@@ -1,5 +1,8 @@
 import { Router, Request, Response, NextFunction } from "express";
 
+export const contentTypeHeaders = { headers: {'Content-Type': 'application/json'}};
+export const graphqlEndpoint = 'http://localhost:3100/graphq';
+
 type Wrapper = ((router: Router) => void);
 
 export const applyMiddleware = (
