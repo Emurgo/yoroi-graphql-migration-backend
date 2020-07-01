@@ -8,7 +8,7 @@
     "test": "mocha -r ts-node/register tests/**/*.test.ts"
   },
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "@types/chai": "^4.2.11",
     "@types/compression": "^1.7.0",
