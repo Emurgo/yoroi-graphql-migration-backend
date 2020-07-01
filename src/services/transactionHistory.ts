@@ -65,7 +65,7 @@ export const askTransactionHistory = async (
                   includedAt: desc
                 }
               ) {
-                id
+                hash
                 block {
                   number
                   hash
@@ -100,7 +100,10 @@ export const askTransactionHistory = async (
 };
 
 
-export const askBlockNumByTxHash = async (hash : string): Promise<UtilEither<number>> => {
+export const askBlockNumByTxHash = async (hash : string|undefined): Promise<UtilEither<number>> => {
+    if(!hash)
+        return {kind:'error', errMsg: 'no hash given'};
+
     const query = `
             query BlockNumByTxHash($hashId: Hash32HexString!) {
               transactions(
@@ -138,24 +141,22 @@ export const askBlockNumByHash = async (hash : string) : Promise<UtilEither<numb
             query BlockNumByHash($id: Hash32HexString!) {
               blocks(
                 where: {
-                  id: {
+                  hash: {
                     _eq: $id
                   }
                 }
               ) {
-                id
                 number
               }
             }
     `;
-    const ret = (await axios.post(graphqlEndpoint,
-                      JSON.stringify({ 'query': query, 'variables': {'hashId':hash} }),
-                      contentTypeHeaders));
+    const ret = await axios.post(graphqlEndpoint,
+                      JSON.stringify({ 'query': query, 'variables': {'id':hash} }),
+                      contentTypeHeaders);
     if('data' in ret 
        && 'data' in ret.data 
-       && 'transactions' in ret.data.data
-       && ret.data.data.transactions[0] 
-       && 'block' in ret.data.data.transactions[0]
+       && 'blocks' in ret.data.data
+       && ret.data.data.blocks[0] 
        && 'number' in  ret.data.data.transactions[0].block
        && typeof ret.data.data.transaction[0].block.number === 'number')
        return {kind:'ok', value:ret.data.data.transaction[0].block.number};

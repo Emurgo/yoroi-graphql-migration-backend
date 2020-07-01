@@ -163,8 +163,8 @@ const txHistory = async (req: Request, res: Response) => {
             const [referenceTx, referenceBlock] = (body.after && [body.after.tx, body.after.block]) || [];
             const referenceBestBlock = body.untilBlock;
 
-            const afterBlockNum = await askBlockNumByTxHash(referenceTx ? referenceTx : "");
             const untilBlockNum = await askBlockNumByHash(referenceBestBlock);
+            const afterBlockNum = await askBlockNumByTxHash(referenceTx );
             const maybeTxs = await askTransactionHistory(limit, body.addresses, afterBlockNum, untilBlockNum);
             switch(maybeTxs.kind) {
               case "ok":
@@ -211,15 +211,12 @@ const txHistory = async (req: Request, res: Response) => {
                     }
                 }
                 res.send(txs);
-
                 return;
               case "error":
                 console.log(maybeTxs.errMsg);
                 return;
               default: return utils.assertNever(maybeTxs);
-
             }
-
             return;
         case "error":
             console.log(verifiedBody.errMsg);
