@@ -162,15 +162,24 @@ const txHistory = async (req: Request, res: Response) => {
             const limit = body.limit || apiResponseLimit;
             const [referenceTx, referenceBlock] = (body.after && [body.after.tx, body.after.block]) || [];
             const referenceBestBlock = body.untilBlock;
-
             const untilBlockNum = await askBlockNumByHash(referenceBestBlock);
             const afterBlockNum = await askBlockNumByTxHash(referenceTx );
+
+            if(untilBlockNum.kind === 'error' && untilBlockNum.errMsg !== utils.errMsgs.noValue) {
+              console.log(`untilBlockNum failed: ${untilBlockNum.errMsg}`);
+              return;
+            }
+            if(afterBlockNum.kind === 'error' && afterBlockNum.errMsg !== utils.errMsgs.noValue) {
+              console.log(`afterBlockNum failed: ${afterBlockNum.errMsg}`);
+              return;
+            }
+
             const maybeTxs = await askTransactionHistory(limit, body.addresses, afterBlockNum, untilBlockNum);
             switch(maybeTxs.kind) {
               case "ok":
                 const txs = maybeTxs.value.map( tx => ({
-                    hash: tx.id,
-                    is_reference: tx.id === referenceTx,
+                    hash: tx.hash,
+                    is_reference: tx.hash === referenceTx,
                     tx_state: 'Successful', // graphql doesn't handle pending/failed txs
                     last_update: tx.includedAt,
                     block_num: tx.block.number,
@@ -181,35 +190,7 @@ const txHistory = async (req: Request, res: Response) => {
                     inputs: tx.inputs,
                     outputs: tx.outputs
                 }));
-                const refs = txs.filter( ({ is_reference }) => is_reference );
 
-                if(referenceTx !== undefined){
-                    if(refs.length !== 1){
-                        console.log(`
-                         graphql response with ${refs.length} rows for 
-                         refTx ${referenceTx} and refBestBlock ${referenceBestBlock}`);
-                        return;
-                    }
-
-                    const { block_num: reference_block_height, hash, block_hash, tx_state } = refs[0];
-                    if (!hash) {
-                      console.log(`Reference transaction '${referenceTx}' is not found!`);
-                      return;
-                    }
-                    if (block_hash !== referenceBlock) {
-                      console.log(`
-                        Reference block '${referenceBlock}' for reference tx 
-                        '${referenceTx}' not match real block '${block_hash}' 
-                        (reference status is '${tx_state}')!`);
-                      return;
-                    }
-                    if (!reference_block_height) {
-                      console.log(`
-                        Reference bestblock '${referenceBestBlock}' does not 
-                        exist in the history!`);
-                      return;
-                    }
-                }
                 res.send(txs);
                 return;
               case "error":

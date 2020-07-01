@@ -1,10 +1,10 @@
 import axios from 'axios';
 import { Request, Response } from "express";
 
-import { assertNever, contentTypeHeaders, graphqlEndpoint, UtilEither} from "../utils";
+import { assertNever, contentTypeHeaders, errMsgs, graphqlEndpoint, UtilEither} from "../utils";
 
 interface TransactionFrag {
-    id: string;
+    hash: string;
     block: BlockFrag;
     includedAt: Date;
     inputs: TransInputFrag;
@@ -62,7 +62,7 @@ export const askTransactionHistory = async (
                 },
                 limit: $limit,
                 order_by: {
-                  includedAt: desc
+                  includedAt: asc
                 }
               ) {
                 hash
@@ -102,7 +102,7 @@ export const askTransactionHistory = async (
 
 export const askBlockNumByTxHash = async (hash : string|undefined): Promise<UtilEither<number>> => {
     if(!hash)
-        return {kind:'error', errMsg: 'no hash given'};
+        return {kind:'error', errMsg: errMsgs.noValue};
 
     const query = `
             query BlockNumByTxHash($hashId: Hash32HexString!) {
@@ -119,21 +119,27 @@ export const askBlockNumByTxHash = async (hash : string|undefined): Promise<Util
                 }
               }
             }`;
-    const ret = (await axios.post(graphqlEndpoint,
-                      JSON.stringify({ 'query': query, 'variables': {'hashId':hash} }),
-                      contentTypeHeaders));
+    let ret = null;
+    try {
+      ret = (await axios.post(graphqlEndpoint,
+                        JSON.stringify({ 'query': query, 'variables': {'hashId':hash} }),
+                        contentTypeHeaders));
+    } catch (err) {
+      return { kind: 'error', errMsg: 'askBlockNumByTxHash, unable to query graphql service: ' + err };
+    }
     if('data' in ret 
        && 'data' in ret.data 
        && 'transactions' in ret.data.data
-       && ret.data.data.transactions[0] 
-       && 'block' in ret.data.data.transactions[0]
-       && 'number' in  ret.data.data.transactions[0].block
-       && typeof ret.data.data.transaction[0].block.number === 'number')
-       return {kind:'ok', value:ret.data.data.transaction[0].block.number};
+       && Array.isArray(ret.data.data.transactions))
+      if(   ret.data.data.transactions > 0
+         && 'block' in ret.data.data.transactions[0]
+         && 'number' in ret.data.data.transactions[0].block)
+         
+        return {kind:'ok', value:ret.data.data.transaction[0].block.number};
+      else
+        return { kind:'error', errMsg: errMsgs.noValue };
     else 
         return {kind:'error', errMsg: 'Did not understand graphql response'};
-
-
 } ;
 
 export const askBlockNumByHash = async (hash : string) : Promise<UtilEither<number>> => {
@@ -150,17 +156,24 @@ export const askBlockNumByHash = async (hash : string) : Promise<UtilEither<numb
               }
             }
     `;
-    const ret = await axios.post(graphqlEndpoint,
-                      JSON.stringify({ 'query': query, 'variables': {'id':hash} }),
-                      contentTypeHeaders);
+    let ret = null;
+    try {
+      ret = await axios.post(graphqlEndpoint,
+                        JSON.stringify({ 'query': query, 'variables': {'id':hash} }),
+                        contentTypeHeaders);
+    } catch (err) {
+      return { kind:'error', errMsg: 'askBlockNumByHash, unable to query graphql service: ' + err };
+    }
     if('data' in ret 
        && 'data' in ret.data 
        && 'blocks' in ret.data.data
-       && ret.data.data.blocks[0] 
-       && 'number' in  ret.data.data.transactions[0].block
-       && typeof ret.data.data.transaction[0].block.number === 'number')
-       return {kind:'ok', value:ret.data.data.transaction[0].block.number};
+       && Array.isArray(ret.data.data.blocks))
+      if(   ret.data.data.blocks.length > 0 
+         && 'number' in ret.data.data.blocks[0])
+        return {kind:'ok', value:ret.data.data.blocks[0].number};
+      else
+        return { kind:'error', errMsg: errMsgs.noValue };
     else 
-        return {kind:'error', errMsg: 'Did not understand graphql response'};
+        return {kind:'error', errMsg: 'askBlockNumByHash, Did not understand graphql response'};
 
 };
