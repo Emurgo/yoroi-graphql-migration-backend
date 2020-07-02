@@ -38,7 +38,7 @@ export const askUtxoForAddresses = async (addresses: string[]) : Promise<UtilEit
               }
             }`;
     const ret = await axios.post(graphqlEndpoint, 
-                        JSON.stringify({query, addresses}),
+                        JSON.stringify({query: query, variables: { addresses: addresses}}),
                         contentTypeHeaders);
     if('data' in ret && 'data' in ret.data && Array.isArray(ret.data.data.utxos))
         return { kind: 'ok', value: ret.data.data.utxos };
