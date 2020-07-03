@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { expect } from 'chai';
+import { resultsForSingleHistory } from './dataSingleHistory';
 import { config, Config } from './config'
 import * as R from 'ramda';
 
@@ -89,7 +90,7 @@ const dataSingleHistory = {
 
 
 describe('/txs/history', function() {
-  this.timeout(10000);
+  this.timeout(100000);
   it('should return empty if addresses do not exist', async () => {
     let result = await axios.post(endpoint+"txs/history", dataEmpty);
     expect(result.data).be.empty;
@@ -144,6 +145,10 @@ describe('/txs/history', function() {
     let result = await axios.post(endpoint+"txs/history", data);
     const last = result.data[result.data.length - 1];
     expect(Date.parse(last.time)).to.be.at.most(timeForOlderBlock);
+  });
+  it('single history objects should match iohk-mainnet', async () => {
+    let result = await axios.post(endpoint+"txs/history", dataSingleHistory );
+    expect(result.data).to.be.eql(resultsForSingleHistory)
   });
   it('objects should have all the properties', async() => {
     let result = await axios.post(endpoint+"txs/history", dataSingleHistory );

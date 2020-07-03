@@ -6,6 +6,8 @@ import axios from 'axios';
 
 import * as _ from 'lodash';
 
+import { Pool } from 'pg';
+
 import { applyMiddleware, applyRoutes, contentTypeHeaders, graphqlEndpoint, Route } from "./utils";
 import * as utils from "./utils";
 import * as middleware from "./middleware";
@@ -16,6 +18,8 @@ import { askBlockNumByHash, askBlockNumByTxHash, askTransactionHistory } from ".
 import { askFilterUsedAddresses } from "./services/filterUsedAddress";
 import { askUtxoSumForAddresses } from "./services/utxoSumForAddress";
 
+
+const pool = new Pool({user: 'hasura', host:'/tmp/', database: 'cexplorer'});
 
 const router = express();
 
@@ -174,12 +178,12 @@ const txHistory = async (req: Request, res: Response) => {
               return;
             }
 
-            const maybeTxs = await askTransactionHistory(limit, body.addresses, afterBlockNum, untilBlockNum);
+            const maybeTxs = await askTransactionHistory(pool, limit, body.addresses, afterBlockNum, untilBlockNum);
             switch(maybeTxs.kind) {
               case "ok":
                 const txs = maybeTxs.value.map( tx => ({
                     hash: tx.hash,
-                    is_reference: tx.hash === referenceTx,
+                    tx_ordinal: tx.txIndex,
                     tx_state: 'Successful', // graphql doesn't handle pending/failed txs
                     last_update: tx.includedAt,
                     block_num: tx.block.number,
