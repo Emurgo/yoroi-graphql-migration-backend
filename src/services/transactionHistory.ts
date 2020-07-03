@@ -52,8 +52,10 @@ const askTransactionSqlQuery = `
   join block
     on block.id = tx.block
   
-  where block.block_no <= $2
-  order by block.time asc;
+  where     block.block_no <= $2
+        and block.block_no > $3 
+  order by block.time asc
+  limit $4;
 `;
 
 const graphQLQuery = `
@@ -132,7 +134,10 @@ export const askTransactionHistory = async (
          , addresses: string[]
          , afterNum: UtilEither<number>
          , untilNum: UtilEither<number>) : Promise<UtilEither<TransactionFrag[]>> => {
-    const ret = await pool.query(askTransactionSqlQuery, [addresses, untilNum.kind === 'ok' ? untilNum.value : 0]);
+    const ret = await pool.query(askTransactionSqlQuery, [ addresses
+                                                         , untilNum.kind === 'ok' ? untilNum.value : 0
+                                                         , afterNum.kind === 'ok' ? afterNum.value : 0
+                                                         , limit]);
     const txs = ret.rows.map( (row: any) => {
       const inputs = row.inAddrValPairs.map( ( obj:any ): TransInputFrag => ({ address: obj.f1
                                                                              , amount: obj.f2.toString() 
@@ -167,7 +172,6 @@ export const askTransactionHistory = async (
 export const askBlockNumByTxHash = async (hash : string|undefined): Promise<UtilEither<number>> => {
     if(!hash)
         return {kind:'error', errMsg: errMsgs.noValue};
-
     const query = `
             query BlockNumByTxHash($hashId: Hash32HexString!) {
               transactions(
@@ -195,11 +199,11 @@ export const askBlockNumByTxHash = async (hash : string|undefined): Promise<Util
        && 'data' in ret.data 
        && 'transactions' in ret.data.data
        && Array.isArray(ret.data.data.transactions))
-      if(   ret.data.data.transactions > 0
+      if(   ret.data.data.transactions.length > 0
          && 'block' in ret.data.data.transactions[0]
          && 'number' in ret.data.data.transactions[0].block)
          
-        return {kind:'ok', value:ret.data.data.transaction[0].block.number};
+        return {kind:'ok', value:ret.data.data.transactions[0].block.number};
       else
         return { kind:'error', errMsg: errMsgs.noValue };
     else 
