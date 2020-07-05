@@ -4,6 +4,9 @@
   "description": "like https://github.com/Emurgo/yoroi-backend-service but simpler and missing pieces.",
   "main": "src/index.ts",
   "scripts": {
+    "postinstall": "tsc",
+    "start": "pm2 start pm2.yaml",
+    "start": "pm2 stop pm2.yaml",
     "dev": "tsc-watch --onSuccess \"node ./dist/index.js\"",
     "test": "mocha -r ts-node/register tests/**/*.test.ts --slow 0",
     "testtxhist": "mocha -r ts-node/register tests/txHistory.test.ts"
@@ -27,6 +30,7 @@
     "lodash": "^4.17.15",
     "mocha": "^8.0.1",
     "pg": "^8.2.1",
+    "pm2": "^4.4.0",
     "ts-node": "^8.10.2",
     "tsc-watch": "^4.2.8",
     "typescript": "^3.9.5"
