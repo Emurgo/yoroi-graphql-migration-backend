@@ -49,6 +49,7 @@ const bestBlock = async (req: Request, res: Response) => {
       return;
     case "error":
       console.log(result.errMsg);
+      res.status(500).send({ error: result.errMsg} );
       return;
     default: return utils.assertNever(result);
   };
@@ -57,6 +58,7 @@ const bestBlock = async (req: Request, res: Response) => {
 const utxoForAddresses = async (req: Request, res: Response) => {
   if(!req.body || !req.body.addresses) {
       console.log("error, no addresses.");
+      res.status(500).send({ error: "No address" } );
       return;
   }
   const verifiedAddresses = utils.validateAddressesReq(addressesRequestLimit
@@ -80,12 +82,14 @@ const utxoForAddresses = async (req: Request, res: Response) => {
               return;
             case "error":
               console.log(result.errMsg);
+              res.status(500).send({ error: result.errMsg} );
               return;
             default: return utils.assertNever(result);
 
           }
       case "error":
           console.log(verifiedAddresses.errMsg);
+          res.status(500).send({ error: verifiedAddresses.errMsg} );
           return;
       default: return utils.assertNever(verifiedAddresses);
   }
@@ -95,6 +99,7 @@ const utxoForAddresses = async (req: Request, res: Response) => {
 const filterUsedAddresses = async (req: Request, res: Response) => {
   if(!req.body || !req.body.addresses) {
       console.log("error, no addresses.");
+      res.status(500).send({ error: "No address" } );
       return;
   }
   const verifiedAddresses = utils.validateAddressesReq(addressesRequestLimit
@@ -114,12 +119,14 @@ const filterUsedAddresses = async (req: Request, res: Response) => {
               return;
             case "error":
               console.log(result.errMsg);
+              res.status(500).send({ error: result.errMsg} );
               return;
             default: return utils.assertNever(result);
           }
           return;
       case "error":
           console.log(verifiedAddresses.errMsg);
+          res.status(500).send({ error: verifiedAddresses.errMsg} );
           return;
       default: return utils.assertNever(verifiedAddresses);
   }
@@ -130,6 +137,7 @@ const filterUsedAddresses = async (req: Request, res: Response) => {
 const utxoSumForAddresses = async (req:  Request, res:Response) => {
   if(!req.body || !req.body.addresses) {
       console.log("error, no addresses.");
+      res.status(500).send({ error: "No address" } );
       return;
   }
   const verifiedAddresses = utils.validateAddressesReq(addressesRequestLimit
@@ -143,12 +151,14 @@ const utxoSumForAddresses = async (req:  Request, res:Response) => {
               return;
             case "error":
               console.log(result.errMsg);
+              res.status(500).send({ error: result.errMsg} );
               return;
             default: return utils.assertNever(result);  
           }
           return;
       case "error":
           console.log(verifiedAddresses.errMsg);
+          res.status(500).send({ error: verifiedAddresses.errMsg} );
           return;
       default: return utils.assertNever(verifiedAddresses);
   }
@@ -156,8 +166,9 @@ const utxoSumForAddresses = async (req:  Request, res:Response) => {
 
 const txHistory = async (req: Request, res: Response) => {
     if(!req.body){
-        console.log("error, no body");
-        return;
+      console.log("error, no body");
+      res.status(500).send({ error: "No body" } );
+      return;
     }
     const verifiedBody = utils.validateHistoryReq(addressesRequestLimit, apiResponseLimit, req.body);
     switch(verifiedBody.kind){
@@ -170,11 +181,15 @@ const txHistory = async (req: Request, res: Response) => {
             const afterBlockNum = await askBlockNumByTxHash(referenceTx );
 
             if(untilBlockNum.kind === 'error' && untilBlockNum.errMsg !== utils.errMsgs.noValue) {
-              console.log(`untilBlockNum failed: ${untilBlockNum.errMsg}`);
+              const msg = `untilBlockNum failed: ${untilBlockNum.errMsg}`;
+              console.log("txHistory: "+msg);
+              res.status(500).send({ error: msg});
               return;
             }
             if(afterBlockNum.kind === 'error' && afterBlockNum.errMsg !== utils.errMsgs.noValue) {
-              console.log(`afterBlockNum failed: ${afterBlockNum.errMsg}`);
+              const msg = `afterBlockNum failed: ${afterBlockNum.errMsg}`;
+              console.log("tsHistory: "+msg);
+              res.status(500).send({ error: msg});
               return;
             }
 
@@ -199,12 +214,14 @@ const txHistory = async (req: Request, res: Response) => {
                 return;
               case "error":
                 console.log(maybeTxs.errMsg);
+                res.status(500).send({ error: maybeTxs.errMsg});
                 return;
               default: return utils.assertNever(maybeTxs);
             }
             return;
         case "error":
             console.log(verifiedBody.errMsg);
+            res.status(500).send({ error: verifiedBody.errMsg});
             return;
         default: return utils.assertNever(verifiedBody);
     }
