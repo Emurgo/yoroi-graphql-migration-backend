@@ -203,14 +203,18 @@ Array<string>
 
 ### `/api/v2/txs/history`
 
-To handle pagination, we use an `after` and `before` field that refers to positions inside the chain.
+Since short rollbacks are common (by design) in Cardano Shelley, your app needs to be ready for this. The pagination mechanism should help make this easy for you.
+
+To handle pagination, we use an `after` and `before` field that refers to positions inside the chain. Usually, pagination works as follows:
+1) Query the `bestblock` endpoint to get the current tip of the chain (and call this `before`)
+2) Look up the last transaction your application has saved locally (and call this `after`)
+3) Query everything between `before` and `after`. If `before` no long exists, requery. If `after` no long exists, mark the transaction as failed and re-query with an earlier transaction
+4) If more results were returned than the maximum responses you can receive for one query, find the most recent transction included in the response and set this as the new `after` and then query again (with the same value for `before`)
 
 **Note**: this endpoint will throw an error if either the `before` or `after` fields no longer exist inside the blockchain (allowing your app to handle rollbacks). Notably, the error codes are
 - 'REFERENCE_BLOCK_MISMATCH'
 - 'REFERENCE_TX_NOT_FOUND'
 - 'REFERENCE_BEST_BLOCK_MISMATCH'
-
-You can use the `after` parameter for pagination
 
 #### Input
 
