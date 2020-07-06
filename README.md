@@ -125,6 +125,8 @@ There are limited test which you can run with `npm run test`.
 
 #### Input
 
+Up to 50 addresses in the request
+
 ```js
 {
   addresses: Array<string>
@@ -165,6 +167,8 @@ Array<{
 
 #### Input
 
+Up to 50 addresses in the request
+
 ```js
 {
   addresses: Array<string>
@@ -183,6 +187,8 @@ Array<{
 
 #### Input
 
+Up to 50 addresses in the request
+
 ```js
 {
   addresses: Array<string>
@@ -199,9 +205,16 @@ Array<string>
 
 To handle pagination, we use an `after` and `before` field that refers to positions inside the chain.
 
-**Note**: this endpoint will throw an error if either the `before` or `after` fields no longer exist inside the blockchain (allowing your app to handle rollbacks)
+**Note**: this endpoint will throw an error if either the `before` or `after` fields no longer exist inside the blockchain (allowing your app to handle rollbacks). Notably, the error codes are
+- 'REFERENCE_BLOCK_MISMATCH'
+- 'REFERENCE_TX_NOT_FOUND'
+- 'REFERENCE_BEST_BLOCK_MISMATCH'
+
+You can use the `after` parameter for pagination
 
 #### Input
+
+Up to 50 addresses in the request
 
 ```js
 {
@@ -211,11 +224,13 @@ To handle pagination, we use an `after` and `before` field that refers to positi
     block: string,
     tx: string,
   },
-  untilBlock: string,
+  untilBlock: string, // inclusive
 }
 ```
 
 #### Output
+
+Up to `50` transactions are returned. Use pagination with the `after` field to get more.
 
 ```js
 Array<{
