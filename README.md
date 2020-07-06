@@ -1,57 +1,26 @@
 # yoroi-graphql-migration-backend.
 
-Purpose: 
-1) As we move from Byron to Shelly we will be adopting a host of new tools.
-   Not all of those tools support reading Byron transaction bodies. 
-   This repository will (eventually) support reading them from 
-   cardano-graphql and cardano-db-sync.
-2) Numerous third-party tools are using the existing yoroi-backend-service,
-   but that itself may be replaced by some of the aforementioned tooling
-   (particularly cardano-graphql.) 
-   This repository can serve as a drop-in replacement for 
-   yoroi-backend-service for api endpoints that can be served by graphql,
-   which can help migration.
-3) Those same third-party tools often have to replicate significant
-   blockchain logic within their testing suite.
-   This repository will (eventually) have a moched-blockchain to allow
-   for easier integration tests.
+## Background
 
-## Building
+The deprecation of Cardano-SL will kill the http-bridge and the old Adalite & EMURGO backend-serivces that power many light wallets and similar applications today.
 
-At present, there is only "development build".  
-A typescript compiler will automatically watch, recompile, and reload
-running code.
-You can do this easily with 
+[Adrestia](https://github.com/input-output-hk/adrestia) is the new codename for all Cardano tooling and includes tooling that will have long-term support.
 
-```
-npm install
-npm run dev
-```
+Adrestia recommends powering light clients with [GraphQL](https://graphql.org/). This is done by using [cardano-db-sync](https://github.com/input-output-hk/cardano-db-sync) to dump the database to a database and then using [cardano-graphql](https://github.com/input-output-hk/cardano-graphql) to serve that data.
 
-The server will then run at http://localhost:8082.
-`curl http://localhost:8082/bestblock` should respond with something
-interesting.
+## Purpose of this project
 
-This is no easy way to configure runtime settings, however.
-You can edit lines 23-26 of src/index.ts to change port settings, 
-graphql uri, et cetera.
+This backend allows you to migrate to using cardano-graphql under the hood while maintaining the same API you would have gotten from EMURGO's backend-service V2 API (a "drop-in" replacement). This makes eases the transition to eventually calling GraphQL directly.
 
-## Runtime requirements
+# Requirements
 
-You will quickly notice after `npm run dev` and `curl ...` that things
-do not actually work.  
-You will likely need a chain of executables to use this.
-As of the time of writing (26 Jun 2020) these runtime requirements are
-tied to specific git commits. 
-They are
-1) cardano-node.
-2) cardano-db-sync.
-3) cardano-graphql.
+To run this, you will need to run the following
 
-Technically speaking, you only need the last one together with a postgresql
-copy of the blockchain and (3).  
-But it's probably easier to set them all up.
-Details about the specific git commits below.
+1) cardano-node
+2) cardano-db-sync
+3) cardano-graphql
+
+Notably, we currently test with the following commits:
 
 ### cardano-node
 
@@ -65,7 +34,7 @@ Later commits are unlikely to work with cardano-node.
 As of the time of writing (26 Jun 2020) this repo is in a state of flux.
 
 If you want to use transaction bodies, as discussed in the purpose,
-you may be interested in using this pr: 
+you may be interested in using this pr:
 https://github.com/mebassett/cardano-db-sync/pull/1
 
 In either case, the build/run instructions from that repository
@@ -134,23 +103,190 @@ Running (b) is much easier.  From the repostory root directory, simply run:
 Assuming hasura and cardano-graphql are all running properly, with a populated
 database, this repo should respond to requests at http://localhost:8082.
 
+## Building
+
+Development build (with hot reloading):
+```
+npm install
+npm run dev
+```
+
+The server will then run at http://localhost:8082. You can query using curl (ex: `curl http://localhost:8082/bestblock`)
+
+This is no easy way to configure runtime settings. However, you can edit lines 23-26 of src/index.ts to change port settings, graphql uri, et cetera.
+
 ## Tests
 
 There are limited test which you can run with `npm run test`.
 
+## API
+
+### `/api/txs/utxoForAddresses`
+
+#### Input
+
+```js
+{
+  addresses: Array<string>
+}
+```
+
+#### Output
+
+```js
+Array<{
+  utxo_id: string, // concat tx_hash and tx_index
+  tx_hash: string,
+  tx_index: number,
+  receiver: string,
+  amount: string
+}>;
+```
+
+### `/api/txs/getTxsBodiesForUTXOs`
+
+#### Input
+
+```js
+{
+  txsHashes: Array<string>
+}
+```
+
+#### Output
+
+```js
+{
+  [key: string]: string
+};
+```
+
+### `/api/txs/getUTXOsSumsForAddresses`
+
+#### Input
+
+```js
+{
+  addresses: Array<string>
+}
+```
+
+#### Output
+
+```js
+{
+  sum: ?string
+};
+```
+
+### `/api/txs/filterUsed`
+
+#### Input
+
+```js
+{
+  addresses: Array<string>
+}
+```
+
+#### Output
+
+```js
+Array<string>
+```
+
+### `/api/txs/getTransactionsHistoryForAddresses`
+
+To handle pagination, we use an `after` and `before` field that refers to positions inside the chain.
+
+**Note**: this endpoint will throw an error if either the `before` or `after` fields no longer exist inside the blockchain (allowing your app to handle rollbacks)
+
+#### Input
+
+```js
+{
+  addresses: Array<string>,
+  // omitting "after" means you query starting from the genesis block
+  after?: {
+    block: string,
+    tx: string,
+  },
+  untilBlock: string,
+}
+```
+
+#### Output
+
+```js
+Array<{
+  // information that is only present if block is included in the blockchain
+  height: null | number,
+  block_hash: null | string,
+  tx_ordinal: null | number,
+  time: null | string, // timestamp with timezone
+  epoch: null | number,
+  slot: null | number,
+
+  // information that is always present
+  hash: string,
+  last_update: string, // timestamp with timezone
+  tx_state: 'Successful' | 'Failed' | 'Pending',
+  inputs: Array<{
+    address: string,
+    amount: string,
+    id: string, // concatenation of txHash || index
+    index: number,
+    txHash: string,
+  }>,
+  outputs: Array<{
+    address: string,
+    amount: string,
+  }>,
+}>;
+```
+
+### `/api/v2/bestblock`
+
+#### Input
+
+None (GET request)
+
+#### Output
+
+```js
+{
+  // 0 if no blocks in db
+  height: number,
+  // null when no blocks in db
+  epoch: null | number,
+  slot: null | number,
+  hash: null | string,
+};
+```
+
+### `/api/txs/signed`
+
+#### Input
+
+```js
+{
+  // base64 encoding of the transaction
+  signedTx: string,
+}
+```
+
+#### Output
+
+```js
+{
+  txId: string
+}
+```
+
 ## TODO
 
- - [ ] all the code is in index.js, which is a bit silly.
- - [ ] inconsistent graphql functions.  The style for `askTransactionHistory`
-       is superior, your author intends for the other ones to also specify
-       their return type and return errors rather than raise exceptions.
- - [ ] Many api endpoints are missing, especially those for submitting 
-       transactions and healthchecks.
- - [ ] the tests only check to see that the response is an object.  It does not
-       test to ensure that each api is giving the specified response.
- - [ ] Further to the above, there does not seem to exist an API specification, 
-       or at least your author cannot find it.
+ - [ ] inconsistent graphql functions. The style for `askTransactionHistory` is superior, your author intends for the other ones to also specify their return type and return errors rather than raise exceptions.
+ - [ ] Many api endpoints are missing, especially those for submitting transactions and healthchecks.
+ - [ ] some tests only check to see that the response is an object. It does not test to ensure that each api is giving the specified response.
  - [ ] Logging, configuration, production builds.
- - [ ] error handling. 
-
-Good luck!
+ - [ ] error handling.
