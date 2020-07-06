@@ -1,7 +1,6 @@
 import http from "http";
 import express from "express";
 import { Request, Response } from "express";
-
 import axios from 'axios';
 
 import * as _ from 'lodash';
@@ -29,6 +28,8 @@ const middlewares = [ middleware.handleCors
                     ];
 
 applyMiddleware(middlewares, router);
+
+
 
 const port = 8082;
 const addressesRequestLimit = 50;
@@ -256,6 +257,8 @@ const routes : Route[] = [ { path: '/v2/bestblock'
                ]
 
 applyRoutes(routes, router);
+router.use(middleware.logErrors);
+router.use(middleware.errorHandler);
 
 const server = http.createServer(router);
 
