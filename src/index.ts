@@ -210,11 +210,11 @@ const txHistory = async (req: Request, res: Response) => {
     }
 };
 
-const routes : Route[] = [ { path: '/bestblock'
+const routes : Route[] = [ { path: '/v2/bestblock'
                  , method: "get"
                  , handler: bestBlock
                  }
-               , { path: '/addresses/filterUsed'
+               , { path: '/v2/addresses/filterUsed'
                  , method: "post"
                  , handler: filterUsedAddresses
                  }
@@ -226,9 +226,15 @@ const routes : Route[] = [ { path: '/bestblock'
                  , method: "post"
                  , handler: utxoSumForAddresses
                  }
-               , { path: '/txs/history'
+               , { path: '/v2/txs/history'
                  , method: "post"
                  , handler: txHistory 
+                 }
+               , { path: '/status'
+                 , method: "get"
+                 , handler: async (req: Request, res: Response) => {
+                     res.send({ isServerOk: true }); 
+                   }
                  }
                ]
 
