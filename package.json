@@ -6,7 +6,7 @@
   "scripts": {
     "postinstall": "tsc",
     "start": "pm2 start pm2.yaml",
-    "start": "pm2 stop pm2.yaml",
+    "stop": "pm2 stop pm2.yaml",
     "dev": "tsc-watch --onSuccess \"node ./dist/index.js\"",
     "test": "mocha -r ts-node/register tests/**/*.test.ts --slow 0",
     "testtxhist": "mocha -r ts-node/register tests/txHistory.test.ts"
