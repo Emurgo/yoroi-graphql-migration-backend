@@ -143,7 +143,7 @@ Array<{
 }>;
 ```
 
-### `/api/txs/getTxsBodiesForUTXOs`
+### `/api/txs/txBodies`
 
 #### Input
 
@@ -161,7 +161,7 @@ Array<{
 };
 ```
 
-### `/api/txs/getUTXOsSumsForAddresses`
+### `/api/txs/utxoSumForAddresses`
 
 #### Input
 
@@ -179,7 +179,7 @@ Array<{
 };
 ```
 
-### `/api/txs/filterUsed`
+### `/api/v2/addresses/filterUsed`
 
 #### Input
 
@@ -195,7 +195,7 @@ Array<{
 Array<string>
 ```
 
-### `/api/txs/getTransactionsHistoryForAddresses`
+### `/api/v2/txs/history`
 
 To handle pagination, we use an `after` and `before` field that refers to positions inside the chain.
 
