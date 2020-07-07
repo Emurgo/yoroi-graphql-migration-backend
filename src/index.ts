@@ -3,8 +3,6 @@ import express from "express";
 import { Request, Response } from "express";
 import axios from 'axios';
 
-import * as _ from 'lodash';
-
 import { Pool } from 'pg';
 
 import { applyMiddleware, applyRoutes, contentTypeHeaders, graphqlEndpoint, Route } from "./utils";
@@ -105,13 +103,13 @@ const filterUsedAddresses = async (req: Request, res: Response) => {
           const result = await askFilterUsedAddresses(verifiedAddresses.value);
           switch(result.kind){
             case "ok":
-              const usedAddresses = _.chain(result.value)
-                                     .flatMap(tx => [...tx.inputs, ...tx.outputs])
-                                     .map('address')
-                                     .intersection(verifiedAddresses.value)
-                                     .value();
-
-              res.send(usedAddresses);
+              const resultSet = new Set(result.value.flatMap( tx => [tx.inputs, tx.outputs]).flat().map(x => x.address));
+              const verifiedSet = new Set(verifiedAddresses.value);
+              const intersection = new Set();
+              for (let elem of resultSet)
+                  if(verifiedSet.has(elem))
+                      intersection.add(elem);
+              res.send([...intersection]);
               return;
             case "error":
               throw new Error(result.errMsg);

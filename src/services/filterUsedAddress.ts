@@ -41,10 +41,10 @@ export const askFilterUsedAddresses = async (addresses: string[]): Promise<UtilE
                     }
                   `;
     const ret = await axios.post(graphqlEndpoint,
-                           JSON.stringify({query, addresses}),
+                           JSON.stringify({query:query, variables:{addresses: addresses}}),
                            contentTypeHeaders);
     
     if('data' in ret && 'data' in ret.data && 'transactions' in ret.data.data)
         return { kind: 'ok', value: ret.data.data.transactions };
-    else return { kind: 'error', errMsg:'BestBlock, could not understand graphql response' };
+    else return { kind: 'error', errMsg:'FilterUsed, could not understand graphql response' };
 };
