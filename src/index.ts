@@ -42,7 +42,7 @@ const bestBlock = async (req: Request, res: Response) => {
       const cardano = result.value;
       res.send({
         epoch: cardano.currentEpoch.number,
-        slot: cardano.slotDuration,
+        slot: cardano.currentEpoch.blocks[0].slotWithinEpoch ,
         hash: cardano.currentEpoch.blocks[0].hash,
         height: cardano.blockHeight,
       });
