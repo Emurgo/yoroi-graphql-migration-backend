@@ -40,10 +40,19 @@ const askTransactionSqlQuery = `
        , block.epoch_no as "blockEpochNo"
        , block.slot_no as "blockSlotNo"
        , block.time at time zone 'UTC' as "includedAt"
-       , (select json_agg(("address", "value",encode("sourceTxHash", 'hex'),"sourceTxIndex")) as inAddrValPairs
-          from "TransactionInput" hasura_ti
-          where hasura_ti."txHash" = tx.hash) as "inAddrValPairs"
-       , (select json_agg(("address", "value")) as outAddrValPairs
+       , (select json_agg(( source_tx_out.address
+                          , source_tx_out.value
+                          , encode(source_tx.hash, 'hex')
+                          , tx_in.tx_out_index) order by tx_in.id asc) as inAddrValPairs
+          FROM tx inadd_tx
+          JOIN tx_in
+            ON tx_in.tx_in_id = inadd_tx.id
+          JOIN tx_out source_tx_out 
+            ON tx_in.tx_out_id = source_tx_out.tx_id AND tx_in.tx_out_index::smallint = source_tx_out.index::smallint
+          JOIN tx source_tx 
+            ON source_tx_out.tx_id = source_tx.id
+          where inadd_tx.hash = tx.hash) as "inAddrValPairs"
+       , (select json_agg(("address", "value") order by "index" asc)  as outAddrValPairs
           from "TransactionOutput" hasura_to
           where hasura_to."txHash" = tx.hash) as "outAddrValPairs"
   from tx
