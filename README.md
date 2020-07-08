@@ -225,10 +225,10 @@ Up to 50 addresses in the request
   addresses: Array<string>,
   // omitting "after" means you query starting from the genesis block
   after?: {
-    block: string,
-    tx: string,
+    block: string, // block hash
+    tx: string, // tx hash
   },
-  untilBlock: string, // inclusive
+  untilBlock: string, // block hash - inclusive
 }
 ```
 
