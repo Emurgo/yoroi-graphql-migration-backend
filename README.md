@@ -250,14 +250,14 @@ Array<{
   hash: string,
   last_update: string, // timestamp with timezone
   tx_state: 'Successful' | 'Failed' | 'Pending',
-  inputs: Array<{
+  inputs: Array<{ // these will be ordered by the input transaction id asc
     address: string,
     amount: string,
     id: string, // concatenation of txHash || index
     index: number,
     txHash: string,
   }>,
-  outputs: Array<{
+  outputs: Array<{ //these will be ordered by transaction index asc.
     address: string,
     amount: string,
   }>,

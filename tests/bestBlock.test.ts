@@ -8,7 +8,7 @@ const s = should();
 describe('/bestblock', function() {
   this.timeout(10000);
   it('returns', async function() {
-    let result = await axios.get(endpoint+"bestblock");
+    let result = await axios.get(endpoint+"v2/bestblock");
     s.exist(result.data);
     result.data.should.be.an('object');
     result.data.slot.should.be.an('number');

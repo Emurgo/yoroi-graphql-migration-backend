@@ -1,10 +1,7 @@
 import http from "http";
 import express from "express";
 import { Request, Response } from "express";
-
 import axios from 'axios';
-
-import * as _ from 'lodash';
 
 import { Pool } from 'pg';
 
@@ -30,6 +27,8 @@ const middlewares = [ middleware.handleCors
 
 applyMiddleware(middlewares, router);
 
+
+
 const port = 8082;
 const addressesRequestLimit = 50;
 const apiResponseLimit = 50; 
@@ -41,14 +40,14 @@ const bestBlock = async (req: Request, res: Response) => {
       const cardano = result.value;
       res.send({
         epoch: cardano.currentEpoch.number,
-        slot: cardano.slotDuration,
+        slot: cardano.currentEpoch.blocks[0].slotWithinEpoch ,
         hash: cardano.currentEpoch.blocks[0].hash,
         height: cardano.blockHeight,
       });
 
       return;
     case "error":
-      console.log(result.errMsg);
+      throw new Error(result.errMsg);
       return;
     default: return utils.assertNever(result);
   };
@@ -56,7 +55,7 @@ const bestBlock = async (req: Request, res: Response) => {
 
 const utxoForAddresses = async (req: Request, res: Response) => {
   if(!req.body || !req.body.addresses) {
-      console.log("error, no addresses.");
+      throw new Error("error, no addresses.");
       return;
   }
   const verifiedAddresses = utils.validateAddressesReq(addressesRequestLimit
@@ -79,13 +78,13 @@ const utxoForAddresses = async (req: Request, res: Response) => {
               res.send(utxos);
               return;
             case "error":
-              console.log(result.errMsg);
+              throw new Error(result.errMsg);
               return;
             default: return utils.assertNever(result);
 
           }
       case "error":
-          console.log(verifiedAddresses.errMsg);
+          throw new Error(verifiedAddresses.errMsg);
           return;
       default: return utils.assertNever(verifiedAddresses);
   }
@@ -94,7 +93,7 @@ const utxoForAddresses = async (req: Request, res: Response) => {
 
 const filterUsedAddresses = async (req: Request, res: Response) => {
   if(!req.body || !req.body.addresses) {
-      console.log("error, no addresses.");
+      throw new Error("error, no addresses.");
       return;
   }
   const verifiedAddresses = utils.validateAddressesReq(addressesRequestLimit
@@ -104,22 +103,22 @@ const filterUsedAddresses = async (req: Request, res: Response) => {
           const result = await askFilterUsedAddresses(verifiedAddresses.value);
           switch(result.kind){
             case "ok":
-              const usedAddresses = _.chain(result.value)
-                                     .flatMap(tx => [...tx.inputs, ...tx.outputs])
-                                     .map('address')
-                                     .intersection(verifiedAddresses.value)
-                                     .value();
-
-              res.send(usedAddresses);
+              const resultSet = new Set(result.value.flatMap( tx => [tx.inputs, tx.outputs]).flat().map(x => x.address));
+              const verifiedSet = new Set(verifiedAddresses.value);
+              const intersection = new Set();
+              for (let elem of resultSet)
+                  if(verifiedSet.has(elem))
+                      intersection.add(elem);
+              res.send([...intersection]);
               return;
             case "error":
-              console.log(result.errMsg);
+              throw new Error(result.errMsg);
               return;
             default: return utils.assertNever(result);
           }
           return;
       case "error":
-          console.log(verifiedAddresses.errMsg);
+          throw new Error(verifiedAddresses.errMsg);
           return;
       default: return utils.assertNever(verifiedAddresses);
   }
@@ -129,7 +128,7 @@ const filterUsedAddresses = async (req: Request, res: Response) => {
 
 const utxoSumForAddresses = async (req:  Request, res:Response) => {
   if(!req.body || !req.body.addresses) {
-      console.log("error, no addresses.");
+      throw new Error("error, no addresses.");
       return;
   }
   const verifiedAddresses = utils.validateAddressesReq(addressesRequestLimit
@@ -142,13 +141,13 @@ const utxoSumForAddresses = async (req:  Request, res:Response) => {
               res.send({ sum: result.value });
               return;
             case "error":
-              console.log(result.errMsg);
+              throw new Error(result.errMsg);
               return;
             default: return utils.assertNever(result);  
           }
           return;
       case "error":
-          console.log(verifiedAddresses.errMsg);
+          throw new Error(verifiedAddresses.errMsg);
           return;
       default: return utils.assertNever(verifiedAddresses);
   }
@@ -156,8 +155,8 @@ const utxoSumForAddresses = async (req:  Request, res:Response) => {
 
 const txHistory = async (req: Request, res: Response) => {
     if(!req.body){
-        console.log("error, no body");
-        return;
+      throw new Error("error, no body");
+      return;
     }
     const verifiedBody = utils.validateHistoryReq(addressesRequestLimit, apiResponseLimit, req.body);
     switch(verifiedBody.kind){
@@ -170,11 +169,13 @@ const txHistory = async (req: Request, res: Response) => {
             const afterBlockNum = await askBlockNumByTxHash(referenceTx );
 
             if(untilBlockNum.kind === 'error' && untilBlockNum.errMsg !== utils.errMsgs.noValue) {
-              console.log(`untilBlockNum failed: ${untilBlockNum.errMsg}`);
+              const msg = `untilBlockNum failed: ${untilBlockNum.errMsg}`;
+              throw new Error("txHistory: "+msg);
               return;
             }
             if(afterBlockNum.kind === 'error' && afterBlockNum.errMsg !== utils.errMsgs.noValue) {
-              console.log(`afterBlockNum failed: ${afterBlockNum.errMsg}`);
+              const msg = `afterBlockNum failed: ${afterBlockNum.errMsg}`;
+              throw new Error("tsHistory: "+msg);
               return;
             }
 
@@ -198,13 +199,13 @@ const txHistory = async (req: Request, res: Response) => {
                 res.send(txs);
                 return;
               case "error":
-                console.log(maybeTxs.errMsg);
+                throw new Error(maybeTxs.errMsg);
                 return;
               default: return utils.assertNever(maybeTxs);
             }
             return;
         case "error":
-            console.log(verifiedBody.errMsg);
+            throw new Error(verifiedBody.errMsg);
             return;
         default: return utils.assertNever(verifiedBody);
     }
@@ -239,6 +240,8 @@ const routes : Route[] = [ { path: '/v2/bestblock'
                ]
 
 applyRoutes(routes, router);
+router.use(middleware.logErrors);
+router.use(middleware.errorHandler);
 
 const server = http.createServer(router);
 

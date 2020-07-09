@@ -1,4 +1,4 @@
-import { Router } from "express";
+import {  NextFunction, Request, Response, Router,  } from "express";
 import cors from "cors";
 import parser from "body-parser";
 import compression from "compression";
@@ -13,4 +13,14 @@ export const handleBodyRequestParsing = (router: Router) => {
 
 export const handleCompression = (router: Router) => {
   router.use(compression());
+};
+
+export const logErrors = (err:Error, req: Request, res: Response, next: NextFunction ) => {
+    const errStr = `ERROR url: ${req.url}\n      stack: ${err.stack}\n      message: ${err.message}`;
+    console.log(errStr);
+    next(err);
+};
+
+export const errorHandler = (err:Error, req: Request, res: Response, next: NextFunction) => {
+    res.status(500).send({ error: err.message });
 };

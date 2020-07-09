@@ -15,7 +15,7 @@ const addresses =
 describe('/addresses/filterUsed', function() {
   it('returns', async function() {
     let postData = { addresses: addresses };
-    let result = await axios.post(endpoint+"addresses/filterUsed", postData);
+    let result = await axios.post(endpoint+"v2/addresses/filterUsed", postData);
     s.exist(result.data);
     result.data.should.be.an('array');
   }); 

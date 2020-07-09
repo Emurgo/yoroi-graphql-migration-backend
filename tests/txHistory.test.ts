@@ -88,16 +88,18 @@ const dataSingleHistory = {
   untilBlock: hashForUntilBlock
 };
 
+const testableUri = endpoint + "v2/txs/history";
+
 
 describe('/txs/history', function() {
   this.timeout(100000);
   it('should return empty if addresses do not exist', async () => {
-    let result = await axios.post(endpoint+"txs/history", dataEmpty);
+    let result = await axios.post(testableUri, dataEmpty);
     expect(result.data).be.empty;
   });
 
   it('should return empty if there are no tx after the given address', async () => {
-    let result = await axios.post(endpoint+"txs/history", dataEmptyForNoTxAfterAddr );
+    let result = await axios.post(testableUri, dataEmptyForNoTxAfterAddr );
     expect(result.data).be.empty;
 
   }); 
@@ -107,7 +109,7 @@ describe('/txs/history', function() {
     // said time should be desc. But https://iohk-mainnet.yoroiwallet.com/api/v2/ does not
     // have that behavior.  The first result is the oldest.  
     // (time desc should mean most recent first).
-    let result = await axios.post(endpoint+"txs/history", dataSortedDescHashOnAfter );
+    let result = await axios.post(testableUri, dataSortedDescHashOnAfter );
     let obj1 = result.data[0];
     let obj2 = result.data[1];
     expect(Date.parse(obj2.time)).to.be.above(Date.parse(obj1.time));
@@ -116,42 +118,42 @@ describe('/txs/history', function() {
 
   it('should return the same elements for the same position if limit is present with after', async () => {
     const data = R.merge(dataSortedDescHashOnAfter, { limit: 2 });
-    let result1 = await axios.post(endpoint+"txs/history", dataSortedDescHashOnAfter );
-    let result2 = await axios.post(endpoint+"txs/history", data );
+    let result1 = await axios.post(testableUri, dataSortedDescHashOnAfter );
+    let result2 = await axios.post(testableUri, data );
     expect(result1.data).to.be.eql(result2.data);
   });
 
   it('should return elements limited by limit parameter', async () => {
     const data = R.merge(dataSortedDescHashOnAfter, { limit: 1 });
-    let result1 = await axios.post(endpoint+"txs/history", dataSortedDescHashOnAfter );
-    let result2 = await axios.post(endpoint+"txs/history", data );
+    let result1 = await axios.post(testableUri, dataSortedDescHashOnAfter );
+    let result2 = await axios.post(testableUri, data );
     expect([result1.data[0]]).to.be.eql(result2.data);
   });
 
   it('should return history for input and output addresses', async() => {
-    let result = await axios.post(endpoint+"txs/history", dataForAddresses );
+    let result = await axios.post(testableUri, dataForAddresses );
     const hashes = result.data.map((obj:any) => obj.hash);
     expect(hashes).to.include.members(outputHashes.concat(inputHashes));
   });
 
   it('should do same history even if addresses sent twice', async() => {
-    let result1 = await axios.post(endpoint+"txs/history", dataSingleHistory );
-    let result2 = await axios.post(endpoint+"txs/history", dataRepeatHistory );
+    let result1 = await axios.post(testableUri, dataSingleHistory );
+    let result2 = await axios.post(testableUri, dataRepeatHistory );
     expect(result1.data).to.be.eql(result2.data);
   });
 
   it('untilBlock should limit the response', async() => {
     const data = R.merge(dataForAddresses, { untilBlock: hashForOlderBlock } );
-    let result = await axios.post(endpoint+"txs/history", data);
+    let result = await axios.post(testableUri, data);
     const last = result.data[result.data.length - 1];
     expect(Date.parse(last.time)).to.be.at.most(timeForOlderBlock);
   });
   it('single history objects should match iohk-mainnet', async () => {
-    let result = await axios.post(endpoint+"txs/history", dataSingleHistory );
+    let result = await axios.post(testableUri, dataSingleHistory );
     expect(result.data).to.be.eql(resultsForSingleHistory)
   });
   it('objects should have all the properties', async() => {
-    let result = await axios.post(endpoint+"txs/history", dataSingleHistory );
+    let result = await axios.post(testableUri, dataSingleHistory );
     const obj = result.data[0];
     expect(obj).to.have.property('hash');
     expect(obj).to.have.property('block_num');
