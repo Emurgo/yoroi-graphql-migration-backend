@@ -3,6 +3,8 @@ import { Request, Response } from "express";
 
 import { assertNever, contentTypeHeaders, errMsgs, graphqlEndpoint, UtilEither} from "../utils";
 
+import { SignedTransaction } from "cardano-wallet";
+
 const submissionEndpoint = 'https://adalite.io/api/txs/submit';
 
 interface SubmissionData {
@@ -14,8 +16,12 @@ interface SubmissionData {
 export const handleSignedTx = async (req: Request, res: Response) => { 
   if(!req.body.signedTx)
       throw new Error ("No signedTx in body");
-  const submission : SubmissionData = { txHash: req.body.signedTx
-                                      , txBody: req.body.signedTx // this is silly, but what should it be?
+  const buffer = Buffer.from(req.body.signedTx, 'base64');
+
+
+
+  const submission : SubmissionData = { txHash: SignedTransaction.from_bytes(buffer).id()
+                                      , txBody: buffer.toString('hex')
                                       };
   const endpointResponse = await axios.post(submissionEndpoint, JSON.stringify(submission), contentTypeHeaders);
 
