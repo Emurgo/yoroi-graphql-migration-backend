@@ -16,11 +16,16 @@ interface SubmissionData {
 export const handleSignedTx = async (req: Request, res: Response) => { 
   if(!req.body.signedTx)
       throw new Error ("No signedTx in body");
+
   const buffer = Buffer.from(req.body.signedTx, 'base64');
+  const txHash = (() => {
+    const tx = SignedTransaction.from_bytes(buffer);
+    const txHash = tx.id();
+    tx.free();
+    return txHash;
+  })();
 
-
-
-  const submission : SubmissionData = { txHash: SignedTransaction.from_bytes(buffer).id()
+  const submission : SubmissionData = { txHash: txHash
                                       , txBody: buffer.toString('hex')
                                       };
   const endpointResponse = await axios.post(submissionEndpoint, JSON.stringify(submission), contentTypeHeaders);
