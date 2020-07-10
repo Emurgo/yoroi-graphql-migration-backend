@@ -15,6 +15,7 @@ import { askBlockNumByHash, askBlockNumByTxHash, askTransactionHistory } from ".
 import { askFilterUsedAddresses } from "./services/filterUsedAddress";
 import { askUtxoSumForAddresses } from "./services/utxoSumForAddress";
 import { handleSignedTx } from "./services/signedTransaction";
+import { BodyRow, askTxBodies } from "./services/txBodies";
 
 import { HealthChecker } from "./HealthChecker";
 
@@ -37,6 +38,7 @@ applyMiddleware(middlewares, router);
 const port = 8082;
 const addressesRequestLimit = 50;
 const apiResponseLimit = 50; 
+const txsHashesRequestLimit = 150;
 
 const bestBlock = async (req: Request, res: Response) => {
   const result = await askBestBlock();
@@ -216,6 +218,21 @@ const txHistory = async (req: Request, res: Response) => {
     }
 };
 
+const txBodies = async (req: Request, res: Response) => {
+  if(!req.body.txsHashes || !(Array.isArray(req.body.txsHashes )))
+    throw new Error("txBodies: must contain an array named txsHashes");
+
+  if(req.body.txsHashes > txsHashesRequestLimit || req.body.txsHashes ===0)
+    throw new Error(`txsHashes request length should be (0, ${txsHashesRequestLimit}]`);
+
+  const results = await askTxBodies(pool, new Set(req.body.txsHashes));
+  const resultsObj : any = {};
+  results.forEach((row: BodyRow) => {
+    resultsObj[row.hash] = row.body;
+  });
+  res.send(resultsObj);
+};
+
 const routes : Route[] = [ { path: '/v2/bestblock'
                  , method: "get"
                  , handler: bestBlock
@@ -236,9 +253,13 @@ const routes : Route[] = [ { path: '/v2/bestblock'
                  , method: "post"
                  , handler: txHistory 
                  }
-               , { path: '/v2/txs/signed'
+               , { path: '/txs/signed'
                  , method: "post"
                  , handler: handleSignedTx
+                 }
+               , { path: '/txs/txBodies'
+                 , method: "post"
+                 , handler: txBodies
                  }
                , { path: '/v2/importerhealthcheck'
                  , method: "get"
