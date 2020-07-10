@@ -18,7 +18,7 @@ export class HealthChecker {
   lastBlock : UtilEither<BestBlock.CardanoFrag>;
   lastTime : number;
   lastGoodBlockChange : number;
-  currentBlock : [number, UtilEither<BestBlock.CardanoFrag>];
+  timeAndBlock : [number, UtilEither<BestBlock.CardanoFrag>];
 
   constructor( bestBlockFunc : () => Promise<UtilEither<BestBlock.CardanoFrag>> ) {
     this.healthCheckerFunc = bestBlockFunc;
@@ -27,44 +27,45 @@ export class HealthChecker {
     this.lastBlock = { kind: 'error', errMsg: 'init' };
     this.lastTime = currentTime;
     this.lastGoodBlockChange = currentTime;
-    this.currentBlock = [currentTime, { kind: 'error', errMsg: 'init' }];
+    this.timeAndBlock = [currentTime, { kind: 'error', errMsg: 'init' }];
 
     setInterval( this.checkHealth, REQUEST_RATE_MS);
     
   }
 
   checkHealth = async () =>  {
-    let mBlock : UtilEither<BestBlock.CardanoFrag> = { kind: 'error', errMsg: 'function failed' };
+    let block : UtilEither<BestBlock.CardanoFrag> = { kind: 'error', errMsg: 'function failed' };
     try {
-      mBlock = await this.healthCheckerFunc();
+      block = await this.healthCheckerFunc();
     } catch {
+      // leave `block` alone, it already denotes that the function failed.
     }
     const currentTime = Date.now();
 
-    const [currentSavedTime, currentMBlock] = this.currentBlock;
+    const [currentSavedTime, currentBlock] = this.timeAndBlock;
 
-    if(currentMBlock.kind !== this.lastBlock.kind)
-      this.lastBlock = currentMBlock;
-    if(currentMBlock.kind === 'ok' && this.lastBlock.kind === 'ok')
-      if(currentMBlock.value.blockHeight !== this.lastBlock.value.blockHeight){
-        this.lastBlock = currentMBlock;
+    if(currentBlock.kind !== this.lastBlock.kind)
+      this.lastBlock = currentBlock;
+    if(currentBlock.kind === 'ok' && this.lastBlock.kind === 'ok')
+      if(currentBlock.value.blockHeight !== this.lastBlock.value.blockHeight){
+        this.lastBlock = currentBlock;
         this.lastGoodBlockChange = currentTime;
       }
        
 
     this.lastTime = currentSavedTime;
-    this.currentBlock = [currentTime, mBlock];
+    this.timeAndBlock = [currentTime, block];
   }
 
   getStatus = ():HealthCheckerStatus => {
-    const [currentSavedTime, currentMBlock] = this.currentBlock;
-    if (currentMBlock.kind !== 'ok')
+    const [currentSavedTime, currentBlock] = this.timeAndBlock;
+    if (currentBlock.kind !== 'ok')
       return "DOWN";
     if (currentSavedTime - this.lastTime > REQUEST_TIMEOUT_MS)
       return "SLOW";
     if (currentSavedTime - this.lastGoodBlockChange > REQUEST_STALE_BLOCK)
         if(this.lastBlock.kind === 'ok')
-            if(this.lastBlock.value.blockHeight === currentMBlock.value.blockHeight)
+            if(this.lastBlock.value.blockHeight === currentBlock.value.blockHeight)
                 return "BLOCK_IS_STALE";
     return "OK";
 
