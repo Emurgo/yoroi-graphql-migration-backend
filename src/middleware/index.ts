@@ -22,5 +22,5 @@ export const logErrors = (err:Error, req: Request, res: Response, next: NextFunc
 };
 
 export const errorHandler = (err:Error, req: Request, res: Response, next: NextFunction) => {
-    res.status(500).send({ error: err.message });
+    res.status(500).send({ error: { response: err.message }});
 };

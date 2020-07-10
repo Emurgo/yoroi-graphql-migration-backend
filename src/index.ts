@@ -177,14 +177,16 @@ const txHistory = async (req: Request, res: Response) => {
 
             if(untilBlockNum.kind === 'error' && untilBlockNum.errMsg !== utils.errMsgs.noValue) {
               const msg = `untilBlockNum failed: ${untilBlockNum.errMsg}`;
-              throw new Error("txHistory: "+msg);
+              throw new Error("REFERENCE_BEST_BLOCK_MISMATCH");
               return;
             }
             if(afterBlockNum.kind === 'error' && afterBlockNum.errMsg !== utils.errMsgs.noValue) {
               const msg = `afterBlockNum failed: ${afterBlockNum.errMsg}`;
-              throw new Error("tsHistory: "+msg);
+              throw new Error("REFERENCE_TX_NOT_FOUND");
               return;
             }
+            // TODO: we should handle the case where body.after.tx is not in the 
+            //       reference block.
 
             const maybeTxs = await askTransactionHistory(pool, limit, body.addresses, afterBlockNum, untilBlockNum);
             switch(maybeTxs.kind) {
