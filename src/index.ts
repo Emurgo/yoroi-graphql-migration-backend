@@ -176,17 +176,18 @@ const txHistory = async (req: Request, res: Response) => {
             const afterBlockNum = await askBlockNumByTxHash(referenceTx );
 
             if(untilBlockNum.kind === 'error' && untilBlockNum.errMsg !== utils.errMsgs.noValue) {
-              const msg = `untilBlockNum failed: ${untilBlockNum.errMsg}`;
               throw new Error("REFERENCE_BEST_BLOCK_MISMATCH");
               return;
             }
             if(afterBlockNum.kind === 'error' && afterBlockNum.errMsg !== utils.errMsgs.noValue) {
-              const msg = `afterBlockNum failed: ${afterBlockNum.errMsg}`;
               throw new Error("REFERENCE_TX_NOT_FOUND");
               return;
             }
-            // TODO: we should handle the case where body.after.tx is not in the 
-            //       reference block.
+
+            if(afterBlockNum.kind === 'ok' && afterBlockNum.value.block.hash !== referenceBlock) {
+              throw new Error("REFERENCE_BLOCK_MISMATCH");
+              return;
+            }
 
             const maybeTxs = await askTransactionHistory(pool, limit, body.addresses, afterBlockNum, untilBlockNum);
             switch(maybeTxs.kind) {
@@ -228,7 +229,7 @@ const txBodies = async (req: Request, res: Response) => {
     throw new Error(`txsHashes request length should be (0, ${txsHashesRequestLimit}]`);
 
   const results = await askTxBodies(pool, new Set(req.body.txsHashes));
-  const resultsObj : any = {};
+  const resultsObj : { [key: string]: string } = {};
   results.forEach((row: BodyRow) => {
     resultsObj[row.hash] = row.body;
   });
