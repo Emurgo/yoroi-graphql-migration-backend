@@ -14,9 +14,15 @@ import { askUtxoForAddresses } from "./services/utxoForAddress";
 import { askBlockNumByHash, askBlockNumByTxHash, askTransactionHistory } from "./services/transactionHistory";
 import { askFilterUsedAddresses } from "./services/filterUsedAddress";
 import { askUtxoSumForAddresses } from "./services/utxoSumForAddress";
+import { handleSignedTx } from "./services/signedTransaction";
+import { BodyRow, askTxBodies } from "./services/txBodies";
+
+import { HealthChecker } from "./HealthChecker";
 
 
 const pool = new Pool({user: 'hasura', host:'/tmp/', database: 'cexplorer'});
+
+const healthChecker = new HealthChecker(askBestBlock);
 
 const router = express();
 
@@ -32,6 +38,7 @@ applyMiddleware(middlewares, router);
 const port = 8082;
 const addressesRequestLimit = 50;
 const apiResponseLimit = 50; 
+const txsHashesRequestLimit = 150;
 
 const bestBlock = async (req: Request, res: Response) => {
   const result = await askBestBlock();
@@ -170,14 +177,16 @@ const txHistory = async (req: Request, res: Response) => {
 
             if(untilBlockNum.kind === 'error' && untilBlockNum.errMsg !== utils.errMsgs.noValue) {
               const msg = `untilBlockNum failed: ${untilBlockNum.errMsg}`;
-              throw new Error("txHistory: "+msg);
+              throw new Error("REFERENCE_BEST_BLOCK_MISMATCH");
               return;
             }
             if(afterBlockNum.kind === 'error' && afterBlockNum.errMsg !== utils.errMsgs.noValue) {
               const msg = `afterBlockNum failed: ${afterBlockNum.errMsg}`;
-              throw new Error("tsHistory: "+msg);
+              throw new Error("REFERENCE_TX_NOT_FOUND");
               return;
             }
+            // TODO: we should handle the case where body.after.tx is not in the 
+            //       reference block.
 
             const maybeTxs = await askTransactionHistory(pool, limit, body.addresses, afterBlockNum, untilBlockNum);
             switch(maybeTxs.kind) {
@@ -211,6 +220,21 @@ const txHistory = async (req: Request, res: Response) => {
     }
 };
 
+const txBodies = async (req: Request, res: Response) => {
+  if(!req.body.txsHashes || !(Array.isArray(req.body.txsHashes )))
+    throw new Error("txBodies: must contain an array named txsHashes");
+
+  if(req.body.txsHashes > txsHashesRequestLimit || req.body.txsHashes ===0)
+    throw new Error(`txsHashes request length should be (0, ${txsHashesRequestLimit}]`);
+
+  const results = await askTxBodies(pool, new Set(req.body.txsHashes));
+  const resultsObj : any = {};
+  results.forEach((row: BodyRow) => {
+    resultsObj[row.hash] = row.body;
+  });
+  res.send(resultsObj);
+};
+
 const routes : Route[] = [ { path: '/v2/bestblock'
                  , method: "get"
                  , handler: bestBlock
@@ -230,6 +254,26 @@ const routes : Route[] = [ { path: '/v2/bestblock'
                , { path: '/v2/txs/history'
                  , method: "post"
                  , handler: txHistory 
+                 }
+               , { path: '/txs/signed'
+                 , method: "post"
+                 , handler: handleSignedTx
+                 }
+               , { path: '/txs/txBodies'
+                 , method: "post"
+                 , handler: txBodies
+                 }
+               , { path: '/v2/importerhealthcheck'
+                 , method: "get"
+                 , handler: async (req: Request, res: Response) => {
+                     const status = healthChecker.getStatus()
+                     if (status === 'OK')
+                         res.send({ code: 200, message: "Importer is OK" });
+                     else if (status === 'BLOCK_IS_STALE')
+                         res.send({ code: 200, message: "Importer seems OK. Not enough time has passed since last valid request." });
+                     else 
+                         throw new Error(status);
+                   }
                  }
                , { path: '/status'
                  , method: "get"
