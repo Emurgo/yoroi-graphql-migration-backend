@@ -14,6 +14,7 @@ import { askUtxoForAddresses } from "./services/utxoForAddress";
 import { askBlockNumByHash, askBlockNumByTxHash, askTransactionHistory } from "./services/transactionHistory";
 import { askFilterUsedAddresses } from "./services/filterUsedAddress";
 import { askUtxoSumForAddresses } from "./services/utxoSumForAddress";
+import { handleSignedTx } from "./services/signedTransaction";
 
 import { HealthChecker } from "./HealthChecker";
 
@@ -234,6 +235,10 @@ const routes : Route[] = [ { path: '/v2/bestblock'
                , { path: '/v2/txs/history'
                  , method: "post"
                  , handler: txHistory 
+                 }
+               , { path: '/v2/txs/signed'
+                 , method: "post"
+                 , handler: handleSignedTx
                  }
                , { path: '/v2/importerhealthcheck'
                  , method: "get"
