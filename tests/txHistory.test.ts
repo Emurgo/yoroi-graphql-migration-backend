@@ -88,6 +88,11 @@ const dataSingleHistory = {
   untilBlock: hashForUntilBlock
 };
 
+const dataTxOrdering = {
+  addresses: ['Ae2tdPwUPEYynjShTL8D2L2GGggTH3AGtMteb7r65oLar1vzZ4JPfxob4b8']
+, untilBlock: hashForUntilBlock
+};
+
 const testableUri = endpoint + "v2/txs/history";
 
 
@@ -173,5 +178,18 @@ describe('/txs/history', function() {
     expect(obj.outputs[0]).to.have.property('address');
     expect(obj.outputs[0]).to.have.property('amount');
 
+  });
+  it('order of tx objects should be by block_num asc, tx_ordinal asc', async() => {
+    let result = await axios.post(testableUri, dataTxOrdering);
+    const sortedList = R.sortBy((obj: any) => obj.block_num, result.data);
+    
+    expect(result.data).to.be.eql(sortedList);
+
+    const groupedList = R.groupBy((obj: any) => obj.block_num, result.data);
+    for (const block_num in groupedList){
+      let sortedSubList = R.sortBy((obj: any) => obj.tx_ordinal, groupedList[block_num]);
+      expect(groupedList[block_num]).to.be.eql(sortedSubList);
+    }
+    
   });
 });
