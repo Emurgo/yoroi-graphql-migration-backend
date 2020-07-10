@@ -192,4 +192,14 @@ describe('/txs/history', function() {
     }
     
   });
+  it('order for tx output objects should be by tx_index (aka tx_ordinal)', async() => {
+    let result = await axios.post(testableUri, dataTxOrdering);
+    // the order index is not actually available, so we just check that they values we get back are the ones we want.
+    // not a great test...
+    // these values came form 1ohk-mainnet.yoroiwallet.com on 10 jul 2020.
+    expect(result.data[0].outputs[0].address).to.be.eql('DdzFFzCqrhsvprtHyEbe74H4xUohxxsahwAJgnQHjD959CrfMTb2BcugM1eAd4Y81AeDMieMjqELXShtBNj3XPUFG1aGku1NVccDMY25');
+    expect(result.data[0].outputs[0].amount).to.be.eql('3168639578');
+    expect(result.data[0].outputs[1].address).to.be.eql('Ae2tdPwUPEYynjShTL8D2L2GGggTH3AGtMteb7r65oLar1vzZ4JPfxob4b8');
+    expect(result.data[0].outputs[1].amount).to.be.eql('98000000');
+  });
 });
