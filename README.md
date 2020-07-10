@@ -300,6 +300,34 @@ None (GET request)
 []
 ```
 
+### `/api/status`
+
+This endpoint is used to test whether or not the server can still be reached and, in the future, could store more developer flags for manually flagging errors
+
+#### Input
+
+None (GET request)
+
+#### Output
+
+```js
+{
+  isServerOk: boolean
+}
+```
+
+### `/api/v2/importerhealthcheck`
+
+This endpoint is used to check whether or not the underlying node is properly syncing
+
+#### Input
+
+None (GET request)
+
+#### Output
+
+200 status if things look good. Error if node is not syncing
+
 ## TODO
 
  - [ ] inconsistent graphql functions. The style for `askTransactionHistory` is superior, your author intends for the other ones to also specify their return type and return errors rather than raise exceptions.
