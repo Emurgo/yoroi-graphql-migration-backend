@@ -15,8 +15,12 @@ import { askBlockNumByHash, askBlockNumByTxHash, askTransactionHistory } from ".
 import { askFilterUsedAddresses } from "./services/filterUsedAddress";
 import { askUtxoSumForAddresses } from "./services/utxoSumForAddress";
 
+import { HealthChecker } from "./HealthChecker";
+
 
 const pool = new Pool({user: 'hasura', host:'/tmp/', database: 'cexplorer'});
+
+const healthChecker = new HealthChecker(askBestBlock);
 
 const router = express();
 
@@ -230,6 +234,18 @@ const routes : Route[] = [ { path: '/v2/bestblock'
                , { path: '/v2/txs/history'
                  , method: "post"
                  , handler: txHistory 
+                 }
+               , { path: '/v2/importerhealthcheck'
+                 , method: "get"
+                 , handler: async (req: Request, res: Response) => {
+                     const status = healthChecker.getStatus()
+                     if (status === 'OK')
+                         res.send({ code: 200, message: "Importer is OK" });
+                     else if (status === 'SLOW')
+                         res.send({ code: 200, message: "Importer seems OK. Not enough time has passed since last valid request." });
+                     else 
+                         throw new Error(status);
+                   }
                  }
                , { path: '/status'
                  , method: "get"

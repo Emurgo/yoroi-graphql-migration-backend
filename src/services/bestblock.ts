@@ -3,18 +3,18 @@ import { Request, Response } from "express";
 
 import { assertNever, contentTypeHeaders, graphqlEndpoint, UtilEither} from "../utils";
 
-interface CardanoFrag {
+export interface CardanoFrag {
   blockHeight: number;
   currentEpoch: EpochFrag;
   slotDuration: number;
 }
 
-interface EpochFrag {
+export interface EpochFrag {
     blocks: BlockFrag[];
     number: number;
 }
 
-interface BlockFrag {
+export interface BlockFrag {
     hash: string;
     number: number;
     slotWithinEpoch: number;
