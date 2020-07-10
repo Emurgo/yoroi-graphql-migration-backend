@@ -239,7 +239,7 @@ Up to `50` transactions are returned. Use pagination with the `after` field to g
 ```js
 Array<{
   // information that is only present if block is included in the blockchain
-  height: null | number,
+  block_num: null | number,
   block_hash: null | string,
   tx_ordinal: null | number,
   time: null | string, // timestamp with timezone
@@ -297,9 +297,7 @@ None (GET request)
 #### Output
 
 ```js
-{
-  txId: string
-}
+[]
 ```
 
 ## TODO
