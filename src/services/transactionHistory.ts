@@ -63,7 +63,7 @@ const askTransactionSqlQuery = `
   
   where     block.block_no <= $2
         and block.block_no > $3 
-  order by block.time asc
+  order by block.time asc, tx.block_index asc
   limit $4;
 `;
 
