@@ -269,7 +269,7 @@ const routes : Route[] = [ { path: '/v2/bestblock'
                      const status = healthChecker.getStatus()
                      if (status === 'OK')
                          res.send({ code: 200, message: "Importer is OK" });
-                     else if (status === 'SLOW')
+                     else if (status === 'BLOCK_IS_STALE')
                          res.send({ code: 200, message: "Importer seems OK. Not enough time has passed since last valid request." });
                      else 
                          throw new Error(status);
