@@ -302,7 +302,9 @@ None (GET request)
 
 ### `/api/status`
 
-This endpoint is used to test whether or not the server can still be reached and, in the future, could store more developer flags for manually flagging errors
+This endpoint is used to test whether or not the server can still be reached and get any manually flagged errors.
+
+
 
 #### Input
 
@@ -312,7 +314,8 @@ None (GET request)
 
 ```js
 {
-  isServerOk: boolean
+  isServerOk: boolean, // heartbeat endpoint for server. IF you want the node status, use /api/v2/importerhealthcheck instead
+  isMaintenance: boolean, // manually set and indicates you should disable ADA integration in your app until it returns false. Use to avoid weird app-side behavior during server upgrdes.
 }
 ```
 
