@@ -5,6 +5,8 @@ import axios from 'axios';
 
 import { Pool } from 'pg';
 
+const semverCompare = require('semver-compare');
+
 import { applyMiddleware, applyRoutes, contentTypeHeaders, graphqlEndpoint, Route } from "./utils";
 import * as utils from "./utils";
 import * as middleware from "./middleware";
@@ -236,6 +238,32 @@ const txBodies = async (req: Request, res: Response) => {
   res.send(resultsObj);
 };
 
+const getStatus = async (req: Request, res:  Response) => {
+  const mobilePlatformVersionPrefixes = ["android / ", "ios / ", "- /"];
+  const clientVersionHeader = 'yoroi-version';
+  const minMobileVersion = '2.2.2';
+  if(clientVersionHeader in req.headers){
+     const rawVerString : string | string[] | undefined = req.headers[clientVersionHeader];
+     let verString: string = 'none / 0.0.0';
+     if (typeof rawVerString === 'string') 
+         verString = rawVerString;
+     if(Array.isArray(rawVerString))
+         verString = rawVerString[0];
+
+     for(let prefix of mobilePlatformVersionPrefixes){
+       if (verString.includes(prefix)){
+         const simVer = verString.split(' / ')[1];
+         if (semverCompare(simVer, minMobileVersion) < 0){
+           res.send({ isServerOk: true
+                    , isMaintenance: true });
+            return;
+         }
+       }
+     }
+  }
+  res.send({ isServerOk: true, isMaintenance: false }); 
+};
+
 const routes : Route[] = [ { path: '/v2/bestblock'
                  , method: "get"
                  , handler: bestBlock
@@ -278,9 +306,7 @@ const routes : Route[] = [ { path: '/v2/bestblock'
                  }
                , { path: '/status'
                  , method: "get"
-                 , handler: async (req: Request, res: Response) => {
-                     res.send({ isServerOk: true }); 
-                   }
+                 , handler: getStatus
                  }
                ]
 
