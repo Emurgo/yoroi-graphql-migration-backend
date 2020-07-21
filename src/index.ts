@@ -1,6 +1,7 @@
 import config from "config";
 import http from "http";
 import express from "express";
+import * as websockets from 'ws';
 import { Request, Response } from "express";
 
 import { Pool } from "pg";
@@ -8,7 +9,8 @@ import { Pool } from "pg";
 // eslint-disable-next-line
 const semverCompare = require("semver-compare");
 
-import { applyMiddleware, applyRoutes, Route } from "./utils";
+import { connectionHandler} from "./ws-server"; 
+import { applyMiddleware, applyRoutes, contentTypeHeaders, graphqlEndpoint, Route } from "./utils";
 import * as utils from "./utils";
 import * as middleware from "./middleware";
 
@@ -326,6 +328,9 @@ router.use(middleware.logErrors);
 router.use(middleware.errorHandler);
 
 const server = http.createServer(router);
+
+const wss = new websockets.Server({ server } );
+wss.on('connection', connectionHandler());
 
 server.listen(port, () =>
   console.log(`listening on ${port}...`)
