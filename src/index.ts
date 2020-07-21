@@ -1,3 +1,4 @@
+import config from "config";
 import http from "http";
 import express from "express";
 import { Request, Response } from "express";
@@ -22,7 +23,10 @@ import { BodyRow, askTxBodies } from "./services/txBodies";
 import { HealthChecker } from "./HealthChecker";
 
 
-const pool = new Pool({user: "hasura", host:"/tmp/", database: "cexplorer"});
+const pool = new Pool({ user: config.get("db.user")
+  , host: config.get("db.host")
+  , database: config.get("db.database")
+  , password: config.get("db.password")});
 
 const healthChecker = new HealthChecker(askBestBlock);
 
@@ -37,10 +41,10 @@ applyMiddleware(middlewares, router);
 
 
 
-const port = 8082;
-const addressesRequestLimit = 50;
-const apiResponseLimit = 50; 
-const txsHashesRequestLimit = 150;
+const port:number= config.get("server.port");
+const addressesRequestLimit:number = config.get("server.addressRequestLimit");
+const apiResponseLimit:number = config.get("server.apiResponseLimit"); 
+const txsHashesRequestLimit:number = config.get("server.txsHashesRequestLimit");
 
 const bestBlock = async (req: Request, res: Response) => {
   const result = await askBestBlock();

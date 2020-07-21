@@ -1,7 +1,8 @@
+import config from "config";
 import { Router, Request, Response, NextFunction } from "express";
 
 export const contentTypeHeaders = { headers: {"Content-Type": "application/json"}};
-export const graphqlEndpoint = "http://localhost:3100/";
+export const graphqlEndpoint:string = config.get("server.graphqlEndpoint");
 
 export const errMsgs = { noValue: "no value" };
 
