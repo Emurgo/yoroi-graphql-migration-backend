@@ -1,7 +1,7 @@
 import config from "config";
 import http from "http";
 import express from "express";
-import * as websockets from 'ws';
+import * as websockets from "ws";
 import { Request, Response } from "express";
 
 import { Pool } from "pg";
@@ -330,7 +330,7 @@ router.use(middleware.errorHandler);
 const server = http.createServer(router);
 
 const wss = new websockets.Server({ server } );
-wss.on('connection', connectionHandler());
+wss.on("connection", connectionHandler());
 
 server.listen(port, () =>
   console.log(`listening on ${port}...`)
