@@ -1,7 +1,6 @@
-import axios from 'axios';
-import { Request, Response } from "express";
+import axios from "axios";
 
-import { assertNever, contentTypeHeaders, graphqlEndpoint, UtilEither} from "../utils";
+import {  contentTypeHeaders, graphqlEndpoint, UtilEither} from "../utils";
 
 export interface CardanoFrag {
   blockHeight: number;
@@ -21,7 +20,7 @@ export interface BlockFrag {
 }
 
 export const askBestBlock = async () : Promise<UtilEither<CardanoFrag>> => {
-    const query = `
+  const query = `
                 {
                   cardano {
                     blockHeight,
@@ -36,9 +35,9 @@ export const askBestBlock = async () : Promise<UtilEither<CardanoFrag>> => {
                   },
                 }
             `;
-    const ret = await axios.post(graphqlEndpoint, JSON.stringify({'query':query}), contentTypeHeaders);
-    if('data' in ret && 'data' in ret.data && 'cardano' in ret.data.data)
-        return { kind: 'ok', value: ret.data.data.cardano };
-    else return { kind: 'error', errMsg:'BestBlock, could not understand graphql response' };
+  const ret = await axios.post(graphqlEndpoint, JSON.stringify({"query":query}), contentTypeHeaders);
+  if("data" in ret && "data" in ret.data && "cardano" in ret.data.data)
+    return { kind: "ok", value: ret.data.data.cardano };
+  else return { kind: "error", errMsg:"BestBlock, could not understand graphql response" };
 };
 

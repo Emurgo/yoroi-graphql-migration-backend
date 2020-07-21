@@ -24,17 +24,17 @@ export class HealthChecker {
     this.healthCheckerFunc = bestBlockFunc;
     const currentTime = Date.now();
 
-    this.lastBlock = { kind: 'error', errMsg: 'init' };
+    this.lastBlock = { kind: "error", errMsg: "init" };
     this.lastTime = currentTime;
     this.lastGoodBlockChange = currentTime;
-    this.timeAndBlock = [currentTime, { kind: 'error', errMsg: 'init' }];
+    this.timeAndBlock = [currentTime, { kind: "error", errMsg: "init" }];
 
     setInterval( this.checkHealth, REQUEST_RATE_MS);
     
   }
 
-  checkHealth = async () =>  {
-    let block : UtilEither<BestBlock.CardanoFrag> = { kind: 'error', errMsg: 'function failed' };
+  checkHealth = async ():Promise<void> =>  {
+    let block : UtilEither<BestBlock.CardanoFrag> = { kind: "error", errMsg: "function failed" };
     try {
       block = await this.healthCheckerFunc();
     } catch {
@@ -46,7 +46,7 @@ export class HealthChecker {
 
     if(currentBlock.kind !== this.lastBlock.kind)
       this.lastBlock = currentBlock;
-    if(currentBlock.kind === 'ok' && this.lastBlock.kind === 'ok')
+    if(currentBlock.kind === "ok" && this.lastBlock.kind === "ok")
       if(currentBlock.value.blockHeight !== this.lastBlock.value.blockHeight){
         this.lastBlock = currentBlock;
         this.lastGoodBlockChange = currentTime;
@@ -59,14 +59,14 @@ export class HealthChecker {
 
   getStatus = ():HealthCheckerStatus => {
     const [currentSavedTime, currentBlock] = this.timeAndBlock;
-    if (currentBlock.kind !== 'ok')
+    if (currentBlock.kind !== "ok")
       return "DOWN";
     if (currentSavedTime - this.lastTime > REQUEST_TIMEOUT_MS)
       return "SLOW";
     if (currentSavedTime - this.lastGoodBlockChange > REQUEST_STALE_BLOCK)
-        if(this.lastBlock.kind === 'ok')
-            if(this.lastBlock.value.blockHeight === currentBlock.value.blockHeight)
-                return "BLOCK_IS_STALE";
+      if(this.lastBlock.kind === "ok")
+        if(this.lastBlock.value.blockHeight === currentBlock.value.blockHeight)
+          return "BLOCK_IS_STALE";
     return "OK";
 
   }

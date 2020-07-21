@@ -1,8 +1,8 @@
-import axios from 'axios';
+import axios from "axios";
 
-import { assertNever, contentTypeHeaders, errMsgs, graphqlEndpoint, UtilEither} from "../utils";
+import {  contentTypeHeaders, errMsgs, graphqlEndpoint, UtilEither} from "../utils";
 
-import { Pool } from 'pg';
+import { Pool } from "pg";
 
 
 const BLOCK_SIZE = 21600;
@@ -118,61 +118,61 @@ interface TransactionFrag {
     inputs: TransInputFrag;
     outputs: TransOutputFrag; // technically a TransactionOutput fragment
     txIndex: number;
-};
+}
 interface BlockFrag {
     number: number;
     hash: string;
     epochNo: number;
     slotNo: number;
-};
+}
 interface TransInputFrag {
     address: string;
     amount: string;
     id: string;
     index: number;
     txHash: string;
-};
+}
 interface TransOutputFrag {
     address: string;
     amount: string;
-};
+}
 
 export const askTransactionHistory = async ( 
-           pool: Pool
-         , limit: number
-         , addresses: string[]
-         , afterNum: UtilEither<BlockNumByTxHashFrag>
-         , untilNum: UtilEither<number>) : Promise<UtilEither<TransactionFrag[]>> => {
-    const ret = await pool.query(askTransactionSqlQuery, [ addresses
-                                                         , untilNum.kind === 'ok' ? untilNum.value : 0
-                                                         , afterNum.kind === 'ok' ? afterNum.value.block.number : 0
-                                                         , limit]);
-    const txs = ret.rows.map( (row: any) => {
-      const inputs = row.inAddrValPairs.map( ( obj:any ): TransInputFrag => ({ address: obj.f1
-                                                                             , amount: obj.f2.toString() 
-                                                                             , id: obj.f3.concat(obj.f4.toString())
-                                                                             , index: obj.f4
-                                                                             , txHash: obj.f3}));
-      const outputs = row.outAddrValPairs.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString() }));
-      const blockFrag : BlockFrag = { number: row.blockNumber
-                                    , hash: row.blockHash.toString('hex')
-                                    , epochNo: row.blockEpochNo
-                                    , slotNo: row.blockSlotNo % BLOCK_SIZE };
-      return { hash: row.hash.toString('hex')
-             , block: blockFrag
-             , includedAt: row.includedAt
-             , inputs: inputs
-             , outputs: outputs
-             , txIndex: row.txIndex
-             };
-    });
+  pool: Pool
+  , limit: number
+  , addresses: string[]
+  , afterNum: UtilEither<BlockNumByTxHashFrag>
+  , untilNum: UtilEither<number>) : Promise<UtilEither<TransactionFrag[]>> => {
+  const ret = await pool.query(askTransactionSqlQuery, [ addresses
+    , untilNum.kind === "ok" ? untilNum.value : 0
+    , afterNum.kind === "ok" ? afterNum.value.block.number : 0
+    , limit]);
+  const txs = ret.rows.map( (row: any) => {
+    const inputs = row.inAddrValPairs.map( ( obj:any ): TransInputFrag => ({ address: obj.f1
+      , amount: obj.f2.toString() 
+      , id: obj.f3.concat(obj.f4.toString())
+      , index: obj.f4
+      , txHash: obj.f3}));
+    const outputs = row.outAddrValPairs.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString() }));
+    const blockFrag : BlockFrag = { number: row.blockNumber
+      , hash: row.blockHash.toString("hex")
+      , epochNo: row.blockEpochNo
+      , slotNo: row.blockSlotNo % BLOCK_SIZE };
+    return { hash: row.hash.toString("hex")
+      , block: blockFrag
+      , includedAt: row.includedAt
+      , inputs: inputs
+      , outputs: outputs
+      , txIndex: row.txIndex
+    };
+  });
             
 
-    return { kind: 'ok', value: txs } ;
-    //if('data' in ret && 'data' in ret.data && 'transactions' in ret.data.data)
-    //    return {'kind':'ok', value:ret.data.data.transactions};
-    //else
-    //    return {'kind':'error', errMsg:'TxsHistory, could not understand graphql response'};
+  return { kind: "ok", value: txs } ;
+  //if('data' in ret && 'data' in ret.data && 'transactions' in ret.data.data)
+  //    return {'kind':'ok', value:ret.data.data.transactions};
+  //else
+  //    return {'kind':'error', errMsg:'TxsHistory, could not understand graphql response'};
 
 
 };
@@ -187,9 +187,9 @@ interface BlockByTxHashFrag {
   number: number;
 }
 export const askBlockNumByTxHash = async (hash : string|undefined): Promise<UtilEither<BlockNumByTxHashFrag>> => {
-    if(!hash)
-        return {kind:'error', errMsg: errMsgs.noValue};
-    const query = `
+  if(!hash)
+    return {kind:"error", errMsg: errMsgs.noValue};
+  const query = `
             query BlockNumByTxHash($hashId: Hash32HexString!) {
               transactions(
                 where: {
@@ -205,32 +205,32 @@ export const askBlockNumByTxHash = async (hash : string|undefined): Promise<Util
                 }
               }
             }`;
-    let ret = null;
-    try {
-      ret = (await axios.post(graphqlEndpoint,
-                        JSON.stringify({ 'query': query, 'variables': {'hashId':hash} }),
-                        contentTypeHeaders));
-    } catch (err) {
-      return { kind: 'error', errMsg: 'askBlockNumByTxHash, unable to query graphql service: ' + err };
-    }
-    if('data' in ret 
-       && 'data' in ret.data 
-       && 'transactions' in ret.data.data
+  let ret = null;
+  try {
+    ret = (await axios.post(graphqlEndpoint,
+      JSON.stringify({ "query": query, "variables": {"hashId":hash} }),
+      contentTypeHeaders));
+  } catch (err) {
+    return { kind: "error", errMsg: "askBlockNumByTxHash, unable to query graphql service: " + err };
+  }
+  if("data" in ret 
+       && "data" in ret.data 
+       && "transactions" in ret.data.data
        && Array.isArray(ret.data.data.transactions))
-      if(   ret.data.data.transactions.length > 0
-         && 'block' in ret.data.data.transactions[0]
-         && 'hash' in ret.data.data.transactions[0].block
-         && 'number' in ret.data.data.transactions[0].block)
+    if(   ret.data.data.transactions.length > 0
+         && "block" in ret.data.data.transactions[0]
+         && "hash" in ret.data.data.transactions[0].block
+         && "number" in ret.data.data.transactions[0].block)
          
-        return {kind:'ok', value:ret.data.data.transactions[0]};
-      else
-        return { kind:'error', errMsg: errMsgs.noValue };
-    else 
-        return {kind:'error', errMsg: 'Did not understand graphql response'};
+      return {kind:"ok", value:ret.data.data.transactions[0]};
+    else
+      return { kind:"error", errMsg: errMsgs.noValue };
+  else 
+    return {kind:"error", errMsg: "Did not understand graphql response"};
 } ;
 
 export const askBlockNumByHash = async (hash : string) : Promise<UtilEither<number>> => {
-    const query = `
+  const query = `
             query BlockNumByHash($id: Hash32HexString!) {
               blocks(
                 where: {
@@ -243,24 +243,24 @@ export const askBlockNumByHash = async (hash : string) : Promise<UtilEither<numb
               }
             }
     `;
-    let ret = null;
-    try {
-      ret = await axios.post(graphqlEndpoint,
-                        JSON.stringify({ 'query': query, 'variables': {'id':hash} }),
-                        contentTypeHeaders);
-    } catch (err) {
-      return { kind:'error', errMsg: 'askBlockNumByHash, unable to query graphql service: ' + err };
-    }
-    if('data' in ret 
-       && 'data' in ret.data 
-       && 'blocks' in ret.data.data
+  let ret = null;
+  try {
+    ret = await axios.post(graphqlEndpoint,
+      JSON.stringify({ "query": query, "variables": {"id":hash} }),
+      contentTypeHeaders);
+  } catch (err) {
+    return { kind:"error", errMsg: "askBlockNumByHash, unable to query graphql service: " + err };
+  }
+  if("data" in ret 
+       && "data" in ret.data 
+       && "blocks" in ret.data.data
        && Array.isArray(ret.data.data.blocks))
-      if(   ret.data.data.blocks.length > 0 
-         && 'number' in ret.data.data.blocks[0])
-        return {kind:'ok', value:ret.data.data.blocks[0].number};
-      else
-        return { kind:'error', errMsg: errMsgs.noValue };
-    else 
-        return {kind:'error', errMsg: 'askBlockNumByHash, Did not understand graphql response'};
+    if(   ret.data.data.blocks.length > 0 
+         && "number" in ret.data.data.blocks[0])
+      return {kind:"ok", value:ret.data.data.blocks[0].number};
+    else
+      return { kind:"error", errMsg: errMsgs.noValue };
+  else 
+    return {kind:"error", errMsg: "askBlockNumByHash, Did not understand graphql response"};
 
 };

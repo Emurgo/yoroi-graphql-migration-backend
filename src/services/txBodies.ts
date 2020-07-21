@@ -1,4 +1,4 @@
-import { Pool } from 'pg';
+import { Pool } from "pg";
 
 const askBodiesQuery = `
  select hash, body
@@ -16,8 +16,8 @@ export interface BodyRow {
 // and time is stressed right now!
 
 export const askTxBodies = async (
-    pool: Pool
+  pool: Pool
   , hashes: Set<string>) : Promise<BodyRow[]> => {
   const ret = await pool.query(askBodiesQuery, [ [...hashes]]);
-  return ret.rows.map( (row: any) => ({ hash: row.hash.toString('hex'), body: row.body.toString('hex')}));
+  return ret.rows.map( (row: any) => ({ hash: row.hash.toString("hex"), body: row.body.toString("hex")}));
 };
