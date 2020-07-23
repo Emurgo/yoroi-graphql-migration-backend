@@ -43,11 +43,12 @@ export const connectionHandler = () => {
     ws.onmessage = (event: MessageEvent) => {
       const data = JSON.parse(event.data);
       switch(data.msg) {
-      case MSG_TYPE_RESTORE:
+      case MSG_TYPE_RESTORE: {
+        const acceptPromise =   
         restoreUtxo().then( (addresses) => 
-          ws.send(JSON.stringify({ msg: MSG_TYPE_RESTORE, addresses: addresses })));
+          ws.send(JSON.stringify({ msg: MSG_TYPE_RESTORE, addresses: addresses })))
+          .catch( (error) => console.log(error)); }
       }
     };
-    console.log("Hello!");
   };
 };
