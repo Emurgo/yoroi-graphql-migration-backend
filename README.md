@@ -50,7 +50,7 @@ Worse, we require some specific commits (because the graphql schema neglects to
 define key relationships) whose images are not yet in docker hub.
 
 You will want to use this PR:
-https://github.com/input-output-hk/cardano-graphql/pull/195
+https://github.com/input-output-hk/cardano-graphql/pull/245
 
 **However**, even this PR is tricky.  
 There are two executables here:

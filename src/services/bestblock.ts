@@ -3,7 +3,6 @@ import axios from "axios";
 import {  contentTypeHeaders, graphqlEndpoint, UtilEither} from "../utils";
 
 export interface CardanoFrag {
-  blockHeight: number;
   currentEpoch: EpochFrag;
   slotDuration: number;
 }
@@ -16,20 +15,19 @@ export interface EpochFrag {
 export interface BlockFrag {
     hash: string;
     number: number;
-    slotWithinEpoch: number;
+    slotInEpoch: number;
 }
 
 export const askBestBlock = async () : Promise<UtilEither<CardanoFrag>> => {
   const query = `
                 {
                   cardano {
-                    blockHeight,
                     currentEpoch {
                       number
                       blocks(limit:1, order_by: { createdAt:desc}) {
                         hash
                         number
-                        slotWithinEpoch
+                        slotInEpoch
                       }
                     }
                   },
