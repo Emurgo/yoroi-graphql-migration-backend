@@ -330,7 +330,7 @@ router.use(middleware.errorHandler);
 const server = http.createServer(router);
 
 const wss = new websockets.Server({ server } );
-wss.on("connection", connectionHandler());
+wss.on("connection", connectionHandler(pool));
 
 server.listen(port, () =>
   console.log(`listening on ${port}...`)
