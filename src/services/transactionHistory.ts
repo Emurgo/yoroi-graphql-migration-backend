@@ -1,11 +1,10 @@
 import axios from "axios";
 
-import {  contentTypeHeaders, errMsgs, graphqlEndpoint, UtilEither} from "../utils";
+import {  BLOCK_SIZE, contentTypeHeaders, errMsgs, graphqlEndpoint, UtilEither} from "../utils";
 
 import { Pool } from "pg";
 
 
-const BLOCK_SIZE = 21600;
 
 
 /**

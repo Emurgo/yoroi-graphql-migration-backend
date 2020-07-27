@@ -10,7 +10,7 @@ import { Pool } from "pg";
 const semverCompare = require("semver-compare");
 
 import { connectionHandler} from "./ws-server"; 
-import { applyMiddleware, applyRoutes, contentTypeHeaders, graphqlEndpoint, Route } from "./utils";
+import { applyMiddleware, applyRoutes, BLOCK_SIZE, contentTypeHeaders, graphqlEndpoint, Route } from "./utils";
 import * as utils from "./utils";
 import * as middleware from "./middleware";
 
@@ -55,7 +55,7 @@ const bestBlock = async (req: Request, res: Response) => {
     const cardano = result.value;
     res.send({
       epoch: cardano.currentEpoch.number,
-      slot: cardano.currentEpoch.blocks[0].slotInEpoch ,
+      slot: cardano.currentEpoch.blocks[0].slotNo % BLOCK_SIZE ,
       hash: cardano.currentEpoch.blocks[0].hash,
       height: cardano.currentEpoch.blocks[0].number,
     });

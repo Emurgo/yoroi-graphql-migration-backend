@@ -4,7 +4,6 @@ import {  contentTypeHeaders, graphqlEndpoint, UtilEither} from "../utils";
 
 export interface CardanoFrag {
   currentEpoch: EpochFrag;
-  slotDuration: number;
 }
 
 export interface EpochFrag {
@@ -15,7 +14,7 @@ export interface EpochFrag {
 export interface BlockFrag {
     hash: string;
     number: number;
-    slotInEpoch: number;
+    slotNo: number;
 }
 
 export const askBestBlock = async () : Promise<UtilEither<CardanoFrag>> => {
@@ -24,10 +23,10 @@ export const askBestBlock = async () : Promise<UtilEither<CardanoFrag>> => {
                   cardano {
                     currentEpoch {
                       number
-                      blocks(limit:1, order_by: { createdAt:desc}) {
+                      blocks(limit:1, order_by: { forgedAt:desc}) {
                         hash
                         number
-                        slotInEpoch
+                        slotNo
                       }
                     }
                   },
