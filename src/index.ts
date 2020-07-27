@@ -207,6 +207,10 @@ const txHistory = async (req: Request, res: Response) => {
     case "ok":{
       const txs = maybeTxs.value.map( tx => ({
         hash: tx.hash,
+        fee: tx.fee,
+        metadata: tx.metadata,
+        ttl: tx.ttl,
+        withdrawals: tx.withdrawals,
         tx_ordinal: tx.txIndex,
         tx_state: "Successful", // graphql doesn't handle pending/failed txs
         last_update: tx.includedAt,

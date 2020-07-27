@@ -33,6 +33,7 @@ const askTransactionSqlQuery = `
         on tx.id = tx_out.tx_id
       where tx_out.address = ANY(($1)::varchar array)) hashes)
   select tx.hash
+       , tx.fee
        , tx.block_index as "txIndex"
        , block.block_no as "blockNumber"
        , block.hash as "blockHash"
@@ -54,12 +55,17 @@ const askTransactionSqlQuery = `
        , (select json_agg(("address", "value") order by "index" asc)  as outAddrValPairs
           from "TransactionOutput" hasura_to
           where hasura_to."txHash" = tx.hash) as "outAddrValPairs"
+       , (select json_agg(("address", "amount") order by "Withdrawal"."id" asc)
+          from "Withdrawal" 
+          where tx_id = tx.id) as withdrawals
+       , pool_meta_data.hash as metadata
   from tx
   join hashes
     on hashes.hash = tx.hash
   join block
     on block.id = tx.block
-  
+  left join pool_meta_data 
+    on tx.id = pool_meta_data.registered_tx_id 
   where     block.block_no <= $2
         and block.block_no > $3 
   order by block.time asc, tx.block_index asc
@@ -109,14 +115,19 @@ const graphQLQuery = `
   }
 `;
 
+const MAX_INT = '2147483647';
 
 interface TransactionFrag {
     hash: string;
+    fee: string;
+    ttl: string;
+    metadata: string;
     block: BlockFrag;
     includedAt: Date;
-    inputs: TransInputFrag;
-    outputs: TransOutputFrag; // technically a TransactionOutput fragment
+    inputs: TransInputFrag[];
+    outputs: TransOutputFrag[]; // technically a TransactionOutput fragment
     txIndex: number;
+    withdrawals: TransOutputFrag[];
 }
 interface BlockFrag {
     number: number;
@@ -153,16 +164,21 @@ export const askTransactionHistory = async (
       , index: obj.f4
       , txHash: obj.f3}));
     const outputs = row.outAddrValPairs.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString() }));
+    const withdrawals = row.withdrawals ? row.withdrawals.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString() })) : null;
     const blockFrag : BlockFrag = { number: row.blockNumber
       , hash: row.blockHash.toString("hex")
       , epochNo: row.blockEpochNo
       , slotNo: row.blockSlotNo % BLOCK_SIZE };
     return { hash: row.hash.toString("hex")
       , block: blockFrag
+      , fee: row.fee.toString()
+      , metadata: (row.metadata) ? row.metadata.toString("hex") : null
       , includedAt: row.includedAt
       , inputs: inputs
       , outputs: outputs
+      , ttl: MAX_INT
       , txIndex: row.txIndex
+      , withdrawals: withdrawals
     };
   });
             
