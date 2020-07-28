@@ -210,6 +210,7 @@ const txHistory = async (req: Request, res: Response) => {
         fee: tx.fee,
         metadata: tx.metadata,
         //ttl: tx.ttl,
+        type: tx.blockEra
         withdrawals: tx.withdrawals,
         tx_ordinal: tx.txIndex,
         tx_state: "Successful", // graphql doesn't handle pending/failed txs

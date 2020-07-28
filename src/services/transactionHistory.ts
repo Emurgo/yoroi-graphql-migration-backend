@@ -39,6 +39,9 @@ const askTransactionSqlQuery = `
        , block.hash as "blockHash"
        , block.epoch_no as "blockEpochNo"
        , block.slot_no as "blockSlotNo"
+       , case when vrf_key is null then 'byron' 
+              else 'shelley' end 
+         as blockEra
        , block.time at time zone 'UTC' as "includedAt"
        , (select json_agg(( source_tx_out.address
                           , source_tx_out.value
@@ -117,10 +120,14 @@ const graphQLQuery = `
 
 const MAX_INT = '2147483647';
 
+export enum BlockEra { Byron = 'byron'
+                     , Shelley = 'shelley'};
+
 interface TransactionFrag {
     hash: string;
     fee: string;
     ttl: string;
+    blockEra: BlockEra;
     metadata: string;
     block: BlockFrag;
     includedAt: Date;
@@ -177,6 +184,7 @@ export const askTransactionHistory = async (
       , inputs: inputs
       , outputs: outputs
       , ttl: MAX_INT
+      , blockEra: row.blockEra === 'byron' ? BlockEra.Byron : BlockEra.Shelley
       , txIndex: row.txIndex
       , withdrawals: withdrawals
     };

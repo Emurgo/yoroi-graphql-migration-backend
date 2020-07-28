@@ -165,6 +165,7 @@ describe("/txs/history", function() {
     expect(obj).to.have.property("fee");
     //expect(obj).to.have.property("ttl");
     expect(obj).to.have.property("metadata");
+    expect(obj).to.have.property("type");
     expect(obj).to.have.property("withdrawals");
     //expect(obj).to.have.property("certificates");
     expect(obj).to.have.property("block_num");
