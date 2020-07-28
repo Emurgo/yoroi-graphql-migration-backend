@@ -118,10 +118,10 @@ const graphQLQuery = `
   }
 `;
 
-const MAX_INT = '2147483647';
+const MAX_INT = "2147483647";
 
-export enum BlockEra { Byron = 'byron'
-                     , Shelley = 'shelley'};
+export enum BlockEra { Byron = "byron"
+                     , Shelley = "shelley"}
 
 interface TransactionFrag {
     hash: string;
@@ -184,7 +184,7 @@ export const askTransactionHistory = async (
       , inputs: inputs
       , outputs: outputs
       , ttl: MAX_INT
-      , blockEra: row.blockEra === 'byron' ? BlockEra.Byron : BlockEra.Shelley
+      , blockEra: row.blockEra === "byron" ? BlockEra.Byron : BlockEra.Shelley
       , txIndex: row.txIndex
       , withdrawals: withdrawals
     };
