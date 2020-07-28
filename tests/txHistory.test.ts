@@ -163,7 +163,7 @@ describe("/txs/history", function() {
     const obj = result.data[0];
     expect(obj).to.have.property("hash");
     expect(obj).to.have.property("fee");
-    expect(obj).to.have.property("ttl");
+    //expect(obj).to.have.property("ttl");
     expect(obj).to.have.property("metadata");
     expect(obj).to.have.property("withdrawals");
     //expect(obj).to.have.property("certificates");
