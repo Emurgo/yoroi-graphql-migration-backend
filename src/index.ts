@@ -20,7 +20,6 @@ import { askBlockNumByHash, askBlockNumByTxHash, askTransactionHistory } from ".
 import { askFilterUsedAddresses } from "./services/filterUsedAddress";
 import { askUtxoSumForAddresses } from "./services/utxoSumForAddress";
 import { handleSignedTx } from "./services/signedTransaction";
-import { BodyRow, askTxBodies } from "./services/txBodies";
 
 import { HealthChecker } from "./HealthChecker";
 
@@ -241,21 +240,6 @@ const txHistory = async (req: Request, res: Response) => {
   }
 };
 
-const txBodies = async (req: Request, res: Response) => {
-  if(!req.body.txsHashes || !(Array.isArray(req.body.txsHashes )))
-    throw new Error("txBodies: must contain an array named txsHashes");
-
-  if(req.body.txsHashes > txsHashesRequestLimit || req.body.txsHashes ===0)
-    throw new Error(`txsHashes request length should be (0, ${txsHashesRequestLimit}]`);
-
-  const results = await askTxBodies(pool, new Set(req.body.txsHashes));
-  const resultsObj : { [key: string]: string } = {};
-  results.forEach((row: BodyRow) => {
-    resultsObj[row.hash] = row.body;
-  });
-  res.send(resultsObj);
-};
-
 const getStatus = async (req: Request, res:  Response) => {
   const mobilePlatformVersionPrefixes = ["android / ", "ios / ", "- /"];
   const desktopPlatformVersionPrefixes = ["firefox / ", "chrome / "];
@@ -317,10 +301,6 @@ const routes : Route[] = [ { path: "/v2/bestblock"
 , { path: "/txs/signed"
   , method: "post"
   , handler: handleSignedTx
-}
-, { path: "/txs/txBodies"
-  , method: "post"
-  , handler: txBodies
 }
 , { path: "/v2/importerhealthcheck"
   , method: "get"
