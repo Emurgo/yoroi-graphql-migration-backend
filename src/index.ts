@@ -241,7 +241,7 @@ const txBodies = async (req: Request, res: Response) => {
 const getStatus = async (req: Request, res:  Response) => {
   const mobilePlatformVersionPrefixes = ["android / ", "ios / ", "- /"];
   const clientVersionHeader = 'yoroi-version';
-  const minMobileVersion = '2.2.2';
+  const minMobileVersion = '2.2.3';
   if(clientVersionHeader in req.headers){
      const rawVerString : string | string[] | undefined = req.headers[clientVersionHeader];
      let verString: string = 'none / 0.0.0';
