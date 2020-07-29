@@ -240,8 +240,10 @@ const txBodies = async (req: Request, res: Response) => {
 
 const getStatus = async (req: Request, res:  Response) => {
   const mobilePlatformVersionPrefixes = ["android / ", "ios / ", "- /"];
+  const desktopPlatformVersionPrefixes = ["firefox / ", "chrome / "];
   const clientVersionHeader = 'yoroi-version';
-  const minMobileVersion = '2.2.3';
+  const minMobileVersion = '2.2.4';
+  const minDesktopVersion = '1.10.4';
   if(clientVersionHeader in req.headers){
      const rawVerString : string | string[] | undefined = req.headers[clientVersionHeader];
      let verString: string = 'none / 0.0.0';
@@ -254,6 +256,16 @@ const getStatus = async (req: Request, res:  Response) => {
        if (verString.includes(prefix)){
          const simVer = verString.split(' / ')[1];
          if (semverCompare(simVer, minMobileVersion) < 0){
+           res.send({ isServerOk: true
+                    , isMaintenance: true });
+            return;
+         }
+       }
+     }
+     for(let prefix of desktopPlatformVersionPrefixes){
+       if (verString.includes(prefix)){
+         const simVer = verString.split(' / ')[1];
+         if (semverCompare(simVer, minDesktopVersion) < 0){
            res.send({ isServerOk: true
                     , isMaintenance: true });
             return;
