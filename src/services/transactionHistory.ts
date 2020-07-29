@@ -164,14 +164,14 @@ export const askTransactionHistory = async (
     , untilNum.kind === "ok" ? untilNum.value : 0
     , afterNum.kind === "ok" ? afterNum.value.block.number : 0
     , limit]);
-  const txs = ret.rows.map( (row: any) => {
+  const txs = ret.rows.map( (row: any):TransactionFrag => {
     const inputs = row.inAddrValPairs.map( ( obj:any ): TransInputFrag => ({ address: obj.f1
       , amount: obj.f2.toString() 
       , id: obj.f3.concat(obj.f4.toString())
       , index: obj.f4
       , txHash: obj.f3}));
     const outputs = row.outAddrValPairs.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString() }));
-    const withdrawals = row.withdrawals ? row.withdrawals.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString() })) : [];
+    const withdrawals : TransOutputFrag[] = row.withdrawals ? row.withdrawals.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString() })) : null;
     const blockFrag : BlockFrag = { number: row.blockNumber
       , hash: row.blockHash.toString("hex")
       , epochNo: row.blockEpochNo
@@ -186,7 +186,7 @@ export const askTransactionHistory = async (
       , ttl: MAX_INT
       , blockEra: row.blockEra === "byron" ? BlockEra.Byron : BlockEra.Shelley
       , txIndex: row.txIndex
-      , withdrawals: withdrawals
+      , withdrawals: []
     };
   });
             
