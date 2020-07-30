@@ -1,6 +1,6 @@
 import axios from "axios";
 
-import {  BLOCK_SIZE, contentTypeHeaders, errMsgs, graphqlEndpoint, UtilEither} from "../utils";
+import {  contentTypeHeaders, errMsgs, graphqlEndpoint, UtilEither} from "../utils";
 
 import { Pool } from "pg";
 
@@ -39,6 +39,7 @@ const askTransactionSqlQuery = `
        , block.hash as "blockHash"
        , block.epoch_no as "blockEpochNo"
        , block.slot_no as "blockSlotNo"
+       , block.epoch_slot_no as "blockSlotInEpoch"
        , case when vrf_key is null then 'byron' 
               else 'shelley' end 
          as blockEra
@@ -175,7 +176,7 @@ export const askTransactionHistory = async (
     const blockFrag : BlockFrag = { number: row.blockNumber
       , hash: row.blockHash.toString("hex")
       , epochNo: row.blockEpochNo
-      , slotNo: row.blockSlotNo % BLOCK_SIZE };
+      , slotNo: row.blockSlotInEpoch };
     return { hash: row.hash.toString("hex")
       , block: blockFrag
       , fee: row.fee.toString()

@@ -6,8 +6,6 @@ export const graphqlEndpoint:string = config.get("server.graphqlEndpoint");
 
 export const errMsgs = { noValue: "no value" };
 
-export const BLOCK_SIZE = 21600;
-
 type Wrapper = ((router: Router) => void);
 
 export const applyMiddleware = (
