@@ -1,23 +1,23 @@
-import axios from 'axios';
+import axios from "axios";
 import { Request, Response } from "express";
 
-import { assertNever, contentTypeHeaders, errMsgs, graphqlEndpoint, UtilEither} from "../utils";
+import { contentTypeHeaders } from "../utils";
 
 import { SignedTransaction } from "cardano-wallet";
 
-const submissionEndpoint = 'https://adalite.io/api/txs/submit';
+const submissionEndpoint = "https://adalite.io/api/txs/submit";
 
 interface SubmissionData {
     txHash: string;
     txBody: string;
 
-};
+}
 
-export const handleSignedTx = async (req: Request, res: Response) => { 
+export const handleSignedTx = async (req: Request, res: Response):Promise<void>=> { 
   if(!req.body.signedTx)
-      throw new Error ("No signedTx in body");
+    throw new Error ("No signedTx in body");
 
-  const buffer = Buffer.from(req.body.signedTx, 'base64');
+  const buffer = Buffer.from(req.body.signedTx, "base64");
   const txHash = (() => {
     const tx = SignedTransaction.from_bytes(buffer);
     const txHash = tx.id();
@@ -26,8 +26,8 @@ export const handleSignedTx = async (req: Request, res: Response) => {
   })();
 
   const submission : SubmissionData = { txHash: txHash
-                                      , txBody: buffer.toString('hex')
-                                      };
+    , txBody: buffer.toString("hex")
+  };
   const endpointResponse = await axios.post(submissionEndpoint, JSON.stringify(submission), contentTypeHeaders);
 
   if(endpointResponse.status === 200){

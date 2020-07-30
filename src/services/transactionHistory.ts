@@ -1,11 +1,10 @@
-import axios from 'axios';
+import axios from "axios";
 
-import { assertNever, contentTypeHeaders, errMsgs, graphqlEndpoint, UtilEither} from "../utils";
+import {  BLOCK_SIZE, contentTypeHeaders, errMsgs, graphqlEndpoint, UtilEither} from "../utils";
 
-import { Pool } from 'pg';
+import { Pool } from "pg";
 
 
-const BLOCK_SIZE = 21600;
 
 
 /**
@@ -34,11 +33,15 @@ const askTransactionSqlQuery = `
         on tx.id = tx_out.tx_id
       where tx_out.address = ANY(($1)::varchar array)) hashes)
   select tx.hash
+       , tx.fee
        , tx.block_index as "txIndex"
        , block.block_no as "blockNumber"
        , block.hash as "blockHash"
        , block.epoch_no as "blockEpochNo"
        , block.slot_no as "blockSlotNo"
+       , case when vrf_key is null then 'byron' 
+              else 'shelley' end 
+         as blockEra
        , block.time at time zone 'UTC' as "includedAt"
        , (select json_agg(( source_tx_out.address
                           , source_tx_out.value
@@ -55,12 +58,17 @@ const askTransactionSqlQuery = `
        , (select json_agg(("address", "value") order by "index" asc)  as outAddrValPairs
           from "TransactionOutput" hasura_to
           where hasura_to."txHash" = tx.hash) as "outAddrValPairs"
+       , (select json_agg(("address", "amount") order by "Withdrawal"."id" asc)
+          from "Withdrawal" 
+          where tx_id = tx.id) as withdrawals
+       , pool_meta_data.hash as metadata
   from tx
   join hashes
     on hashes.hash = tx.hash
   join block
     on block.id = tx.block
-  
+  left join pool_meta_data 
+    on tx.id = pool_meta_data.registered_tx_id 
   where     block.block_no <= $2
         and block.block_no > $3 
   order by block.time asc, tx.block_index asc
@@ -110,69 +118,84 @@ const graphQLQuery = `
   }
 `;
 
+const MAX_INT = "2147483647";
+
+export enum BlockEra { Byron = "byron"
+                     , Shelley = "shelley"}
 
 interface TransactionFrag {
     hash: string;
+    fee: string;
+    ttl: string;
+    blockEra: BlockEra;
+    metadata: string;
     block: BlockFrag;
     includedAt: Date;
-    inputs: TransInputFrag;
-    outputs: TransOutputFrag; // technically a TransactionOutput fragment
+    inputs: TransInputFrag[];
+    outputs: TransOutputFrag[]; // technically a TransactionOutput fragment
     txIndex: number;
-};
+    withdrawals: TransOutputFrag[];
+}
 interface BlockFrag {
     number: number;
     hash: string;
     epochNo: number;
     slotNo: number;
-};
+}
 interface TransInputFrag {
     address: string;
     amount: string;
     id: string;
     index: number;
     txHash: string;
-};
+}
 interface TransOutputFrag {
     address: string;
     amount: string;
-};
+}
 
 export const askTransactionHistory = async ( 
-           pool: Pool
-         , limit: number
-         , addresses: string[]
-         , afterNum: UtilEither<BlockNumByTxHashFrag>
-         , untilNum: UtilEither<number>) : Promise<UtilEither<TransactionFrag[]>> => {
-    const ret = await pool.query(askTransactionSqlQuery, [ addresses
-                                                         , untilNum.kind === 'ok' ? untilNum.value : 0
-                                                         , afterNum.kind === 'ok' ? afterNum.value.block.number : 0
-                                                         , limit]);
-    const txs = ret.rows.map( (row: any) => {
-      const inputs = row.inAddrValPairs.map( ( obj:any ): TransInputFrag => ({ address: obj.f1
-                                                                             , amount: obj.f2.toString() 
-                                                                             , id: obj.f3.concat(obj.f4.toString())
-                                                                             , index: obj.f4
-                                                                             , txHash: obj.f3}));
-      const outputs = row.outAddrValPairs.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString() }));
-      const blockFrag : BlockFrag = { number: row.blockNumber
-                                    , hash: row.blockHash.toString('hex')
-                                    , epochNo: row.blockEpochNo
-                                    , slotNo: row.blockSlotNo % BLOCK_SIZE };
-      return { hash: row.hash.toString('hex')
-             , block: blockFrag
-             , includedAt: row.includedAt
-             , inputs: inputs
-             , outputs: outputs
-             , txIndex: row.txIndex
-             };
-    });
+  pool: Pool
+  , limit: number
+  , addresses: string[]
+  , afterNum: UtilEither<BlockNumByTxHashFrag>
+  , untilNum: UtilEither<number>) : Promise<UtilEither<TransactionFrag[]>> => {
+  const ret = await pool.query(askTransactionSqlQuery, [ addresses
+    , untilNum.kind === "ok" ? untilNum.value : 0
+    , afterNum.kind === "ok" ? afterNum.value.block.number : 0
+    , limit]);
+  const txs = ret.rows.map( (row: any):TransactionFrag => {
+    const inputs = row.inAddrValPairs.map( ( obj:any ): TransInputFrag => ({ address: obj.f1
+      , amount: obj.f2.toString() 
+      , id: obj.f3.concat(obj.f4.toString())
+      , index: obj.f4
+      , txHash: obj.f3}));
+    const outputs = row.outAddrValPairs.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString() }));
+    const withdrawals : TransOutputFrag[] = row.withdrawals ? row.withdrawals.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString() })) : null;
+    const blockFrag : BlockFrag = { number: row.blockNumber
+      , hash: row.blockHash.toString("hex")
+      , epochNo: row.blockEpochNo
+      , slotNo: row.blockSlotNo % BLOCK_SIZE };
+    return { hash: row.hash.toString("hex")
+      , block: blockFrag
+      , fee: row.fee.toString()
+      , metadata: (row.metadata) ? row.metadata.toString("hex") : null
+      , includedAt: row.includedAt
+      , inputs: inputs
+      , outputs: outputs
+      , ttl: MAX_INT
+      , blockEra: row.blockEra === "byron" ? BlockEra.Byron : BlockEra.Shelley
+      , txIndex: row.txIndex
+      , withdrawals: []
+    };
+  });
             
 
-    return { kind: 'ok', value: txs } ;
-    //if('data' in ret && 'data' in ret.data && 'transactions' in ret.data.data)
-    //    return {'kind':'ok', value:ret.data.data.transactions};
-    //else
-    //    return {'kind':'error', errMsg:'TxsHistory, could not understand graphql response'};
+  return { kind: "ok", value: txs } ;
+  //if('data' in ret && 'data' in ret.data && 'transactions' in ret.data.data)
+  //    return {'kind':'ok', value:ret.data.data.transactions};
+  //else
+  //    return {'kind':'error', errMsg:'TxsHistory, could not understand graphql response'};
 
 
 };
@@ -187,9 +210,9 @@ interface BlockByTxHashFrag {
   number: number;
 }
 export const askBlockNumByTxHash = async (hash : string|undefined): Promise<UtilEither<BlockNumByTxHashFrag>> => {
-    if(!hash)
-        return {kind:'error', errMsg: errMsgs.noValue};
-    const query = `
+  if(!hash)
+    return {kind:"error", errMsg: errMsgs.noValue};
+  const query = `
             query BlockNumByTxHash($hashId: Hash32HexString!) {
               transactions(
                 where: {
@@ -205,32 +228,32 @@ export const askBlockNumByTxHash = async (hash : string|undefined): Promise<Util
                 }
               }
             }`;
-    let ret = null;
-    try {
-      ret = (await axios.post(graphqlEndpoint,
-                        JSON.stringify({ 'query': query, 'variables': {'hashId':hash} }),
-                        contentTypeHeaders));
-    } catch (err) {
-      return { kind: 'error', errMsg: 'askBlockNumByTxHash, unable to query graphql service: ' + err };
-    }
-    if('data' in ret 
-       && 'data' in ret.data 
-       && 'transactions' in ret.data.data
+  let ret = null;
+  try {
+    ret = (await axios.post(graphqlEndpoint,
+      JSON.stringify({ "query": query, "variables": {"hashId":hash} }),
+      contentTypeHeaders));
+  } catch (err) {
+    return { kind: "error", errMsg: "askBlockNumByTxHash, unable to query graphql service: " + err };
+  }
+  if("data" in ret 
+       && "data" in ret.data 
+       && "transactions" in ret.data.data
        && Array.isArray(ret.data.data.transactions))
-      if(   ret.data.data.transactions.length > 0
-         && 'block' in ret.data.data.transactions[0]
-         && 'hash' in ret.data.data.transactions[0].block
-         && 'number' in ret.data.data.transactions[0].block)
+    if(   ret.data.data.transactions.length > 0
+         && "block" in ret.data.data.transactions[0]
+         && "hash" in ret.data.data.transactions[0].block
+         && "number" in ret.data.data.transactions[0].block)
          
-        return {kind:'ok', value:ret.data.data.transactions[0]};
-      else
-        return { kind:'error', errMsg: errMsgs.noValue };
-    else 
-        return {kind:'error', errMsg: 'Did not understand graphql response'};
+      return {kind:"ok", value:ret.data.data.transactions[0]};
+    else
+      return { kind:"error", errMsg: errMsgs.noValue };
+  else 
+    return {kind:"error", errMsg: "Did not understand graphql response"};
 } ;
 
 export const askBlockNumByHash = async (hash : string) : Promise<UtilEither<number>> => {
-    const query = `
+  const query = `
             query BlockNumByHash($id: Hash32HexString!) {
               blocks(
                 where: {
@@ -243,24 +266,24 @@ export const askBlockNumByHash = async (hash : string) : Promise<UtilEither<numb
               }
             }
     `;
-    let ret = null;
-    try {
-      ret = await axios.post(graphqlEndpoint,
-                        JSON.stringify({ 'query': query, 'variables': {'id':hash} }),
-                        contentTypeHeaders);
-    } catch (err) {
-      return { kind:'error', errMsg: 'askBlockNumByHash, unable to query graphql service: ' + err };
-    }
-    if('data' in ret 
-       && 'data' in ret.data 
-       && 'blocks' in ret.data.data
+  let ret = null;
+  try {
+    ret = await axios.post(graphqlEndpoint,
+      JSON.stringify({ "query": query, "variables": {"id":hash} }),
+      contentTypeHeaders);
+  } catch (err) {
+    return { kind:"error", errMsg: "askBlockNumByHash, unable to query graphql service: " + err };
+  }
+  if("data" in ret 
+       && "data" in ret.data 
+       && "blocks" in ret.data.data
        && Array.isArray(ret.data.data.blocks))
-      if(   ret.data.data.blocks.length > 0 
-         && 'number' in ret.data.data.blocks[0])
-        return {kind:'ok', value:ret.data.data.blocks[0].number};
-      else
-        return { kind:'error', errMsg: errMsgs.noValue };
-    else 
-        return {kind:'error', errMsg: 'askBlockNumByHash, Did not understand graphql response'};
+    if(   ret.data.data.blocks.length > 0 
+         && "number" in ret.data.data.blocks[0])
+      return {kind:"ok", value:ret.data.data.blocks[0].number};
+    else
+      return { kind:"error", errMsg: errMsgs.noValue };
+  else 
+    return {kind:"error", errMsg: "askBlockNumByHash, Did not understand graphql response"};
 
 };

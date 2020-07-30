@@ -1,7 +1,6 @@
-import axios from 'axios';
-import { Request, Response } from "express";
+import axios from "axios";
 
-import { assertNever, contentTypeHeaders, graphqlEndpoint, UtilEither} from "../utils";
+import { contentTypeHeaders, graphqlEndpoint, UtilEither} from "../utils";
 
 interface UtxoFrag {
   address: string;
@@ -21,7 +20,7 @@ interface BlockFrag {
 
 
 export const askUtxoForAddresses = async (addresses: string[]) : Promise<UtilEither<UtxoFrag[]>> => {
-    const query = `
+  const query = `
             query UtxoForAddresses($addresses: [String]) {
               utxos(where: {
                 address: {
@@ -37,12 +36,12 @@ export const askUtxoForAddresses = async (addresses: string[]) : Promise<UtilEit
                 }
               }
             }`;
-    const ret = await axios.post(graphqlEndpoint, 
-                        JSON.stringify({query: query, variables: { addresses: addresses}}),
-                        contentTypeHeaders);
-    if('data' in ret && 'data' in ret.data && Array.isArray(ret.data.data.utxos))
-        return { kind: 'ok', value: ret.data.data.utxos };
-    else
-        return { kind: 'error', errMsg: 'utxoForAddresses, could not understand graphql response' };
+  const ret = await axios.post(graphqlEndpoint, 
+    JSON.stringify({query: query, variables: { addresses: addresses}}),
+    contentTypeHeaders);
+  if("data" in ret && "data" in ret.data && Array.isArray(ret.data.data.utxos))
+    return { kind: "ok", value: ret.data.data.utxos };
+  else
+    return { kind: "error", errMsg: "utxoForAddresses, could not understand graphql response" };
 };
 
