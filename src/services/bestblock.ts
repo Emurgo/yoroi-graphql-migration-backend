@@ -15,6 +15,7 @@ export interface BlockFrag {
     hash: string;
     number: number;
     slotNo: number;
+    slotInEpoch: number;
 }
 
 export const askBestBlock = async () : Promise<UtilEither<CardanoFrag>> => {
@@ -27,6 +28,7 @@ export const askBestBlock = async () : Promise<UtilEither<CardanoFrag>> => {
                         hash
                         number
                         slotNo
+                        slotInEpoch
                       }
                     }
                   },
