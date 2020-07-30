@@ -26,6 +26,8 @@ export const handleSignedTx = async (req: Request, res: Response):Promise<void>=
       }
       res.send([]);
       return;
+    }else{
+      throw Error(`I did not understand the response from the submission endpoint: ${endpointResponse.data}`);
     }
   } catch(error) {
     const msg = `Error trying to send transaction: ${error} - ${error.response.data}`;
