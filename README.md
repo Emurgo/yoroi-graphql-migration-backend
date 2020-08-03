@@ -24,84 +24,23 @@ Notably, we currently test with the following commits:
 
 ### cardano-node
 
-commit 7eb060098d1124e879a0472a6ef00f1ff3ff0a02 should Just Work.  
+Release 1.18.0 should Just Work.  
 Follow the building and running instructions from that repository.
 
 ### cardano-db-sync.
 
-commit bf1b61be25802b69191ac3de04ed377a972cc809 should Just Work.
-Later commits are unlikely to work with cardano-node.
-As of the time of writing (26 Jun 2020) this repo is in a state of flux.
+commit 8c8d133b7451d1e4afcf1836c28b40ea84fd5f99 should Just Work.
 
-If you want to use transaction bodies, as discussed in the purpose,
-you may be interested in using this pr:
-https://github.com/mebassett/cardano-db-sync/pull/1
-
-In either case, the build/run instructions from that repository
+the build/run instructions from that repository
 at doc/building-running.md should get you up to speed.
 Note that you will want to use "extended".
 
 ### cardano-graphql
 
-This is the trickiest.
-This repository has a docker-compose file that your author was never able to get
-running.
-Worse, we require some specific commits (because the graphql schema neglects to
-define key relationships) whose images are not yet in docker hub.
+Release 2.0.0 should just work. 
 
-You will want to use this PR:
-https://github.com/input-output-hk/cardano-graphql/pull/245
-
-**However**, even this PR is tricky.  
-There are two executables here:
-a) Hasura
-b) cardano-graphql node app.
-
-To run (a) you will need to:
-- edit hasura/docker-entrypoint.sh so that HASURA_GRAPHQL_DATABASE_URL points to
-  the same postgresql database that cardano-db-sync is running on.
-  (you can have this running in docker or your local machine.  My instructions
-   assume postgresql is running locally and not in docker) 
-- build a new docker image with
-    ```
-        cd hasura/
-        docker build . -t custom-cardano-graphql-hasura
-    ```
-- launch with
-    ```
-    docker run -i --net=host \
-      -e HASURA_GRAPHQL_ENABLED_LOG_TYPES='startup, http-log, webhook-log, websocket-log, query-log' \
-      -e HASURA_GRAPHQL_ENABLE_TELEMETRY=false \
-      -e HASURA_GRAPHQL_ENABLE_CONSOLE=true \
-      custom-cardano-graphql-hasura
-    ```
-  Note that I am using `--net=host`, which should make it easier for hasura to
-  talk to your local postgresql service (ensure that you are allowing tcp 
-  connections over 127.0.0.1 or whatever you have set in earlier steps!)
-  This also means that hasura will try to take port 8080.
-  I have found that cardano-db-sync also uses this port, but doesn't need it.
-  (I have not investigated this further.  But cardano-db-sync doesn't seem
-   to cp
-  So, naively, you would think you would want run hasura first.
-  But cardano-db-sync builds the database schema that hasura is expecting to
-  find.
-  So you may need to start cardano-db-sync first, then kill it, then
-  start hasura, or something hacky like that.
-  It is fragile.
-
-  To verify that it is running, you should see the hasura console at
-  http://localhost:8080.
-
-Running (b) is much easier.  From the repostory root directory, simply run:
- - `yarn && yarn build`
- - `cd dist/`
- - `HASURA_URI=http://localhost:8080 node index.js`
-
- To verify that it is running, you should see a graphql console at
- http://localhost:3100
-
-Assuming hasura and cardano-graphql are all running properly, with a populated
-database, this repo should respond to requests at http://localhost:8082.
+**However**, please node that the docker compose file likely does not have
+the exact version of cardano-db-sync needed to run this.  
 
 ## Building
 
@@ -261,6 +200,48 @@ Array<{
     address: string,
     amount: string,
   }>,
+  withdrawals: Array<{| address: string,
+    amount: string
+  |}>,
+  certificates: Array<{|
+    kind: 'StakeRegistration',
+    stakeCredential: string,
+  |} | {|
+    kind: 'StakeDeregistration',
+    stakeCredential: string,
+  |} | {|
+    kind: 'StakeDelegation',
+    stakeCredential: string,
+    poolKeyHash: string,
+  |} | {|
+    kind: 'PoolRegistration',
+    poolParams: {|
+      operator: string,
+      vrfKeyHash: string,
+      pledge: string,
+      cost: string,
+      margin: number,
+      rewardAccount: string,
+      poolOwners: Array<string>,
+      relays: Array<{| ipv4: string, 
+        ipv6: string, 
+        dnsName: string, 
+        dnsSrvName: string, 
+        port: string |}>,
+      poolMetadata: null | {|
+        url: string,
+        metadataHash: string,
+      |},
+    |},
+  |} | {|
+    type: 'PoolRetirement',
+    poolKeyHash: string,
+    epoch: number,
+  |} {|
+    type: 'MoveInstantaneousRewardsCert',
+    rewards: Array<string>,
+    pot: 'Reserve' | 'Treasury'
+  |}>
 }>;
 ```
 
@@ -331,10 +312,3 @@ None (GET request)
 
 200 status if things look good. Error if node is not syncing
 
-## TODO
-
- - [ ] inconsistent graphql functions. The style for `askTransactionHistory` is superior, your author intends for the other ones to also specify their return type and return errors rather than raise exceptions.
- - [ ] Many api endpoints are missing, especially those for submitting transactions and healthchecks.
- - [ ] some tests only check to see that the response is an object. It does not test to ensure that each api is giving the specified response.
- - [ ] Logging, configuration, production builds.
- - [ ] error handling.
