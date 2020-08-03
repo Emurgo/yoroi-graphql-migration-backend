@@ -23,11 +23,15 @@ import { handleSignedTx } from "./services/signedTransaction";
 
 import { HealthChecker } from "./HealthChecker";
 
+import { createCertificatesView } from "./Transactions/certificates";
+
 
 const pool = new Pool({ user: config.get("db.user")
   , host: config.get("db.host")
   , database: config.get("db.database")
   , password: config.get("db.password")});
+createCertificatesView(pool);
+
 
 const healthChecker = new HealthChecker(askBestBlock);
 
