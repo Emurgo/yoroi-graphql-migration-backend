@@ -38,29 +38,35 @@ export type Certificate = StakeRegistration | StakeDeregistration | StakeDelegat
 
 export interface StakeRegistration {
   kind: "StakeRegistration";
+  certIndex: number;
   stakeCredential: string;
 }
 export interface StakeDeregistration{
   kind: "StakeDeregistration";
+  certIndex: number;
   stakeCredential: string;
 }
 export interface StakeDelegation{
   kind: "StakeDelegation";
+  certIndex: number;
   stakeCredential: string;
   poolKeyHash: string;
 }
 export interface PoolRegistration{
   kind: "PoolRegistration";
+  certIndex: number;
   poolParams: PoolParams;
 }
 export interface PoolRetirement{
   kind: "PoolRetirement";
+  certIndex: number;
   poolKeyHash: string;
   epoch: number;
   
 }
 export interface MoveInstantaneousRewardsCert{
   kind: "MoveInstantaneousRewardsCert";
+  certIndex: number;
   pot: "Reserve" | "Treasury";
   rewards: string[];
 }

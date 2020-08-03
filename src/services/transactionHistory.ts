@@ -145,7 +145,11 @@ export const askTransactionHistory = async (
       , txHash: obj.f3}));
     const outputs = row.outAddrValPairs.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString() }));
     const withdrawals : TransOutputFrag[] = row.withdrawals ? row.withdrawals.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString() })) : [];
-    const certificates = row.certificates ? row.certificates.map(rowToCertificate) : [];
+    const certificates = row.certificates !== null
+                        ? row.certificates
+                             .map(rowToCertificate) 
+                             .filter( (i:Certificate|null) => i !== null)
+                        : [];
     const blockFrag : BlockFrag = { number: row.blockNumber
       , hash: row.blockHash.toString("hex")
       , epochNo: row.blockEpochNo
@@ -175,16 +179,19 @@ export const askTransactionHistory = async (
 
 };
 
-const rowToCertificate = (row:any):Certificate => {
+const rowToCertificate = (row:any):Certificate|null => {
   switch(row.jsType){
   case "StakeRegistration":
     return { kind: row.jsType
+      , certIndex: row.certIndex
       , stakeCredential: row.stakeCred };
   case "StakeDeregistration":
     return { kind: row.jsType
+      , certIndex: row.certIndex
       , stakeCredential: row.stakeCred };
   case "StakeDelegation":
     return { kind: row.jsType
+      , certIndex: row.certIndex
       , poolKeyHash: row.poolHashKey
       , stakeCredential: row.stakeCred };
   case "PoolRegistration": {
@@ -213,20 +220,24 @@ const rowToCertificate = (row:any):Certificate => {
           , metadataHash: row.poolParamsMetaDataHash }
     };
     return { kind: row.jsType
+      , certIndex: row.certIndex
       , poolParams: params};
   }
   case "PoolRetirement":
     return { kind: row.jsType
+      , certIndex: row.certIndex
       , poolKeyHash: row.poolHashKey
       , epoch: row.epoch };
   case "MoveInstantaneousRewardsCert":
     return { kind: row.jsType
+      , certIndex: row.certIndex
       , pot: row.mirPot
       , rewards: row.rewards === null
         ? []
         : row.rewards.map( (o:any)=> o.f1) };
   default:
-    throw Error(`Certificate from DB doesn't match any known type: ${row}`);
+    console.log(`Certificate from DB doesn't match any known type: ${row}`); // the app only logs errors.
+    return null
   }
 };
 
