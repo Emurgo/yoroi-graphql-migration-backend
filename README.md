@@ -200,29 +200,29 @@ Array<{
     address: string,
     amount: string,
   }>,
-  withdrawals: Array<{| address: string,
+  withdrawals: Array<{| address: string, // hex
     amount: string
   |}>,
   certificates: Array<{|
     kind: 'StakeRegistration',
-    stakeCredential: string,
+    stakeCredential: string, //hex
   |} | {|
     kind: 'StakeDeregistration',
-    stakeCredential: string,
+    stakeCredential: string, // hex
   |} | {|
     kind: 'StakeDelegation',
-    stakeCredential: string,
-    poolKeyHash: string,
+    stakeCredential: string, // hex
+    poolKeyHash: string, // hex
   |} | {|
     kind: 'PoolRegistration',
     poolParams: {|
-      operator: string,
-      vrfKeyHash: string,
-      pledge: string,
+      operator: string, // hex
+      vrfKeyHash: string, // hex
+      pledge: number, 
       cost: string,
       margin: number,
-      rewardAccount: string,
-      poolOwners: Array<string>,
+      rewardAccount: string, // hex
+      poolOwners: Array<string>,  // hex
       relays: Array<{| ipv4: string, 
         ipv6: string, 
         dnsName: string, 
@@ -230,16 +230,16 @@ Array<{
         port: string |}>,
       poolMetadata: null | {|
         url: string,
-        metadataHash: string,
+        metadataHash: string, //hex
       |},
     |},
   |} | {|
     type: 'PoolRetirement',
-    poolKeyHash: string,
+    poolKeyHash: string, // hex
     epoch: number,
   |} {|
     type: 'MoveInstantaneousRewardsCert',
-    rewards: Array<string>,
+    rewards: Array<string>, // hex of stake addresses
     pot: 'Reserve' | 'Treasury'
   |}>
 }>;
