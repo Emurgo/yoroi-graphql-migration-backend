@@ -2,6 +2,8 @@ import axios from "axios";
 
 import {  contentTypeHeaders, errMsgs, graphqlEndpoint, UtilEither} from "../utils";
 
+import { BlockEra, BlockFrag, TransInputFrag, TransOutputFrag, TransactionFrag} from "../Transactions/types";
+
 import { Pool } from "pg";
 
 
@@ -63,6 +65,10 @@ const askTransactionSqlQuery = `
           from "Withdrawal" 
           where tx_id = tx.id) as withdrawals
        , pool_meta_data.hash as metadata
+       , (select json_agg(row_to_json(combined_certificates) order by certIndex asc)
+          from combined_certificates 
+          where txId = tx.id) as certificates
+                            
   from tx
   join hashes
     on hashes.hash = tx.hash
@@ -120,40 +126,6 @@ const graphQLQuery = `
 `;
 
 const MAX_INT = "2147483647";
-
-export enum BlockEra { Byron = "byron"
-                     , Shelley = "shelley"}
-
-interface TransactionFrag {
-    hash: string;
-    fee: string;
-    ttl: string;
-    blockEra: BlockEra;
-    metadata: string;
-    block: BlockFrag;
-    includedAt: Date;
-    inputs: TransInputFrag[];
-    outputs: TransOutputFrag[]; // technically a TransactionOutput fragment
-    txIndex: number;
-    withdrawals: TransOutputFrag[];
-}
-interface BlockFrag {
-    number: number;
-    hash: string;
-    epochNo: number;
-    slotNo: number;
-}
-interface TransInputFrag {
-    address: string;
-    amount: string;
-    id: string;
-    index: number;
-    txHash: string;
-}
-interface TransOutputFrag {
-    address: string;
-    amount: string;
-}
 
 export const askTransactionHistory = async ( 
   pool: Pool
