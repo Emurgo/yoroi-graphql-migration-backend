@@ -172,7 +172,7 @@ export const askTransactionHistory = async (
       , index: obj.f4
       , txHash: obj.f3}));
     const outputs = row.outAddrValPairs.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString() }));
-    const withdrawals : TransOutputFrag[] = row.withdrawals ? row.withdrawals.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString() })) : null;
+    const withdrawals : TransOutputFrag[] = row.withdrawals ? row.withdrawals.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString() })) : [];
     const blockFrag : BlockFrag = { number: row.blockNumber
       , hash: row.blockHash.toString("hex")
       , epochNo: row.blockEpochNo
@@ -187,7 +187,7 @@ export const askTransactionHistory = async (
       , ttl: MAX_INT
       , blockEra: row.blockEra === "byron" ? BlockEra.Byron : BlockEra.Shelley
       , txIndex: row.txIndex
-      , withdrawals: []
+      , withdrawals: withdrawals
     };
   });
             
