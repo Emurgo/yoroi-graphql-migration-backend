@@ -2,6 +2,7 @@ import axios from "axios";
 import { expect } from "chai";
 import { resultsForSingleHistory } from "./dataSingleHistory";
 import { config, Config } from "./config";
+import { Certificate, TransactionFrag } from "../src/Transactions/types";
 import * as R from "ramda";
 
 const endpoint = config.apiUrl;
@@ -91,6 +92,12 @@ const dataSingleHistory = {
 const dataTxOrdering = {
   addresses: ["Ae2tdPwUPEYynjShTL8D2L2GGggTH3AGtMteb7r65oLar1vzZ4JPfxob4b8"]
   , untilBlock: hashForUntilBlock
+};
+
+const dataShelleyCerts = {
+  addresses: ["addr1q9ya8v4pe33nlkgftyd70nhhp407pvnjjcsddhf64sh9gegwtvyxm7r69gx9cwvtg82p87zpwmzj0kj7tjmyraze3pzqe6zxzv"
+    ,"addr1v8vqle5aa50ljr6pu5ndqve29luch29qmpwwhz2pk5tcggqn3q8mu"]
+  , untilBlock: "bca4bb9095b3d95dfb36ad5a559553e02770bcfe96702315b1175b43b5aeac82"
 };
 
 const testableUri = endpoint + "v2/txs/history";
@@ -208,5 +215,30 @@ describe("/txs/history", function() {
     expect(result.data[0].outputs[0].amount).to.be.eql("3168639578");
     expect(result.data[0].outputs[1].address).to.be.eql("Ae2tdPwUPEYynjShTL8D2L2GGggTH3AGtMteb7r65oLar1vzZ4JPfxob4b8");
     expect(result.data[0].outputs[1].amount).to.be.eql("98000000");
+  });
+  it("should get sensible shelley certificates", async() => {
+    const result = await axios.post(testableUri, dataShelleyCerts);
+    const resultsWithCerts = result.data.filter( (obj: TransactionFrag) => obj.certificates.length > 0);
+    const certs = resultsWithCerts.map( (obj: TransactionFrag) => obj.certificates).flat();
+    expect(certs).to.not.be.empty;
+    
+    const poolRegCert = certs.filter ( (c:Certificate) => c.kind === "PoolRegistration")[0];
+    poolRegCert.poolParams.poolOwners.every( (item:any) => {
+      expect(typeof item).to.be.equal("string");
+    });
+    poolRegCert.poolParams.relays.every((item:any) => { 
+      expect(item).to.have.property("ipv6");
+      expect(item).to.have.property("ipv4");
+      expect(item).to.have.property("dnsName");
+      expect(item).to.have.property("dnsSrvName");
+      expect(item).to.have.property("port");
+    });
+    expect(poolRegCert.poolParams.poolMetadata).to.have.property("url");
+    expect(poolRegCert.poolParams.poolMetadata).to.have.property("metadataHash");
+    
+    const mirCert = certs.filter ( (c:Certificate) => c.kind === "MoveInstantaneousRewardsCert")[0];
+    mirCert.rewards.every( (item:any) => {
+      expect(typeof item).to.be.equal("string");
+    });
   });
 });
