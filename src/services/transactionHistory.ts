@@ -1,6 +1,8 @@
 import axios from "axios";
 
-import {  contentTypeHeaders, errMsgs, graphqlEndpoint, UtilEither} from "../utils";
+import {  assertNever, contentTypeHeaders, errMsgs, graphqlEndpoint, UtilEither} from "../utils";
+
+import { BlockEra, BlockFrag, Certificate, TransInputFrag, TransOutputFrag, TransactionFrag} from "../Transactions/types";
 
 import { Pool } from "pg";
 
@@ -63,6 +65,10 @@ const askTransactionSqlQuery = `
           from "Withdrawal" 
           where tx_id = tx.id) as withdrawals
        , pool_meta_data.hash as metadata
+       , (select json_agg(row_to_json(combined_certificates) order by "certIndex" asc)
+          from combined_certificates 
+          where "txId" = tx.id) as certificates
+                            
   from tx
   join hashes
     on hashes.hash = tx.hash
@@ -121,40 +127,6 @@ const graphQLQuery = `
 
 const MAX_INT = "2147483647";
 
-export enum BlockEra { Byron = "byron"
-                     , Shelley = "shelley"}
-
-interface TransactionFrag {
-    hash: string;
-    fee: string;
-    ttl: string;
-    blockEra: BlockEra;
-    metadata: string;
-    block: BlockFrag;
-    includedAt: Date;
-    inputs: TransInputFrag[];
-    outputs: TransOutputFrag[]; // technically a TransactionOutput fragment
-    txIndex: number;
-    withdrawals: TransOutputFrag[];
-}
-interface BlockFrag {
-    number: number;
-    hash: string;
-    epochNo: number;
-    slotNo: number;
-}
-interface TransInputFrag {
-    address: string;
-    amount: string;
-    id: string;
-    index: number;
-    txHash: string;
-}
-interface TransOutputFrag {
-    address: string;
-    amount: string;
-}
-
 export const askTransactionHistory = async ( 
   pool: Pool
   , limit: number
@@ -173,6 +145,11 @@ export const askTransactionHistory = async (
       , txHash: obj.f3}));
     const outputs = row.outAddrValPairs.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString() }));
     const withdrawals : TransOutputFrag[] = row.withdrawals ? row.withdrawals.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString() })) : [];
+    const certificates = row.certificates !== null
+                        ? row.certificates
+                             .map(rowToCertificate) 
+                             .filter( (i:Certificate|null) => i !== null)
+                        : [];
     const blockFrag : BlockFrag = { number: row.blockNumber
       , hash: row.blockHash.toString("hex")
       , epochNo: row.blockEpochNo
@@ -188,6 +165,7 @@ export const askTransactionHistory = async (
       , blockEra: row.blockEra === "byron" ? BlockEra.Byron : BlockEra.Shelley
       , txIndex: row.txIndex
       , withdrawals: withdrawals
+      , certificates: certificates
     };
   });
             
@@ -201,6 +179,67 @@ export const askTransactionHistory = async (
 
 };
 
+const rowToCertificate = (row:any):Certificate|null => {
+  switch(row.jsType){
+  case "StakeRegistration":
+    return { kind: row.jsType
+      , certIndex: row.certIndex
+      , stakeCredential: row.stakeCred };
+  case "StakeDeregistration":
+    return { kind: row.jsType
+      , certIndex: row.certIndex
+      , stakeCredential: row.stakeCred };
+  case "StakeDelegation":
+    return { kind: row.jsType
+      , certIndex: row.certIndex
+      , poolKeyHash: row.poolHashKey
+      , stakeCredential: row.stakeCred };
+  case "PoolRegistration": {
+    const poolRelays = row.poolParamsRelays 
+      ? row.poolParamsRelays.map((obj:any) => ({
+        ipv4: obj.ipv4
+        , ipv6: obj.ipv6
+        , dnsName: obj.dnsName
+        , dnsSrvName: obj.dnsSrvName
+        , port: obj.port
+      }))
+      : [];
+                                                     
+    const params = { 
+      operator: row.poolParamsOperator
+      , vrfKeyHash: row.poolParamsVrfKeyHash
+      , pledge: row.poolParamsPledge
+      , cost: row.poolParamsCost
+      , margin: row.poolParamsMargin
+      , rewardAccount: row.poolParamsRewardAccount
+      , poolOwners: row.poolParamsOwners
+      , relays: poolRelays
+      , poolMetadata: row.poolParamsMetaDataUrl === null 
+        ? null
+        : { url: row.poolParamsMetaDataUrl
+          , metadataHash: row.poolParamsMetaDataHash }
+    };
+    return { kind: row.jsType
+      , certIndex: row.certIndex
+      , poolParams: params};
+  }
+  case "PoolRetirement":
+    return { kind: row.jsType
+      , certIndex: row.certIndex
+      , poolKeyHash: row.poolHashKey
+      , epoch: row.epoch };
+  case "MoveInstantaneousRewardsCert":
+    return { kind: row.jsType
+      , certIndex: row.certIndex
+      , pot: row.mirPot
+      , rewards: row.rewards === null
+        ? []
+        : row.rewards.map( (o:any)=> o.f1) };
+  default:
+    console.log(`Certificate from DB doesn't match any known type: ${row}`); // the app only logs errors.
+    return null
+  }
+};
 
 interface BlockNumByTxHashFrag {
   block: BlockByTxHashFrag;
