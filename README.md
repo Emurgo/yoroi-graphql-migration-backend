@@ -84,13 +84,13 @@ Array<{
 }>;
 ```
 
-### `/api/txs/txBodies`
+### `/api/getAccountState`
 
 #### Input
 
 ```js
 {
-  txsHashes: Array<string>
+  addresses: Array<string> // hex of reward stake addresses
 }
 ```
 
@@ -98,8 +98,14 @@ Array<{
 
 ```js
 {
-  [key: string]: string
+  [addresses: string]: RewardInfo
 };
+type RewardInfo = null | {|
+      poolOperator: null, // not implemented yet
+      remainingAmount: number, // current remaining awards
+      rewards: number, //all the rewards every added
+      withdrawals: number // all the withdrawals that have ever happened
+    |};
 ```
 
 ### `/api/txs/utxoSumForAddresses`
