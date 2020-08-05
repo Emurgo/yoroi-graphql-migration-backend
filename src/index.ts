@@ -310,7 +310,7 @@ const routes : Route[] = [ { path: "/v2/bestblock"
 }
 , { path: "/getPoolInfo"
   , method: "get"
-  , handler: handlePoolInfo
+  , handler: handlePoolInfo(pool)
 }
 , { path: "/v2/importerhealthcheck"
   , method: "get"
