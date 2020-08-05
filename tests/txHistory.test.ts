@@ -100,6 +100,11 @@ const dataShelleyCerts = {
   , untilBlock: "bca4bb9095b3d95dfb36ad5a559553e02770bcfe96702315b1175b43b5aeac82"
 };
 
+const dataRewardAddresses = {
+  addresses: ["e10e5b086df87a2a0c5c398b41d413f84176c527da5e5cb641f4598844","e1279cf18e075b222f093746f4f9cad980fd3fc5fcc5f69decef4f9ee9"]
+  , untilBlock: "bca4bb9095b3d95dfb36ad5a559553e02770bcfe96702315b1175b43b5aeac82"
+};
+
 const testableUri = endpoint + "v2/txs/history";
 
 
@@ -240,5 +245,14 @@ describe("/txs/history", function() {
     mirCert.rewards.every( (item:any) => {
       expect(typeof item).to.be.equal("string");
     });
+  });
+  it("should respond to reward addresses with relevant txs and certs", async() => {
+    const result = await axios.post(testableUri, dataRewardAddresses);
+    expect(result.data).to.not.be.empty;
+
+    const resultsWithCerts = result.data.filter( (obj: TransactionFrag) => obj.certificates.length > 0);
+    const certs = resultsWithCerts.map( (obj: TransactionFrag) => obj.certificates).flat();
+    expect(certs).to.not.be.empty;
+
   });
 });
