@@ -146,10 +146,10 @@ export const askTransactionHistory = async (
     const outputs = row.outAddrValPairs.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString() }));
     const withdrawals : TransOutputFrag[] = row.withdrawals ? row.withdrawals.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString() })) : [];
     const certificates = row.certificates !== null
-                        ? row.certificates
-                             .map(rowToCertificate) 
-                             .filter( (i:Certificate|null) => i !== null)
-                        : [];
+      ? row.certificates
+        .map(rowToCertificate) 
+        .filter( (i:Certificate|null) => i !== null)
+      : [];
     const blockFrag : BlockFrag = { number: row.blockNumber
       , hash: row.blockHash.toString("hex")
       , epochNo: row.blockEpochNo
@@ -237,7 +237,7 @@ const rowToCertificate = (row:any):Certificate|null => {
         : row.rewards.map( (o:any)=> o.f1) };
   default:
     console.log(`Certificate from DB doesn't match any known type: ${row}`); // the app only logs errors.
-    return null
+    return null;
   }
 };
 
