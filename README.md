@@ -102,6 +102,29 @@ Array<{
 };
 ```
 
+### `/api/getPoolInfo`
+
+#### Input
+
+```js
+{
+  poolMetaDataHashes: Array<string> //hash ids of pool meta data.
+};
+```
+
+#### Output
+
+```js
+{
+  [poolMetaDataHash: string]: {| name: string,
+                                 description: string,
+                                 ticker: string,
+                                 homepage: string,
+                                 extended: string
+                        
+};
+```
+
 ### `/api/txs/utxoSumForAddresses`
 
 #### Input
