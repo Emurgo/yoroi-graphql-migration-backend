@@ -71,7 +71,7 @@ export const handlePoolInfo = (p: Pool) => async (req: Request, res: Response):P
       console.log(`Recieved invalid pool metadata hash for SMASH: ${hash}`);
       continue;
     }
-    let info = null;
+    let info = { pledge_address: null };
     try {
       const endpointResponse = await axios.get(submissionEndpoint+hash); 
       if(endpointResponse.status === 200){
@@ -79,7 +79,7 @@ export const handlePoolInfo = (p: Pool) => async (req: Request, res: Response):P
       }else{
         console.log(`SMASH did not respond to user submitted hash: ${hash}`);
       }} catch(e) {
-      console.log(e);
+      console.log(`SMASH did not respond with hash ${hash}, giving error ${e}`);
     }
 
     const dbHistory = await p.query(poolHistoryQuery, [hash]);
