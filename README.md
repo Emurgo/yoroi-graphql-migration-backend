@@ -102,9 +102,9 @@ Array<{
 };
 type RewardInfo = null | {|
       poolOperator: null, // not implemented yet
-      remainingAmount: number, // current remaining awards
-      rewards: number, //all the rewards every added
-      withdrawals: number // all the withdrawals that have ever happened
+      remainingAmount: string, // current remaining awards
+      rewards: string, //all the rewards every added
+      withdrawals: string // all the withdrawals that have ever happened
     |};
 ```
 
