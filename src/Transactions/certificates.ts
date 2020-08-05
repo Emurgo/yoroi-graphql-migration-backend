@@ -178,7 +178,7 @@ group by reserve.tx_id
 
 UNION ALL
 
-select 'MoveInstantaneous"rewards"Cert' as "jsType"
+select 'MoveInstantaneousRewardsCert' as "jsType"
      , 'CertMir' as "formalType"
      , treasury.tx_id as "txId"
      , max(treasury.cert_index) as "certIndex"  

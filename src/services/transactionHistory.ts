@@ -179,8 +179,6 @@ export const askTransactionHistory = async (
 
 };
 
-
-
 interface BlockNumByTxHashFrag {
   block: BlockByTxHashFrag;
   hash: string;
