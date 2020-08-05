@@ -20,6 +20,7 @@ import { askBlockNumByHash, askBlockNumByTxHash, askTransactionHistory } from ".
 import { askFilterUsedAddresses } from "./services/filterUsedAddress";
 import { askUtxoSumForAddresses } from "./services/utxoSumForAddress";
 import { handleSignedTx } from "./services/signedTransaction";
+import { handlePoolInfo } from "./services/poolInfo";
 
 import { HealthChecker } from "./HealthChecker";
 
@@ -306,6 +307,10 @@ const routes : Route[] = [ { path: "/v2/bestblock"
 , { path: "/txs/signed"
   , method: "post"
   , handler: handleSignedTx
+}
+, { path: "/getPoolInfo"
+  , method: "get"
+  , handler: handlePoolInfo
 }
 , { path: "/v2/importerhealthcheck"
   , method: "get"
