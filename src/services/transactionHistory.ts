@@ -28,12 +28,21 @@ const askTransactionSqlQuery = `
       from (select "txHash" as hash
             from "TransactionInput"
             where "address" = ANY(($1)::varchar array)
-      union
-      select tx.hash as hash
-      from tx
-      join tx_out
-        on tx.id = tx_out.tx_id
-      where tx_out.address = ANY(($1)::varchar array)) hashes)
+            union
+            select tx.hash as hash
+            from tx
+            join tx_out
+              on tx.id = tx_out.tx_id
+            where tx_out.address = ANY(($1)::varchar array)
+            union
+            select tx.hash as hash
+            from tx 
+            join combined_certificates as certs 
+              on tx.id = certs."txId" 
+            where certs."formalType" in ('CertRegKey', 'CertDeregKey','CertDelegate')
+              and certs."stakeCred" = any(($1)::varchar array)
+           ) hashes
+    )
   select tx.hash
        , tx.fee
        , tx.block_index as "txIndex"
@@ -146,10 +155,10 @@ export const askTransactionHistory = async (
     const outputs = row.outAddrValPairs.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString() }));
     const withdrawals : TransOutputFrag[] = row.withdrawals ? row.withdrawals.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString() })) : [];
     const certificates = row.certificates !== null
-                        ? row.certificates
-                             .map(rowToCertificate) 
-                             .filter( (i:Certificate|null) => i !== null)
-                        : [];
+      ? row.certificates
+        .map(rowToCertificate) 
+        .filter( (i:Certificate|null) => i !== null)
+      : [];
     const blockFrag : BlockFrag = { number: row.blockNumber
       , hash: row.blockHash.toString("hex")
       , epochNo: row.blockEpochNo
@@ -237,7 +246,7 @@ const rowToCertificate = (row:any):Certificate|null => {
         : row.rewards.map( (o:any)=> o.f1) };
   default:
     console.log(`Certificate from DB doesn't match any known type: ${row}`); // the app only logs errors.
-    return null
+    return null;
   }
 };
 
