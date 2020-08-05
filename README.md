@@ -116,12 +116,22 @@ Array<{
 
 ```js
 {
-  [poolMetaDataHash: string]: {| name: string,
-                                 description: string,
-                                 ticker: string,
-                                 homepage: string,
-                                 extended: string
-                        
+  [poolMetaDataHash: string]: {| info: RemotePoolInfo,
+                                 history: Array<{|
+                                     epoch: number,
+                                     slot: number,
+                                     tx_ordinal: number
+                                     cert_ordinal: number
+                                     payload: Certificate |}> |}
+                                    
+  
+  type RemotePoolInfo = {
+      pledge_address: string,
+      name?: string,
+      description?: string,
+      ticker?: string,
+      ... // other stuff from SMASH.
+  }      
 };
 ```
 
