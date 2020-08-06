@@ -28,12 +28,21 @@ const askTransactionSqlQuery = `
       from (select "txHash" as hash
             from "TransactionInput"
             where "address" = ANY(($1)::varchar array)
-      union
-      select tx.hash as hash
-      from tx
-      join tx_out
-        on tx.id = tx_out.tx_id
-      where tx_out.address = ANY(($1)::varchar array)) hashes)
+            union
+            select tx.hash as hash
+            from tx
+            join tx_out
+              on tx.id = tx_out.tx_id
+            where tx_out.address = ANY(($1)::varchar array)
+            union
+            select tx.hash as hash
+            from tx 
+            join combined_certificates as certs 
+              on tx.id = certs."txId" 
+            where certs."formalType" in ('CertRegKey', 'CertDeregKey','CertDelegate')
+              and certs."stakeCred" = any(($1)::varchar array)
+           ) hashes
+    )
   select tx.hash
        , tx.fee
        , tx.block_index as "txIndex"
