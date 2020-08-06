@@ -128,7 +128,7 @@ Array<{
                                     
   
   type RemotePoolInfo = {
-      pledge_address: string,
+      pledge_address: string|null, //null if the address is valid but doesn't exist.
       name?: string,
       description?: string,
       ticker?: string,
@@ -136,6 +136,8 @@ Array<{
   }      
 };
 ```
+
+this will throw errors for invalid addresses.
 
 ### `/api/txs/utxoSumForAddresses`
 

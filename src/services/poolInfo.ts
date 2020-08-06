@@ -66,10 +66,10 @@ export const handlePoolInfo = (p: Pool) => async (req: Request, res: Response):P
     throw new Error (` poolMetaDataHashes must have between 0 and ${addressesRequestLimit} items`);
    
   const ret:Dictionary<any> = {};
+
   for (const hash of hashes) {
     if(hash.length !== 64){
-      console.log(`Recieved invalid pool metadata hash for SMASH: ${hash}`);
-      continue;
+      throw new Error(`Recieved invalid pool metadata hash for SMASH: ${hash}`);
     }
     let info = { pledge_address: null };
     try {
@@ -85,7 +85,9 @@ export const handlePoolInfo = (p: Pool) => async (req: Request, res: Response):P
     const dbHistory = await p.query(poolHistoryQuery, [hash]);
     const dbPledgeAddr = await p.query(poolPledgeAddrQuery, [hash]);
     
-    info.pledge_address = dbPledgeAddr.rows[0].hash.toString("hex");
+    info.pledge_address = dbPledgeAddr.rows.length > 0
+                          ? dbPledgeAddr.rows[0].hash.toString("hex")
+                          : null;
 
     const history = dbHistory.rows.map( (row: any) => ({
       epoch: row.epoch_no
