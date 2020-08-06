@@ -117,15 +117,15 @@ export const rowToCertificate = (row:any):Certificate|null => {
         , ipv6: obj.ipv6
         , dnsName: obj.dnsName
         , dnsSrvName: obj.dnsSrvName
-        , port: obj.port
+        , port: obj.port.toString()
       }))
       : [];
                                                      
     const params = { 
       operator: row.poolParamsOperator
       , vrfKeyHash: row.poolParamsVrfKeyHash
-      , pledge: row.poolParamsPledge
-      , cost: row.poolParamsCost
+      , pledge: row.poolParamsPledge.toString()
+      , cost: row.poolParamsCost.toString()
       , margin: row.poolParamsMargin
       , rewardAccount: row.poolParamsRewardAccount
       , poolOwners: row.poolParamsOwners

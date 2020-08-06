@@ -122,7 +122,9 @@ Array<{
                                      slot: number,
                                      tx_ordinal: number
                                      cert_ordinal: number
-                                     payload: Certificate |}> |}
+                                     payload: Certificate // see `/api/v2/txs/history`
+                                     |}> 
+                              |}
                                     
   
   type RemotePoolInfo = {
@@ -251,16 +253,16 @@ Array<{
     poolParams: {|
       operator: string, // hex
       vrfKeyHash: string, // hex
-      pledge: number, 
+      pledge: string, 
       cost: string,
       margin: number,
       rewardAccount: string, // hex
       poolOwners: Array<string>,  // hex
-      relays: Array<{| ipv4: string, 
-        ipv6: string, 
-        dnsName: string, 
-        dnsSrvName: string, 
-        port: string |}>,
+      relays: Array<{| ipv4: string|null, 
+        ipv6: string|null, 
+        dnsName: string|null, 
+        dnsSrvName: string|null, 
+        port: string|null |}>,
       poolMetadata: null | {|
         url: string,
         metadataHash: string, //hex
