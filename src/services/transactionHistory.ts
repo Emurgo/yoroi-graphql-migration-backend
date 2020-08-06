@@ -2,7 +2,7 @@ import axios from "axios";
 
 import {  assertNever, contentTypeHeaders, errMsgs, graphqlEndpoint, UtilEither} from "../utils";
 
-import { BlockEra, BlockFrag, Certificate, TransInputFrag, TransOutputFrag, TransactionFrag} from "../Transactions/types";
+import { rowToCertificate, BlockEra, BlockFrag, Certificate, TransInputFrag, TransOutputFrag, TransactionFrag} from "../Transactions/types";
 
 import { Pool } from "pg";
 
@@ -186,68 +186,6 @@ export const askTransactionHistory = async (
   //    return {'kind':'error', errMsg:'TxsHistory, could not understand graphql response'};
 
 
-};
-
-const rowToCertificate = (row:any):Certificate|null => {
-  switch(row.jsType){
-  case "StakeRegistration":
-    return { kind: row.jsType
-      , certIndex: row.certIndex
-      , stakeCredential: row.stakeCred };
-  case "StakeDeregistration":
-    return { kind: row.jsType
-      , certIndex: row.certIndex
-      , stakeCredential: row.stakeCred };
-  case "StakeDelegation":
-    return { kind: row.jsType
-      , certIndex: row.certIndex
-      , poolKeyHash: row.poolHashKey
-      , stakeCredential: row.stakeCred };
-  case "PoolRegistration": {
-    const poolRelays = row.poolParamsRelays 
-      ? row.poolParamsRelays.map((obj:any) => ({
-        ipv4: obj.ipv4
-        , ipv6: obj.ipv6
-        , dnsName: obj.dnsName
-        , dnsSrvName: obj.dnsSrvName
-        , port: obj.port
-      }))
-      : [];
-                                                     
-    const params = { 
-      operator: row.poolParamsOperator
-      , vrfKeyHash: row.poolParamsVrfKeyHash
-      , pledge: row.poolParamsPledge
-      , cost: row.poolParamsCost
-      , margin: row.poolParamsMargin
-      , rewardAccount: row.poolParamsRewardAccount
-      , poolOwners: row.poolParamsOwners
-      , relays: poolRelays
-      , poolMetadata: row.poolParamsMetaDataUrl === null 
-        ? null
-        : { url: row.poolParamsMetaDataUrl
-          , metadataHash: row.poolParamsMetaDataHash }
-    };
-    return { kind: row.jsType
-      , certIndex: row.certIndex
-      , poolParams: params};
-  }
-  case "PoolRetirement":
-    return { kind: row.jsType
-      , certIndex: row.certIndex
-      , poolKeyHash: row.poolHashKey
-      , epoch: row.epoch };
-  case "MoveInstantaneousRewardsCert":
-    return { kind: row.jsType
-      , certIndex: row.certIndex
-      , pot: row.mirPot
-      , rewards: row.rewards === null
-        ? []
-        : row.rewards.map( (o:any)=> o.f1) };
-  default:
-    console.log(`Certificate from DB doesn't match any known type: ${row}`); // the app only logs errors.
-    return null;
-  }
 };
 
 interface BlockNumByTxHashFrag {

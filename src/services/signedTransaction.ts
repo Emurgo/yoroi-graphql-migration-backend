@@ -1,10 +1,10 @@
+import config from "config";
 import axios from "axios";
 import { Request, Response } from "express";
 
-
 import { SignedTransaction } from "cardano-wallet";
 
-const submissionEndpoint = "https://backend.yoroiwallet.com/api/submit/tx";
+const submissionEndpoint :string = config.get("server.txSubmissionEndpoint");
 
 const contentTypeHeaders = {"Content-Type": "application/cbor"};
 

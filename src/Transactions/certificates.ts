@@ -87,7 +87,7 @@ select 'PoolRegistration' as "jsType"
      , pool.registered_tx_id as "txId" 
      , pool.cert_index as "certIndex"
      , null as "stakeCred"
-     , null::text as "poolHashKey"
+     , encode(pool_hash.hash,'hex') as "poolHashKey"
      , encode(pool_hash.hash,'hex') as "poolParamsOperator" 
            -- this is weird.  a hash of pool operator (see pg 30 of A Formal 
            -- Spec of the Cardano Ledger) can be acquired by the cwitness 
