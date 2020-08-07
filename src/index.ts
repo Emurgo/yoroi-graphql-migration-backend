@@ -306,7 +306,7 @@ const routes : Route[] = [ { path: "/v2/bestblock"
   , handler: txHistory 
 }
 , { path: "/getAccountState"
-  , method: "get"
+  , method: "post"
   , handler: handleGetAccountState(pool)
 }
 , { path: "/txs/signed"
@@ -314,7 +314,7 @@ const routes : Route[] = [ { path: "/v2/bestblock"
   , handler: handleSignedTx
 }
 , { path: "/getPoolInfo"
-  , method: "get"
+  , method: "post"
   , handler: handlePoolInfo(pool)
 }
 , { path: "/v2/importerhealthcheck"

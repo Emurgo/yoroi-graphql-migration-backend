@@ -15,7 +15,7 @@ const mixedAddresses = [fakeAddress, realAddress];
 
 describe("/getAccountState", function() {
   it("should return 0 rewards for addresses that have withdrawn everything", async() => {
-    const result = await axios({method: "get", url: testableUri, data: {addresses: realAddresses}});
+    const result = await axios({method: "post", url: testableUri, data: {addresses: realAddresses}});
     for(const addr of realAddresses) {
       expect(result.data[addr]).to.have.property("remainingAmount");
       expect(result.data[addr].remainingAmount).to.be.equal("0");
@@ -23,7 +23,7 @@ describe("/getAccountState", function() {
     expect(result.data).not.be.empty;
   });
   it("should return null for invalid addresses or addresses that have no rewards", async() => {
-    const result = await axios({method: "get", url: testableUri, data: {addresses: mixedAddresses}});
+    const result = await axios({method: "post", url: testableUri, data: {addresses: mixedAddresses}});
     expect(result.data).to.have.property(fakeAddress);
     expect(result.data).to.have.property(realAddress);
     expect(result.data[fakeAddress]).to.be.a("null");
