@@ -1,3 +1,4 @@
+import { Dictionary } from "../utils";
 
 export enum BlockEra { Byron = "byron"
                      , Shelley = "shelley"}
@@ -39,17 +40,17 @@ export type Certificate = StakeRegistration | StakeDeregistration | StakeDelegat
 export interface StakeRegistration {
   kind: "StakeRegistration";
   certIndex: number;
-  stakeCredential: string;
+  rewardAddress: string;
 }
 export interface StakeDeregistration{
   kind: "StakeDeregistration";
   certIndex: number;
-  stakeCredential: string;
+  rewardAddress: string;
 }
 export interface StakeDelegation{
   kind: "StakeDelegation";
   certIndex: number;
-  stakeCredential: string;
+  rewardAddress: string;
   poolKeyHash: string;
 }
 export interface PoolRegistration{
@@ -67,8 +68,13 @@ export interface PoolRetirement{
 export interface MoveInstantaneousRewardsCert{
   kind: "MoveInstantaneousRewardsCert";
   certIndex: number;
-  pot: "Reserve" | "Treasury";
-  rewards: string[];
+  pot: MirCertPot
+  rewards: null|Dictionary<string>; 
+}
+
+export enum MirCertPot {
+    Reserves = 0,
+    Treasury = 1
 }
 
 export interface PoolParams {
@@ -100,16 +106,16 @@ export const rowToCertificate = (row:any):Certificate|null => {
   case "StakeRegistration":
     return { kind: row.jsType
       , certIndex: row.certIndex
-      , stakeCredential: row.stakeCred };
+      , rewardAddress:row.stakeCred };
   case "StakeDeregistration":
     return { kind: row.jsType
       , certIndex: row.certIndex
-      , stakeCredential: row.stakeCred };
+      , rewardAddress:row.stakeCred };
   case "StakeDelegation":
     return { kind: row.jsType
       , certIndex: row.certIndex
       , poolKeyHash: row.poolHashKey
-      , stakeCredential: row.stakeCred };
+      , rewardAddress:row.stakeCred };
   case "PoolRegistration": {
     const poolRelays = row.poolParamsRelays 
       ? row.poolParamsRelays.map((obj:any) => ({
@@ -144,13 +150,25 @@ export const rowToCertificate = (row:any):Certificate|null => {
       , certIndex: row.certIndex
       , poolKeyHash: row.poolHashKey
       , epoch: row.epoch };
-  case "MoveInstantaneousRewardsCert":
+  case "MoveInstantaneousRewardsCert": {
+    const rewards:Dictionary<string> = {};
+    let potType = MirCertPot.Reserves;
+    if (row.mirPot === "Reserves")
+      potType = MirCertPot.Reserves;
+    else if(row.mirPot === "Treasure")
+      potType = MirCertPot.Treasury;
+    else
+      throw new Error("rowtoCert: invalid pot type.  Someone must have changes certificates.ts and not let this method know about it.");
+
+    for (const o of row.rewards) 
+      rewards[o.f1] = o.f2.toString();
     return { kind: row.jsType
       , certIndex: row.certIndex
-      , pot: row.mirPot
+      , pot: potType 
       , rewards: row.rewards === null
-        ? []
-        : row.rewards.map( (o:any)=> o.f1) };
+        ? null
+        : rewards };
+  }
   default:
     console.log(`Certificate from DB doesn't match any known type: ${row}`); // the app only logs errors.
     return null;

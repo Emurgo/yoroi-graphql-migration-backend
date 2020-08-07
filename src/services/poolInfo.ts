@@ -86,8 +86,8 @@ export const handlePoolInfo = (p: Pool) => async (req: Request, res: Response):P
     const dbPledgeAddr = await p.query(poolPledgeAddrQuery, [hash]);
     
     info.pledge_address = dbPledgeAddr.rows.length > 0
-                          ? dbPledgeAddr.rows[0].hash.toString("hex")
-                          : null;
+      ? dbPledgeAddr.rows[0].hash.toString("hex")
+      : null;
 
     const history = dbHistory.rows.map( (row: any) => ({
       epoch: row.epoch_no
