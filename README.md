@@ -283,7 +283,7 @@ Array<{
   |} {|
     type: 'MoveInstantaneousRewardsCert',
     rewards: null|{ [addresses: string]: string } // dictionary of stake addresses to their reward amounts in lovelace
-    pot: 'Reserves' | 'Treasury'
+    pot: 0 | 1 // 0 = Reserves, 1 = Treasury
   |}>
 }>;
 ```
