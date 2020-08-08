@@ -248,13 +248,13 @@ Array<{
   |}>,
   certificates: Array<{|
     kind: 'StakeRegistration',
-    stakeCredential: string, //hex
+    rewardAddress:string, //hex
   |} | {|
     kind: 'StakeDeregistration',
-    stakeCredential: string, // hex
+    rewardAddress:string, // hex
   |} | {|
     kind: 'StakeDelegation',
-    stakeCredential: string, // hex
+    rewardAddress:string, // hex
     poolKeyHash: string, // hex
   |} | {|
     kind: 'PoolRegistration',
@@ -282,8 +282,8 @@ Array<{
     epoch: number,
   |} {|
     type: 'MoveInstantaneousRewardsCert',
-    rewards: Array<string>, // hex of stake addresses
-    pot: 'Reserve' | 'Treasury'
+    rewards: null|{ [addresses: string]: string } // dictionary of stake addresses to their reward amounts in lovelace
+    pot: 0 | 1 // 0 = Reserves, 1 = Treasury
   |}>
 }>;
 ```

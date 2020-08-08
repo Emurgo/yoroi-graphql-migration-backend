@@ -1,8 +1,8 @@
 import axios from "axios";
-import { expect } from "chai";
+import { assert, expect } from "chai";
 import { resultsForSingleHistory } from "./dataSingleHistory";
 import { config, Config } from "./config";
-import { Certificate, TransactionFrag } from "../src/Transactions/types";
+import { Certificate, MirCertPot, TransactionFrag } from "../src/Transactions/types";
 import * as R from "ramda";
 
 const endpoint = config.apiUrl;
@@ -242,9 +242,11 @@ describe("/txs/history", function() {
     expect(poolRegCert.poolParams.poolMetadata).to.have.property("metadataHash");
     
     const mirCert = certs.filter ( (c:Certificate) => c.kind === "MoveInstantaneousRewardsCert")[0];
-    mirCert.rewards.every( (item:any) => {
-      expect(typeof item).to.be.equal("string");
-    });
+    assert.oneOf(mirCert.pot, [MirCertPot.Reserves, MirCertPot.Treasury])
+    for(let addr in mirCert.rewards){
+        expect(typeof addr).to.be.equal("string");
+        expect(typeof mirCert.rewards[addr]).to.be.equal("string");
+    }
   });
   it("should respond to reward addresses with relevant txs and certs", async() => {
     const result = await axios.post(testableUri, dataRewardAddresses);

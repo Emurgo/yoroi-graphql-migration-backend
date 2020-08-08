@@ -17,6 +17,10 @@ export const applyMiddleware = (
   }
 };
 
+export interface Dictionary<T> {
+ [key: string]: T;
+}
+
 type Handler = (
   req: Request,
   res: Response,

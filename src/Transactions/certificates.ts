@@ -169,7 +169,7 @@ select 'MoveInstantaneousRewardsCert' as "jsType"
      , null as "poolParamsMetaDataUrl"
      , null::text as "poolParamsMetaDataHash"
      , null::integer as "epoch"
-     , 'Reserve' as "mirPot"
+     , 'Reserves' as "mirPot"
      , json_agg((encode(addr.hash,'hex'), reserve.amount)) as "rewards"
 from reserve
 join stake_address as addr
