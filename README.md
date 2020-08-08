@@ -114,7 +114,7 @@ type RewardInfo = null | {|
 
 ```js
 {
-  poolMetaDataHashes: Array<string> //hash ids of pool meta data.
+  poolIds: Array<string> // operator key
 };
 ```
 
@@ -122,24 +122,21 @@ type RewardInfo = null | {|
 
 ```js
 {
-  [poolMetaDataHash: string]: {| info: RemotePoolInfo,
-                                 history: Array<{|
-                                     epoch: number,
-                                     slot: number,
-                                     tx_ordinal: number
-                                     cert_ordinal: number
-                                     payload: Certificate // see `/api/v2/txs/history`
-                                     |}> 
-                              |}
-                                    
-  
-  type RemotePoolInfo = {
-      pledge_address: string|null, //null if the address is valid but doesn't exist.
+  [poolId: string]: null | {|
+    info: {
       name?: string,
       description?: string,
       ticker?: string,
       ... // other stuff from SMASH.
-  }      
+    },
+    history: Array<{|
+      epoch: number,
+      slot: number,
+      tx_ordinal: number
+      cert_ordinal: number
+      payload: Certificate // see `/api/v2/txs/history`
+    |}>
+  |}
 };
 ```
 
@@ -261,15 +258,15 @@ Array<{
     poolParams: {|
       operator: string, // hex
       vrfKeyHash: string, // hex
-      pledge: string, 
+      pledge: string,
       cost: string,
       margin: number,
       rewardAccount: string, // hex
       poolOwners: Array<string>,  // hex
-      relays: Array<{| ipv4: string|null, 
-        ipv6: string|null, 
-        dnsName: string|null, 
-        dnsSrvName: string|null, 
+      relays: Array<{| ipv4: string|null,
+        ipv6: string|null,
+        dnsName: string|null,
+        dnsSrvName: string|null,
         port: string|null |}>,
       poolMetadata: null | {|
         url: string,
@@ -282,7 +279,7 @@ Array<{
     epoch: number,
   |} {|
     type: 'MoveInstantaneousRewardsCert',
-    rewards: null|{ [addresses: string]: string } // dictionary of stake addresses to their reward amounts in lovelace
+    rewards: { [addresses: string]: string } // dictionary of stake addresses to their reward amounts in lovelace
     pot: 0 | 1 // 0 = Reserves, 1 = Treasury
   |}>
 }>;

@@ -1,9 +1,6 @@
 import axios from "axios";
 import { expect } from "chai";
-import { resultsForSingleHistory } from "./dataSingleHistory";
-import { config, Config } from "./config";
-import { Certificate, TransactionFrag } from "../src/Transactions/types";
-import * as R from "ramda";
+import { config, } from "./config";
 
 const endpoint = config.apiUrl;
 const testableUri = endpoint + "getAccountState";
