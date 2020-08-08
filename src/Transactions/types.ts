@@ -166,7 +166,7 @@ export const rowToCertificate = (row:any):Certificate|null => {
       , certIndex: row.certIndex
       , pot: potType 
       , rewards: row.rewards === null
-        ? null
+        ? {}
         : rewards };
   }
   default:

@@ -1,5 +1,4 @@
-import { assertNever, validateAddressesReq , UtilEither} from "../utils";
-import { BlockEra, BlockFrag, Certificate, TransInputFrag, TransOutputFrag, TransactionFrag} from "../Transactions/types";
+import { assertNever, validateAddressesReq } from "../utils";
 
 import config from "config";
 import { Pool } from "pg";
@@ -11,10 +10,10 @@ const accountRewardsQuery = `
   select addr.hash as "stakeAddress"
        , sum(reserve.amount - coalesce(withdrawal.amount,0)) as "remainingAmount"
        , sum(reserve.amount) as "reward"
-       , sum(withdrawal.amount) as "withdrawal"
+       , sum(coalesce(withdrawal.amount, 0)) as "withdrawal"
   from reserve
   join stake_address as addr on addr.id = reserve.addr_id
-  join withdrawal on addr.id = withdrawal.addr_id
+  left outer join withdrawal on addr.id = withdrawal.addr_id
   where encode(addr.hash, 'hex') = any(($1)::varchar array)
   group by addr.hash
 `;
@@ -46,7 +45,7 @@ const askAccountRewards = async (pool: Pool, addresses: string[]): Promise<Dicti
   return ret;
 };
 
-export const handleGetAccountState = (pool: Pool) => async (req: Request, res:Response) => {
+export const handleGetAccountState = (pool: Pool) => async (req: Request, res:Response): Promise<void> => {
   if(!req.body || !req.body.addresses) {
     throw new Error("no addresses.");
     return;
