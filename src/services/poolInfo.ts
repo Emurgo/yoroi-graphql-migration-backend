@@ -4,7 +4,7 @@ import { Pool } from "pg";
 import { Request, Response } from "express";
 
 import { rowToCertificate, Certificate} from "../Transactions/types";
-const submissionEndpoint :string = config.get("server.smashEndpoint");
+const smashEndpoint :string = config.get("server.smashEndpoint");
 
 const addressesRequestLimit:number = config.get("server.addressRequestLimit");
 
@@ -25,7 +25,7 @@ interface PoolHistory {
 }
 
 const latestMetadataQuery = `
-  select encode(pool_meta_data.hash, 'hex')
+  select encode(pool_meta_data.hash, 'hex') as "metadata_hash"
      from pool_hash
      join pool_update 
           on pool_hash.id = pool_update.hash_id 
@@ -46,11 +46,12 @@ const poolHistoryQuery = `
     on tx.id = combined_certificates."txId"
   join block
     on block.id = tx.block
-  where "poolHashKey" = $1;
+  where "poolHashKey" = $1
+    and ("jsType" = 'PoolRegistration' or "jsType" = 'PoolRetirement');
 `;
 
 export const handlePoolInfo = (p: Pool) => async (req: Request, res: Response):Promise<void>=> { 
-  if(!req.body.poolMetaDataHashes)
+  if(!req.body.poolIds)
     throw new Error ("No poolIds in body");
   const hashes = req.body.poolIds;
 
@@ -63,17 +64,16 @@ export const handlePoolInfo = (p: Pool) => async (req: Request, res: Response):P
     if(hash.length !== 56){
       throw new Error(`Received invalid pool id: ${hash}`);
     }
-    const metadataHashResp = await p.query(poolHistoryQuery, [latestMetadataQuery]);
+    const metadataHashResp = await p.query(latestMetadataQuery, [hash]);
     if (metadataHashResp.rows.length === 0) {
       ret[hash] = null;
       continue;
     }
-    const metadataHash = metadataHashResp.rows[0];
-
+    const metadataHash = metadataHashResp.rows[0].metadata_hash;
 
     let info = {};
     try {
-      const endpointResponse = await axios.get(submissionEndpoint+metadataHash); 
+      const endpointResponse = await axios.get(smashEndpoint+metadataHash); 
       if(endpointResponse.status === 200){
         info = endpointResponse.data;
       }else{
@@ -82,7 +82,7 @@ export const handlePoolInfo = (p: Pool) => async (req: Request, res: Response):P
       console.log(`SMASH did not respond with hash ${hash}, giving error ${e}`);
     }
 
-    const dbHistory = await p.query(poolHistoryQuery, [metadataHash]);
+    const dbHistory = await p.query(poolHistoryQuery, [hash]);
 
     const history = dbHistory.rows.map( (row: any) => ({
       epoch: row.epoch_no
