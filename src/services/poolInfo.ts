@@ -71,7 +71,7 @@ export const handlePoolInfo = (p: Pool) => async (req: Request, res: Response):P
     const metadataHash = metadataHashResp.rows[0];
 
 
-    let info = null;
+    let info = {};
     try {
       const endpointResponse = await axios.get(submissionEndpoint+metadataHash); 
       if(endpointResponse.status === 200){
