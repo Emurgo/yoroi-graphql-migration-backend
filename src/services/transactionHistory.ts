@@ -41,6 +41,12 @@ const askTransactionSqlQuery = `
               on tx.id = certs."txId" 
             where certs."formalType" in ('CertRegKey', 'CertDeregKey','CertDelegate')
               and certs."stakeCred" = any(($1)::varchar array)
+            union
+            select tx.hash as hash
+            from tx
+            join "Withdrawal" as w
+            on tx.id = w."tx_id"
+            where encode(w."address",'hex') = any(($1)::varchar array)
            ) hashes
     )
   select tx.hash
@@ -70,7 +76,7 @@ const askTransactionSqlQuery = `
        , (select json_agg(("address", "value") order by "index" asc)  as outAddrValPairs
           from "TransactionOutput" hasura_to
           where hasura_to."txHash" = tx.hash) as "outAddrValPairs"
-       , (select json_agg(("address", "amount") order by "Withdrawal"."id" asc)
+       , (select json_agg((encode("address",'hex'), "amount") order by "Withdrawal"."id" asc)
           from "Withdrawal" 
           where tx_id = tx.id) as withdrawals
        , pool_meta_data.hash as metadata
@@ -153,7 +159,9 @@ export const askTransactionHistory = async (
       , index: obj.f4
       , txHash: obj.f3}));
     const outputs = row.outAddrValPairs.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString() }));
-    const withdrawals : TransOutputFrag[] = row.withdrawals ? row.withdrawals.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString() })) : [];
+    const withdrawals : TransOutputFrag[] = row.withdrawals 
+                                          ? row.withdrawals.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString() })) 
+                                          : [];
     const certificates = row.certificates !== null
       ? row.certificates
         .map(rowToCertificate) 
