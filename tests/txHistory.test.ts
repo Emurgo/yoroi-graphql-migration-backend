@@ -96,13 +96,15 @@ const dataTxOrdering = {
 
 const dataShelleyCerts = {
   addresses: ["addr1q9ya8v4pe33nlkgftyd70nhhp407pvnjjcsddhf64sh9gegwtvyxm7r69gx9cwvtg82p87zpwmzj0kj7tjmyraze3pzqe6zxzv"
-    ,"addr1v8vqle5aa50ljr6pu5ndqve29luch29qmpwwhz2pk5tcggqn3q8mu"]
-  , untilBlock: "bca4bb9095b3d95dfb36ad5a559553e02770bcfe96702315b1175b43b5aeac82"
+             ,"addr1v8vqle5aa50ljr6pu5ndqve29luch29qmpwwhz2pk5tcggqn3q8mu"]
+  , untilBlock: "d6f6cd7101ce4fa80f7d7fe78745d2ca404705f58247320bc2cef975e7574939"
 };
 
 const dataRewardAddresses = {
-  addresses: ["e10e5b086df87a2a0c5c398b41d413f84176c527da5e5cb641f4598844","e1279cf18e075b222f093746f4f9cad980fd3fc5fcc5f69decef4f9ee9"]
-  , untilBlock: "bca4bb9095b3d95dfb36ad5a559553e02770bcfe96702315b1175b43b5aeac82"
+  addresses: ["e10e5b086df87a2a0c5c398b41d413f84176c527da5e5cb641f4598844"
+             ,"e1279cf18e075b222f093746f4f9cad980fd3fc5fcc5f69decef4f9ee9"
+             ,"e19842145a1693dfbf809963c7a605b463dce5ca6b66820341a443501e"]
+  , untilBlock: "d6f6cd7101ce4fa80f7d7fe78745d2ca404705f58247320bc2cef975e7574939"
 };
 
 const testableUri = endpoint + "v2/txs/history";
@@ -251,6 +253,10 @@ describe("/txs/history", function() {
   it("should respond to reward addresses with relevant txs and certs", async() => {
     const result = await axios.post(testableUri, dataRewardAddresses);
     expect(result.data).to.not.be.empty;
+
+    // ensures that withdrawal txs on a reward address appear
+    assert.oneOf('f6ee8bc837e3a1bc187da5d28ba67acaf10a9336ff63a243abb879c47b855132', 
+                  result.data.map( (obj: TransactionFrag) => obj.hash));  
 
     const resultsWithCerts = result.data.filter( (obj: TransactionFrag) => obj.certificates.length > 0);
     const certs = resultsWithCerts.map( (obj: TransactionFrag) => obj.certificates).flat();
