@@ -73,7 +73,7 @@ export const handlePoolInfo = (p: Pool) => async (req: Request, res: Response):P
 
     let info = {};
     try {
-      const endpointResponse = await axios.get(smashEndpoint+metadataHash); 
+      const endpointResponse = await axios.get(`${smashEndpoint}${hash}/${metadataHash}`); 
       if(endpointResponse.status === 200){
         info = endpointResponse.data;
       }else{
