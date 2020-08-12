@@ -123,7 +123,7 @@ export const rowToCertificate = (row:any):Certificate|null => {
         , ipv6: obj.ipv6
         , dnsName: obj.dnsName
         , dnsSrvName: obj.dnsSrvName
-        , port: obj.port.toString()
+        , port: obj.port ? obj.port.toString() : null
       }))
       : [];
                                                      
