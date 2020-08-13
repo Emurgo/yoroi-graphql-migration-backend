@@ -160,8 +160,8 @@ export const askTransactionHistory = async (
       , txHash: obj.f3}));
     const outputs = row.outAddrValPairs.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString() }));
     const withdrawals : TransOutputFrag[] = row.withdrawals 
-                                          ? row.withdrawals.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString() })) 
-                                          : [];
+      ? row.withdrawals.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString() })) 
+      : [];
     const certificates = row.certificates !== null
       ? row.certificates
         .map(rowToCertificate) 

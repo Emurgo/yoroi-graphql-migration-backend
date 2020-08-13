@@ -1,47 +1,59 @@
 import axios from "axios";
+import { Pool } from "pg";
+import { Request, Response } from "express";
 
-import { contentTypeHeaders, graphqlEndpoint, UtilEither} from "../utils";
+import config from "config";
+import { assertNever, contentTypeHeaders, graphqlEndpoint, isHex, UtilEither, validateAddressesReq } from "../utils";
 
-interface UtxoFrag {
-  address: string;
-  txHash: string;
-  index: number
-  value: string;
-  transaction: TransactionFrag;
-}
+const utxoForAddressQuery = `
+  select tx_out.address
+       , tx.hash
+       , tx_out.index
+       , tx_out.value
+       , block.block_no as "blockNumber"
+  FROM tx
+  JOIN tx_out
+    ON tx.id = tx_out.tx_id
+  LEFT JOIN tx_in
+    ON tx_out.tx_id = tx_in.tx_out_id
+   AND tx_out.index::smallint = tx_in.tx_out_index::smallint
+  JOIN block
+    on block.id = tx.block
+  WHERE tx_in.tx_in_id IS NULL
+    and (   tx_out.address = any(($1)::varchar array) 
+         or tx_out.payment_cred = any(($2)::bytea array));
+`;
 
-interface TransactionFrag {
-    block: BlockFrag;
-}
+const addressesRequestLimit:number = config.get("server.addressRequestLimit");
 
-interface BlockFrag {
-    number: number;
-}
-
-
-export const askUtxoForAddresses = async (addresses: string[]) : Promise<UtilEither<UtxoFrag[]>> => {
-  const query = `
-            query UtxoForAddresses($addresses: [String]) {
-              utxos(where: {
-                address: {
-                  _in: $addresses
-                }
-              }) {
-                address
-                txHash
-                index
-                value
-                transaction {
-                      block { number }
-                }
-              }
-            }`;
-  const ret = await axios.post(graphqlEndpoint, 
-    JSON.stringify({query: query, variables: { addresses: addresses}}),
-    contentTypeHeaders);
-  if("data" in ret && "data" in ret.data && Array.isArray(ret.data.data.utxos))
-    return { kind: "ok", value: ret.data.data.utxos };
-  else
-    return { kind: "error", errMsg: "utxoForAddresses, could not understand graphql response" };
+export const utxoForAddresses = (pool: Pool) => async (req: Request, res: Response) => {
+  if(!req.body || !req.body.addresses) {
+    throw new Error("error, no addresses.");
+    return;
+  }
+  const verifiedAddresses = validateAddressesReq(addressesRequestLimit
+    , req.body.addresses);
+  switch(verifiedAddresses.kind){
+  case "ok": {
+    const paymentCreds = verifiedAddresses.value.filter(isHex).map((s:string) => `\\x${s}`);
+    const result = await pool.query(utxoForAddressQuery, [verifiedAddresses.value, paymentCreds]);
+    const utxos = result.rows.map ( utxo => 
+      ({ utxo_id: `${utxo.hash}:${utxo.index}`
+        , tx_hash: utxo.hash
+        , tx_index: utxo.index
+        , receiver: utxo.address
+        , amount: utxo.value.toString()
+        , block_num: utxo.blockNumber }));
+    res.send(utxos);
+    return;
+  }
+  case "error":
+    throw new Error(verifiedAddresses.errMsg);
+    return;
+  default: return assertNever(verifiedAddresses);
+  }
 };
+
+
+
 
