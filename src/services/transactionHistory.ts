@@ -25,15 +25,25 @@ const askTransactionSqlQuery = `
   with
     hashes as (
       select distinct hash
-      from (select "txHash" as hash
-            from "TransactionInput"
-            where "address" = ANY(($1)::varchar array)
+      from (
+            select tx.hash as hash
+            FROM tx
+            JOIN tx_in 
+              ON tx_in.tx_in_id = tx.id
+            JOIN tx_out source_tx_out 
+              ON tx_in.tx_out_id = source_tx_out.tx_id 
+             AND tx_in.tx_out_index::smallint = source_tx_out.index::smallint
+            JOIN tx source_tx 
+              ON source_tx_out.tx_id = source_tx.id
+            WHERE source_tx_out.address = ANY(($1)::varchar array)
+               OR source_tx_out.payment_cred = ANY(($5)::bytea array)
             union
             select tx.hash as hash
             from tx
             join tx_out
               on tx.id = tx_out.tx_id
             where tx_out.address = ANY(($1)::varchar array)
+               or tx_out.payment_cred = ANY(($5)::bytea array)
             union
             select tx.hash as hash
             from tx 
@@ -142,16 +152,23 @@ const graphQLQuery = `
 
 const MAX_INT = "2147483647";
 
+const HEX_LENGTH = 56;
+
+const HEX_REGEXP = RegExp('^[0-9a-fA-F]+$')
+
 export const askTransactionHistory = async ( 
   pool: Pool
   , limit: number
   , addresses: string[]
   , afterNum: UtilEither<BlockNumByTxHashFrag>
   , untilNum: UtilEither<number>) : Promise<UtilEither<TransactionFrag[]>> => {
+  const paymentCreds = addresses.filter((s:string) => s.length === HEX_LENGTH && HEX_REGEXP.test(s))
+                                .map((s:string) => `\\x${s}`);
   const ret = await pool.query(askTransactionSqlQuery, [ addresses
     , untilNum.kind === "ok" ? untilNum.value : 0
     , afterNum.kind === "ok" ? afterNum.value.block.number : 0
-    , limit]);
+    , limit
+    , paymentCreds]);
   const txs = ret.rows.map( (row: any):TransactionFrag => {
     const inputs = row.inAddrValPairs.map( ( obj:any ): TransInputFrag => ({ address: obj.f1
       , amount: obj.f2.toString() 
