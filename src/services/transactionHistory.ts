@@ -153,15 +153,20 @@ export const askTransactionHistory = async (
     , afterNum.kind === "ok" ? afterNum.value.block.number : 0
     , limit]);
   const txs = ret.rows.map( (row: any):TransactionFrag => {
-    const inputs = row.inAddrValPairs.map( ( obj:any ): TransInputFrag => ({ address: obj.f1
-      , amount: obj.f2.toString() 
-      , id: obj.f3.concat(obj.f4.toString())
-      , index: obj.f4
-      , txHash: obj.f3}));
-    const outputs = row.outAddrValPairs.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString() }));
+    const inputs = row.inAddrValPairs 
+      ? row.inAddrValPairs.map( ( obj:any ): TransInputFrag => 
+        ({ address: obj.f1
+          , amount: obj.f2.toString() 
+          , id: obj.f3.concat(obj.f4.toString())
+          , index: obj.f4
+          , txHash: obj.f3}))
+      : []; 
+    const outputs = row.outAddrValPairs 
+      ? row.outAddrValPairs.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString() }))
+      : [];
     const withdrawals : TransOutputFrag[] = row.withdrawals 
-                                          ? row.withdrawals.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString() })) 
-                                          : [];
+      ? row.withdrawals.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString() })) 
+      : [];
     const certificates = row.certificates !== null
       ? row.certificates
         .map(rowToCertificate) 
