@@ -37,19 +37,19 @@ interface Pointer {
 }
 
 
-const askRegHistory = async (pool: Pool, addresses: string[]): Promise<Dictionary<Pointer|null>> => {
+const askRegHistory = async (pool: Pool, addresses: string[]): Promise<Dictionary<Pointer[]>> => {
 
   const stakeCred = addresses.filter((s:string)=>HEX_REGEXP.test(s)).map((s:string) => `\\x${s}`);
   const history = await pool.query(regHistoryQuery, [stakeCred]);
-  const ret : Dictionary<Pointer|null> = {};
+  const ret : Dictionary<Pointer[]> = {};
   for(const addr of addresses) {
-    const pointer  = history.rows.filter( (r:any) => r.stakeCred.toString("hex") === addr)
+    const pointers = history.rows.filter( (r:any) => r.stakeCred.toString("hex") === addr)
       .map( (r:any) => ({ slot: r.slotNo
         , txIndex: r.txIndex
         , certIndex: r.certIndex 
         , certType: r.certType}));
 
-    ret[addr] = pointer.length > 0 ? pointer[0] : null;
+    ret[addr] = pointers
   }
   return ret;
 };

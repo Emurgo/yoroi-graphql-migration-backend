@@ -98,7 +98,7 @@ Array<{
 
 ```js
 {
-  [addresses: string]: Pointer;
+  [addresses: string]: Array<Pointer>;
 };
 type Pointer = null | {|
       slot: number,
