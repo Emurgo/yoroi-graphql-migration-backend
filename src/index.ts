@@ -15,7 +15,7 @@ import * as utils from "./utils";
 import * as middleware from "./middleware";
 
 import { askBestBlock } from "./services/bestblock";
-import { askUtxoForAddresses } from "./services/utxoForAddress";
+import { utxoForAddresses } from "./services/utxoForAddress";
 import { askBlockNumByHash, askBlockNumByTxHash, askTransactionHistory } from "./services/transactionHistory";
 import { askFilterUsedAddresses } from "./services/filterUsedAddress";
 import { askUtxoSumForAddresses } from "./services/utxoSumForAddress";
@@ -71,45 +71,6 @@ const bestBlock = async (req: Request, res: Response) => {
     throw new Error(result.errMsg);
     return;
   default: return utils.assertNever(result);
-  }
-};
-
-const utxoForAddresses = async (req: Request, res: Response) => {
-  if(!req.body || !req.body.addresses) {
-    throw new Error("error, no addresses.");
-    return;
-  }
-  const verifiedAddresses = utils.validateAddressesReq(addressesRequestLimit
-    , req.body.addresses);
-  switch(verifiedAddresses.kind){
-  case "ok": {
-    const result = await askUtxoForAddresses(verifiedAddresses.value);
-    switch(result.kind)
-    {
-    case "ok":{
-      const utxos = result.value.map( utxo => 
-        ({
-          utxo_id: `${utxo.txHash}:${utxo.index}`,
-          tx_hash: utxo.txHash,
-          tx_index: utxo.index,
-          receiver: utxo.address,
-          amount: utxo.value,
-          block_num: utxo.transaction.block.number,
-        }));
-      res.send(utxos);
-      return;
-    }
-    case "error":
-      throw new Error(result.errMsg);
-      return;
-    default: return utils.assertNever(result);
-
-    }
-  }
-  case "error":
-    throw new Error(verifiedAddresses.errMsg);
-    return;
-  default: return utils.assertNever(verifiedAddresses);
   }
 };
 
@@ -295,7 +256,7 @@ const routes : Route[] = [ { path: "/v2/bestblock"
 }
 , { path: "/txs/utxoForAddresses"
   , method: "post"
-  , handler: utxoForAddresses
+  , handler: utxoForAddresses(pool)
 }
 , { path: "/txs/utxoSumForAddresses"
   , method: "post"
