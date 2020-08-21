@@ -17,7 +17,7 @@ export const applyMiddleware = (
   }
 };
 
-const HEX_REGEXP = RegExp("^[0-9a-fA-F]+$"); 
+export const HEX_REGEXP = RegExp("^[0-9a-fA-F]+$"); 
 const HEX_LENGTH = 56;
 export const isHex = (s:string) =>
   s.length === HEX_LENGTH && HEX_REGEXP.test(s);

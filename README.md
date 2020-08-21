@@ -85,6 +85,30 @@ Array<{
 }>;
 ```
 
+### `/api/getRegistrationHistory`
+
+#### Input
+
+```js
+{
+  addresses: Array<string> // hex of reward stake addresses
+}
+```
+
+#### Output
+
+```js
+{
+  [addresses: string]: Array<Pointer>;
+};
+type Pointer = null | {|
+      slot: number,
+      txIndex: number,
+      certIndex: number,
+      certType: "StakeRegistration"|"StakeDeregistration",
+    |};
+```
+
 ### `/api/getAccountState`
 
 #### Input
