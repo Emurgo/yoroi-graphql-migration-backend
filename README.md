@@ -201,6 +201,10 @@ Up to 50 addresses in the request
 
 ```js
 {
+  // addresses may contain several different things.
+  // 1. For reward addresses, this field accepts the hex (as a string)
+  // 2. For Ptr / enterprise / base addresses, this field will accept the hex of the _payment key_ as a string.
+  // 3. For Byone, use the Ae2/Dd address.
   addresses: Array<string>,
   // omitting "after" means you query starting from the genesis block
   after?: {
