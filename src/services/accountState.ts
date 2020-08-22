@@ -3,6 +3,7 @@ import { assertNever, validateAddressesReq } from "../utils";
 import config from "config";
 import { Pool } from "pg";
 import { Request, Response } from "express";
+import { Address } from "@emurgo/cardano-serialization-lib-nodejs";
 
 const addrReqLimit:number = config.get("server.addressRequestLimit");
 
@@ -29,20 +30,67 @@ interface Dictionary<T> {
     [key: string]: T;
 }
 
+const queryCardanoCli = async (address: string /* hex-encoded string */): Promise<null | {
+  remainingAmount: string,
+}> => {
+  console.log(address);
+  let bech32Addr;
+  try {
+    const wasmAddr = Address.from_bytes(Buffer.from(address, "hex"));
+    bech32Addr = wasmAddr.to_bech32("stake");
+  } catch (_e) {
+    console.log(`invalid address ${address}`);
+    return null;
+  }
+
+  // stake1uyznuh5q22uegen83m09d4wr8ahcp02aysz4yx6ht2d8zggtxc7m7 (empty)
+  // stake1u8pcjgmx7962w6hey5hhsd502araxp26kdtgagakhaqtq8squng76 (not empty)
+  const cardanoCliResponse: Array<{
+    address: string, // bech32
+    delegation: null | string, // bech32
+    rewardAccountBalance: number, // cardano-cli returns this as a number even though it really shouldn't
+  }> = await (async (addressPassedToCli: string) => [
+    {
+      "address": addressPassedToCli,
+      "delegation": "pool1pu5jlj4q9w9jlxeu370a3c9myx47md5j5m2str0naunn2q3lkdy", // mock data
+      "rewardAccountBalance": 4506726 // mock data
+    }
+  ])(bech32Addr);
+
+  return {
+    remainingAmount: cardanoCliResponse[0].rewardAccountBalance.toString() // cardano-cli returns this as a number even though it really shouldn't
+  };
+};
+
 const askAccountRewards = async (pool: Pool, addresses: string[]): Promise<Dictionary<RewardInfo|null>> => {
-  const rewards = await pool.query(accountRewardsQuery, [addresses]);
   const ret : Dictionary<RewardInfo|null> = {};
-  for(const row of rewards.rows) {
-    ret[row.stakeAddress.toString("hex")] = { remainingAmount: row.remainingAmount
-      , rewards: row.reward
-      , withdrawals: row.withdrawal
-      , poolOperator: null //not implemented
+  for (const addr of addresses) {
+    const result = await queryCardanoCli(addr);
+    if (result == null) {
+      ret[addr] = null;
+      continue;
+    }
+    ret[addr] = {
+      remainingAmount: result.remainingAmount,
+      rewards: "", // not implemented yet
+      withdrawals: "", // not implemented yet
+      poolOperator: null, // not implemented yet
     };
   }
-  for( const addr of addresses)
-    if (!(addr in ret))
-      ret[addr] = null;
   return ret;
+  // const rewards = await pool.query(accountRewardsQuery, [addresses]);
+  // const ret : Dictionary<RewardInfo|null> = {};
+  // for(const row of rewards.rows) {
+  //   ret[row.stakeAddress.toString("hex")] = { remainingAmount: row.remainingAmount
+  //     , rewards: row.reward
+  //     , withdrawals: row.withdrawal
+  //     , poolOperator: null //not implemented
+  //   };
+  // }
+  // for( const addr of addresses)
+  //   if (!(addr in ret))
+  //     ret[addr] = null;
+  // return ret;
 };
 
 export const handleGetAccountState = (pool: Pool) => async (req: Request, res:Response): Promise<void> => {
@@ -62,6 +110,4 @@ export const handleGetAccountState = (pool: Pool) => async (req: Request, res:Re
     return;
   default: return assertNever(verifiedAddrs);
   }
-  
-
 };

@@ -128,8 +128,8 @@ type Pointer = null | {|
 type RewardInfo = null | {|
       poolOperator: null, // not implemented yet
       remainingAmount: string, // current remaining awards
-      rewards: string, //all the rewards every added
-      withdrawals: string // all the withdrawals that have ever happened
+      rewards: string, //all the rewards every added (not implemented yet)
+      withdrawals: string // all the withdrawals that have ever happened (not implemented yet)
     |};
 ```
 
