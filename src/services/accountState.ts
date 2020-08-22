@@ -33,11 +33,11 @@ interface Dictionary<T> {
 const queryCardanoCli = async (address: string /* hex-encoded string */): Promise<null | {
   remainingAmount: string,
 }> => {
-  console.log(address);
   let bech32Addr;
   try {
     const wasmAddr = Address.from_bytes(Buffer.from(address, "hex"));
     bech32Addr = wasmAddr.to_bech32("stake");
+    wasmAddr.free();
   } catch (_e) {
     console.log(`invalid address ${address}`);
     return null;
