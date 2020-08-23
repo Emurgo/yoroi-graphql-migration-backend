@@ -45,11 +45,16 @@ const queryCardanoCli = async (address: string /* hex-encoded string */): Promis
   const commandResult = await execShellCommand(`/var/lib/nginx/bin/stake-wrapper ${bech32Addr}`);
   // stake1uyznuh5q22uegen83m09d4wr8ahcp02aysz4yx6ht2d8zggtxc7m7 (empty)
   // stake1u8pcjgmx7962w6hey5hhsd502araxp26kdtgagakhaqtq8squng76 (not empty)
+  // stake1uy4ntxtgap3ry4fqv6svhehnc4krsag6uk45tvz9af9ngcsjpl8sq (empty array result)
   const cardanoCliResponse: Array<{
     address: string, // bech32
     delegation: null | string, // bech32
     rewardAccountBalance: number, // cardano-cli returns this as a number even though it really shouldn't
   }> = JSON.parse(commandResult);
+
+  if (cardanoCliResponse.length === 0) {
+    return null;
+  }
   return {
     remainingAmount: cardanoCliResponse[0].rewardAccountBalance.toString() // cardano-cli returns this as a number even though it really shouldn't
   };
