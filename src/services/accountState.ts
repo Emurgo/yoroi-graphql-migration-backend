@@ -42,24 +42,30 @@ const queryCardanoCli = async (address: string /* hex-encoded string */): Promis
     console.log(`invalid address ${address}`);
     return null;
   }
-
+  const commandResult = await execShellCommand(`/var/lib/nginx/bin/stake-wrapper ${bech32Addr}`);
   // stake1uyznuh5q22uegen83m09d4wr8ahcp02aysz4yx6ht2d8zggtxc7m7 (empty)
   // stake1u8pcjgmx7962w6hey5hhsd502araxp26kdtgagakhaqtq8squng76 (not empty)
   const cardanoCliResponse: Array<{
     address: string, // bech32
     delegation: null | string, // bech32
     rewardAccountBalance: number, // cardano-cli returns this as a number even though it really shouldn't
-  }> = await (async (addressPassedToCli: string) => [
-    {
-      "address": addressPassedToCli,
-      "delegation": "pool1pu5jlj4q9w9jlxeu370a3c9myx47md5j5m2str0naunn2q3lkdy", // mock data
-      "rewardAccountBalance": 4506726 // mock data
-    }
-  ])(bech32Addr);
-
+  }> = JSON.parse(commandResult);
   return {
     remainingAmount: cardanoCliResponse[0].rewardAccountBalance.toString() // cardano-cli returns this as a number even though it really shouldn't
   };
+};
+
+const execShellCommand = (cmd: string): Promise<string> => {
+  const exec = require('child_process').exec;
+  return new Promise((resolve, reject) => {
+    exec(cmd, (err: string, stdout: string, stderr: string) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve(stdout ? stdout : stderr);
+    });
+  });
 };
 
 const askAccountRewards = async (pool: Pool, addresses: string[]): Promise<Dictionary<RewardInfo|null>> => {
