@@ -10,23 +10,23 @@ const regHistoryQuery = `
   select block.slot_no as "slotNo"
        , tx.block_index as "txIndex"
        , cc.cert_index as "certIndex" 
-       , sa.hash as "stakeCred"
+       , sa.hash_raw as "stakeCred"
        , 'StakeRegistration' as "certType"
   from stake_registration cc 
   join stake_address sa on cc.addr_id = sa.id 
   join tx on cc.tx_id = tx.id 
   join block on tx.block=block.id 
-  where sa.hash = any(($1)::bytea array) 
+  where sa.hash_raw = any(($1)::bytea array) 
   union 
   select block.slot_no as "slotNo"
        , tx.block_index as "txIndex"
        , cc.cert_index as "certIndex" 
-       , sa.hash as "stakeCred"
+       , sa.hash_raw as "stakeCred"
        , 'StakeDeregistration' as "certType"
   from stake_deregistration cc 
   join stake_address sa on cc.addr_id = sa.id 
   join tx on cc.tx_id = tx.id join block on tx.block=block.id 
-  where sa.hash = any(($1)::bytea array) 
+  where sa.hash_raw = any(($1)::bytea array) 
 `;
 
 interface Pointer {

@@ -7,7 +7,7 @@ select 'StakeRegistration' as "jsType"
      , 'CertRegKey' as "formalType"
      , reg.tx_id as "txId"
      , reg.cert_index as "certIndex"
-     , encode(addr.hash,'hex') as "stakeCred"
+     , encode(addr.hash_raw,'hex') as "stakeCred"
      , null::text as "poolHashKey"
      , null::text as "poolParamsOperator"
      , null::text as "poolParamsVrfKeyHash"
@@ -32,7 +32,7 @@ select 'StakeDeregistration' as "jsType"
      , 'CertDeregKey' as "formalType"
      , dereg.tx_id as "txId"
      , dereg.cert_index as "certIndex"
-     , encode(addr.hash,'hex') as "stakeCred"
+     , encode(addr.hash_raw,'hex') as "stakeCred"
      , null::text as "poolHashKey"
      , null::text as "poolParamsOperator"
      , null::text as "poolParamsVrfKeyHash"
@@ -57,7 +57,7 @@ select 'StakeDelegation' as "jsType"
      , 'CertDelegate' as "formalType"
      , del.tx_id as "txId"
      , del.cert_index as "certIndex"
-     , encode(addr.hash,'hex') as "stakeCred"
+     , encode(addr.hash_raw,'hex') as "stakeCred"
      , encode(pool_hash.hash, 'hex') as "poolHashKey"
      , null::text as "poolParamsOperator"
      , null::text as "poolParamsVrfKeyHash"
@@ -75,10 +75,8 @@ select 'StakeDelegation' as "jsType"
 from delegation as del
 join stake_address as addr
   on del.addr_id = addr.id
-join pool_update 
-  on del.update_id = pool_update.id
 join pool_hash
-  on pool_update.hash_id = pool_hash.id
+  on del.pool_id = pool_hash.id
 
 UNION ALL
   
@@ -99,7 +97,7 @@ select 'PoolRegistration' as "jsType"
      , pool.pledge as "poolParamsPledge"
      , pool.fixed_cost as "poolParamsCost"
      , pool.margin as "poolParamsMargin"
-     , encode(addr.hash,'hex') as "poolParamsRewardAccount"
+     , encode(addr.hash_raw,'hex') as "poolParamsRewardAccount"
      , ( select json_agg(encode(hash,'hex'))
          from pool_owner
          where pool_owner.pool_id = pool_hash.id) as "poolParamsOwners" 
@@ -145,10 +143,8 @@ select 'PoolRetirement' as "jsType"
      , null as "mirPot"
      , null::json as "rewards"
 from pool_retire as pool
-join pool_update as pu
-  on pu.id = pool.update_id
 join pool_hash 
-  on pool_hash.id = pu.hash_id
+  on pool_hash.id = pool.hash_id
 
 UNION ALL
   
@@ -170,7 +166,7 @@ select 'MoveInstantaneousRewardsCert' as "jsType"
      , null::text as "poolParamsMetaDataHash"
      , null::integer as "epoch"
      , 'Reserves' as "mirPot"
-     , json_agg((encode(addr.hash,'hex'), reserve.amount)) as "rewards"
+     , json_agg((encode(addr.hash_raw,'hex'), reserve.amount)) as "rewards"
 from reserve
 join stake_address as addr
   on addr.id = reserve.addr_id
@@ -196,7 +192,7 @@ select 'MoveInstantaneousRewardsCert' as "jsType"
      , null::text as "poolParamsMetaDataHash"
      , null::integer as "epoch"
      , 'Treasury' as "mirPot"
-     , json_agg((encode(addr.hash,'hex'), treasury.amount)) as "rewards"
+     , json_agg((encode(addr.hash_raw,'hex'), treasury.amount)) as "rewards"
 from treasury
 join stake_address as addr
   on addr.id = treasury.addr_id
