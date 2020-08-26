@@ -54,9 +54,11 @@ const askTransactionSqlQuery = `
             union
             select tx.hash as hash
             from tx
-            join "Withdrawal" as w
+            join withdrawal as w
             on tx.id = w."tx_id"
-            where encode(w."address",'hex') = any(($1)::varchar array)
+            join stake_address as addr
+            on w.addr_id = addr.id
+            where addr.hash_raw = any(($5)::bytea array)
            ) hashes
     )
   select tx.hash
@@ -86,8 +88,10 @@ const askTransactionSqlQuery = `
        , (select json_agg(("address", "value") order by "index" asc)  as outAddrValPairs
           from "TransactionOutput" hasura_to
           where hasura_to."txHash" = tx.hash) as "outAddrValPairs"
-       , (select json_agg((encode("address",'hex'), "amount") order by "Withdrawal"."id" asc)
-          from "Withdrawal" 
+       , (select json_agg((encode(addr."hash_raw",'hex'), "amount") order by w."id" asc)
+          from withdrawal as w
+          join stake_address as addr
+          on addr.id = w.addr_id
           where tx_id = tx.id) as withdrawals
        , pool_meta_data.hash as metadata
        , (select json_agg(row_to_json(combined_certificates) order by "certIndex" asc)
