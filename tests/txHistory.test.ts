@@ -282,6 +282,7 @@ describe("/txs/history", function() {
   it("should respond to reward addresses with relevant txs and certs", async() => {
     const result = await axios.post(testableUri, dataRewardAddresses);
     expect(result.data).to.not.be.empty;
+    console.log(result.data);
 
     // ensures that withdrawal txs on a reward address appear
     assert.oneOf("f6ee8bc837e3a1bc187da5d28ba67acaf10a9336ff63a243abb879c47b855132", 

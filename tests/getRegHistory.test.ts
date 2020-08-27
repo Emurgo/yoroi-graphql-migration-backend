@@ -14,7 +14,7 @@ describe("/getRegistrationHistory", function() {
     const result = await axios({method: "post", url: testableUri, data: {addresses: [realAddress]}});
     expect(result.data).not.be.empty;
     expect(result.data).to.have.property(realAddress);
-    expect(result.data[realAddress]).to.be.an('array').that.is.not.empty;
+    expect(result.data[realAddress]).to.be.an("array").that.is.not.empty;
     expect(result.data[realAddress][0]).to.have.property("slot");
     expect(result.data[realAddress][0]).to.have.property("txIndex");
     expect(result.data[realAddress][0]).to.have.property("certIndex");
@@ -28,8 +28,8 @@ describe("/getRegistrationHistory", function() {
     const result = await axios({method: "post", url: testableUri, data: {addresses: mixedAddresses}});
     expect(result.data).to.have.property(fakeAddress);
     expect(result.data).to.have.property(realAddress);
-    expect(result.data[fakeAddress]).to.be.an('array').that.is.empty;
-    expect(result.data[realAddress]).to.be.an('array').that.is.not.empty;
+    expect(result.data[fakeAddress]).to.be.an("array").that.is.empty;
+    expect(result.data[realAddress]).to.be.an("array").that.is.not.empty;
 
   });
 });

@@ -49,7 +49,7 @@ const askRegHistory = async (pool: Pool, addresses: string[]): Promise<Dictionar
         , certIndex: r.certIndex 
         , certType: r.certType}));
 
-    ret[addr] = pointers
+    ret[addr] = pointers;
   }
   return ret;
 };
