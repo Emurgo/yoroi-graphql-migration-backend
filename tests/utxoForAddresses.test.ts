@@ -30,6 +30,8 @@ describe("/txs/utxoForAddresses", function() {
     expect(result.data[0]).to.have.property("amount");
     expect(result.data[0]).to.have.property("block_num");
     expect(result.data[0]).to.have.property("tx_index");
+    expect(result.data[0]).to.have.property("tx_hash");
+    expect(result.data[0].tx_hash).to.be.an("string");
     expect(result.data[0].amount).to.be.equal("200000");
     expect(result.data[0].block_num).to.be.equal(322087);
     expect(result.data[0].tx_index).to.be.equal(1);

@@ -7,7 +7,7 @@ import { assertNever, contentTypeHeaders, graphqlEndpoint, isHex, UtilEither, va
 
 const utxoForAddressQuery = `
   select tx_out.address
-       , tx.hash
+       , encode(tx.hash,'hex') as hash
        , tx_out.index
        , tx_out.value
        , block.block_no as "blockNumber"
