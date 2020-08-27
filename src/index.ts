@@ -17,7 +17,7 @@ import * as middleware from "./middleware";
 import { askBestBlock } from "./services/bestblock";
 import { utxoForAddresses } from "./services/utxoForAddress";
 import { askBlockNumByHash, askBlockNumByTxHash, askTransactionHistory } from "./services/transactionHistory";
-import { askFilterUsedAddresses } from "./services/filterUsedAddress";
+import { filterUsedAddresses } from "./services/filterUsedAddress";
 import { askUtxoSumForAddresses } from "./services/utxoSumForAddress";
 import { handleSignedTx } from "./services/signedTransaction";
 import { handlePoolInfo } from "./services/poolInfo";
@@ -74,43 +74,6 @@ const bestBlock = async (req: Request, res: Response) => {
   default: return utils.assertNever(result);
   }
 };
-
-
-const filterUsedAddresses = async (req: Request, res: Response) => {
-  if(!req.body || !req.body.addresses) {
-    throw new Error("error, no addresses.");
-    return;
-  }
-  const verifiedAddresses = utils.validateAddressesReq(addressesRequestLimit
-    , req.body.addresses);
-  switch(verifiedAddresses.kind){
-  case "ok": {
-    const result = await askFilterUsedAddresses(verifiedAddresses.value);
-    switch(result.kind){
-    case "ok":{
-      const resultSet = new Set(result.value.flatMap( tx => [tx.inputs, tx.outputs]).flat().map(x => x.address));
-      const verifiedSet = new Set(verifiedAddresses.value);
-      const intersection = new Set();
-      for (const elem of resultSet)
-        if(verifiedSet.has(elem))
-          intersection.add(elem);
-      res.send([...intersection]);
-      return;}
-    case "error":
-      throw new Error(result.errMsg);
-      return;
-    default: return utils.assertNever(result);
-    }
-    return;
-  }
-  case "error":
-    throw new Error(verifiedAddresses.errMsg);
-    return;
-  default: return utils.assertNever(verifiedAddresses);
-  }
-};
-
-
 
 const utxoSumForAddresses = async (req:  Request, res:Response) => {
   if(!req.body || !req.body.addresses) {
@@ -253,7 +216,7 @@ const routes : Route[] = [ { path: "/v2/bestblock"
 }
 , { path: "/v2/addresses/filterUsed"
   , method: "post"
-  , handler: filterUsedAddresses
+  , handler: filterUsedAddresses(pool)
 }
 , { path: "/txs/utxoForAddresses"
   , method: "post"
