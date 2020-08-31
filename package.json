@@ -15,7 +15,7 @@
   "license": "MIT",
   "dependencies": {
     "@emurgo/cardano-serialization-lib-nodejs": "^2.0.0",
-    "@types/chai": "^4.2.11",
+    "@types/chai": "^4.2.12",
     "@types/compression": "^1.7.0",
     "@types/cors": "^2.8.6",
     "@types/express": "^4.17.6",
