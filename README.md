@@ -366,6 +366,7 @@ None (GET request)
 {
   isServerOk: boolean, // heartbeat endpoint for server. IF you want the node status, use /api/v2/importerhealthcheck instead
   isMaintenance: boolean, // manually set and indicates you should disable ADA integration in your app until it returns false. Use to avoid weird app-side behavior during server upgrdes.
+  serverTime: number, // in millisecond unix time
 }
 ```
 
