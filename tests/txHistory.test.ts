@@ -47,6 +47,14 @@ const dataEmptyForNoTxAfterAddr = {
     tx: "a5fb58900cbd0a6f5b77bac47fa950555dddb85f684a074b7a748f5b6e3b1aad",
     block: "6575c26f4eb1533d2087e5e755ff0b606f4fc663a40f7aa558c38c389400f2f0"},
 };
+const dataShouldThrowReferenceErrors = {
+  addresses: [
+    "Ae2tdPwUPEZHu3NZa6kCwet2msq4xrBXKHBDvogFKwMsF18Jca8JHLRBas7"],
+  untilBlock: hashForUntilBlock,
+  after: {
+    tx: "0000000000000000000000000000000000000000000000000000000000000000",
+    block: "790eb4d6ef2fea7cceebf22c66c20518616d5331966f6f9b4ca3a308b9c3ceb1"},
+};
 
 const dataSortedDescHashOnAfter = {
   addresses: [
@@ -102,7 +110,7 @@ const dataShelleyCerts = {
 
 const dataPaymentCreds = {
   addresses: ["x9566a8f301fb8a046e44557bb38dfb9080a1213f17f200dcd3808169"
-             ,"211c082781577c6b8a4832d29011baab323947e59fbd6ec8995b6c5a"]
+    ,"211c082781577c6b8a4832d29011baab323947e59fbd6ec8995b6c5a"]
   , untilBlock: "d6f6cd7101ce4fa80f7d7fe78745d2ca404705f58247320bc2cef975e7574939"
 };
 
@@ -127,7 +135,18 @@ describe("/txs/history", function() {
     const result = await axios.post(testableUri, dataEmptyForNoTxAfterAddr );
     expect(result.data).be.empty;
 
-  }); 
+  });
+
+  it("should throw reference errors for a tx that doesn't match the block in after.", async() => {
+    try {
+      const ret = await axios.post(testableUri,  dataShouldThrowReferenceErrors );
+      expect(1).to.be.equal(0);
+    } catch (err) {
+      expect(err.response.status).to.be.equal(500);
+      expect(err.response.data.error.response).to.be.equal("REFERENCE_TX_NOT_FOUND");
+    }
+
+  });
 
   it("should return elements sorted by time asc (and hash asc but that is not tested) if after is present", async () => {
     // NOTE: the original test in yoroi-backend-service:../v2-transaction-history.integration-test.js
