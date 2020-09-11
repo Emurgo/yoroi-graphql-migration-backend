@@ -36,7 +36,7 @@ const queryCardanoCli = async (address: string /* hex-encoded string */): Promis
   let bech32Addr;
   try {
     const wasmAddr = Address.from_bytes(Buffer.from(address, "hex"));
-    bech32Addr = wasmAddr.to_bech32("stake");
+    bech32Addr = wasmAddr.to_bech32();
     wasmAddr.free();
   } catch (_e) {
     console.log(`invalid address ${address}`);
