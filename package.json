@@ -49,7 +49,7 @@
     "eslint": "^7.5.0",
     "eslint-config-airbnb-typescript": "^9.0.0",
     "eslint-plugin-import": "^2.22.0",
-    "@types/ws": "^7.2.6",
+    "@types/ws": "^7.2.7",
     "ramda": "^0.27.0"
   }
 }
