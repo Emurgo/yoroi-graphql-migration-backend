@@ -155,7 +155,7 @@ const txHistory = async (req: Request, res: Response) => {
     const untilBlockNum = await askBlockNumByHash(referenceBestBlock);
     const afterBlockNum = await askBlockNumByTxHash(referenceTx );
 
-    if(untilBlockNum.kind === "error" && typeof referenceBestBlock !== "undefined"){
+    if(untilBlockNum.kind === "error" && untilBlockNum.errMsg !== utils.errMsgs.noValue ){
       throw new Error("REFERENCE_BEST_BLOCK_MISMATCH");
       return;
     }
