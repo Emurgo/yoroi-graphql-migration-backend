@@ -2,11 +2,9 @@ import { Pool } from "pg";
 import { Request, Response } from "express";
 
 import config from "config";
-import { assertNever, isHex, UtilEither, validateAddressesReq } from "../utils";
+import { assertNever, getCardanoSpendingKeyHash, isHex, validateAddressesReq } from "../utils";
 
-
-
-const filterUsedQuery = `
+const baseQuery = `
   select ( select json_agg((address)) 
            from tx_out 
            where tx_id = outertx.tx_id) as outputs,
@@ -17,13 +15,13 @@ const filterUsedQuery = `
             and tx_in.tx_out_index = tx_out.index 
            where tx_in_id = outertx.tx_id) as inputs
   from tx_out as outertx 
-  where address = any(($1)::varchar array) 
-     or payment_cred = any(($2)::bytea array)
 `;
-
-const resolveAddrQuery = `
-  select json_agg((address)) as addrs
-  from tx_out 
+const filterByAddressQuery = `
+  ${baseQuery}
+  where address = any(($1)::varchar array)
+`;
+const filterByPaymentCredQuery = `
+  ${baseQuery}
   where payment_cred = any(($1)::bytea array)
 `;
 
@@ -37,19 +35,42 @@ export const filterUsedAddresses = (pool : Pool) => async (req: Request, res: Re
   const verifiedAddrs = validateAddressesReq(addressesRequestLimit, req.body.addresses);
   switch(verifiedAddrs.kind){
   case "ok": {
-    const paymentCreds = verifiedAddrs.value.filter(isHex).map((s:string) => `\\x${s}`);
-    const result = await pool.query(filterUsedQuery, [verifiedAddrs.value, paymentCreds]);
-    const addrResult = await pool.query(resolveAddrQuery, [paymentCreds]);
-    const extraAddr = addrResult.rows.length > 0 
-      ?  addrResult.rows[0].addrs || []
-      : [];
-    const resultSet = new Set(result.rows.flatMap( tx => [tx.inputs, tx.outputs]).flat());
-    const verifiedSet = new Set(verifiedAddrs.value.concat(extraAddr));
-    const intersection = new Set();
-    for (const elem of resultSet)
-      if(verifiedSet.has(elem))
-        intersection.add(elem);
-    res.send([...intersection]);
+    const paymentCreds = new Set(verifiedAddrs.value.filter(isHex).map((s:string) => `\\x${s}`));
+    const addresses = new Set(verifiedAddrs.value.filter(addr => !isHex(addr)));
+
+    const result: Set<string> = new Set();
+
+    if (paymentCreds.size > 0) {
+      // 1) Get all transactions that contain one of these payment keys
+      const queryResult = await pool.query(filterByPaymentCredQuery, [Array.from(paymentCreds)]);
+      // 2) get all the addresses inside these transactions
+      const addressesInTxs = queryResult.rows.flatMap( tx => [tx.inputs, tx.outputs]).flat();
+      // 3) get the payment credential for each address in the transaction
+      const keysInTxs: Array<string> = addressesInTxs.reduce(
+        (arr, next) => {
+          const paymentCred = getCardanoSpendingKeyHash(next);
+          if (paymentCred != null) arr.push(paymentCred);
+          return arr;
+        },
+        ([] as Array<string>)
+      );
+      console.log(keysInTxs);
+      // 4) filter addresses to the ones we care about for this filterUsed query
+      keysInTxs
+        .filter(addr => paymentCreds.has(`\\x${addr}`))
+        .forEach(addr => result.add(addr));
+    }
+    if (addresses.size > 0) {
+      // 1) Get all transactions that contain one of these addresses
+      const queryResult = await pool.query(filterByAddressQuery, [Array.from(addresses)]);
+      // 2) get all the addresses inside these transactions
+      const addressesInTxs = queryResult.rows.flatMap( tx => [tx.inputs, tx.outputs]).flat();
+      // 3) filter addresses to the ones we care about for this filterUsed query
+      addressesInTxs
+        .filter(addr => addresses.has(addr))
+        .forEach(addr => result.add(addr));
+    }
+    res.send([...result]);
     return;
 
   }
