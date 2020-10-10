@@ -1,5 +1,11 @@
 import config from "config";
 import { Router, Request, Response, NextFunction } from "express";
+import {
+  Address,
+  BaseAddress,
+  PointerAddress,
+  EnterpriseAddress,
+} from "@emurgo/cardano-serialization-lib-nodejs";
 
 export const contentTypeHeaders = { headers: {"Content-Type": "application/json"}};
 export const graphqlEndpoint:string = config.get("server.graphqlEndpoint");
@@ -110,3 +116,44 @@ export const validateHistoryReq = (addressRequestLimit:number, apiResponseLimit:
   }
 
 };
+
+
+export function getCardanoSpendingKeyHash(
+  bech32Addr: string,
+): (undefined | string) {
+  const getResult = (bytes: Uint8Array | undefined) => {
+    if (bytes == null) return undefined;
+    return Buffer.from(bytes).toString("hex");
+  }
+  try {
+    const wasmAddr = Address.from_bech32(bech32Addr);
+    {
+      const baseAddr = BaseAddress.from_address(wasmAddr);
+      if (baseAddr) {
+        const result = getResult(baseAddr.payment_cred().to_keyhash()?.to_bytes());
+        baseAddr.free();
+        wasmAddr.free();
+        return result;
+      }
+    }
+    {
+      const ptrAddr = PointerAddress.from_address(wasmAddr);
+      if (ptrAddr) {
+        const result = getResult(ptrAddr.payment_cred().to_keyhash()?.to_bytes());
+        ptrAddr.free();
+        wasmAddr.free();
+        return result;
+      }
+    }
+    {
+      const enterpriseAddr = EnterpriseAddress.from_address(wasmAddr);
+      if (enterpriseAddr) {
+        const result = getResult(enterpriseAddr.payment_cred().to_keyhash()?.to_bytes());
+        enterpriseAddr.free();
+        wasmAddr.free();
+        return result;
+      }
+    }
+  } catch (_e) { return undefined; }
+  return undefined;
+}

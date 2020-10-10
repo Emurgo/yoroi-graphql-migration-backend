@@ -61,7 +61,7 @@ const queryCardanoCli = async (address: string /* hex-encoded string */): Promis
 };
 
 const execShellCommand = (cmd: string): Promise<string> => {
-  const exec = require('child_process').exec;
+  const exec = require("child_process").exec;
   return new Promise((resolve, reject) => {
     exec(cmd, (err: string, stdout: string, stderr: string) => {
       if (err) {

@@ -158,7 +158,7 @@ const MAX_INT = "2147483647";
 
 const HEX_LENGTH = 56;
 
-const HEX_REGEXP = RegExp('^[0-9a-fA-F]+$')
+const HEX_REGEXP = RegExp("^[0-9a-fA-F]+$");
 
 export const askTransactionHistory = async ( 
   pool: Pool
@@ -167,7 +167,7 @@ export const askTransactionHistory = async (
   , afterNum: UtilEither<BlockNumByTxHashFrag>
   , untilNum: UtilEither<number>) : Promise<UtilEither<TransactionFrag[]>> => {
   const paymentCreds = addresses.filter((s:string) => s.length === HEX_LENGTH && HEX_REGEXP.test(s))
-                                .map((s:string) => `\\x${s}`);
+    .map((s:string) => `\\x${s}`);
   const ret = await pool.query(askTransactionSqlQuery, [ addresses
     , untilNum.kind === "ok" ? untilNum.value : 0
     , afterNum.kind === "ok" ? afterNum.value.block.number : 0

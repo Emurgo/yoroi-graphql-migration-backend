@@ -12,7 +12,6 @@ const privatePool = "b1fe7ac3669604156c20dcfc08355197af5637c37750d862039670c4";
 describe("/getPoolInfo", function() {
   it("should return information about a pool that has metadata available", async() => {
     const result = await axios({method: "post", url: testableUri, data: {poolIds: [realPoolId]}});
-    console.log(result.data);
     expect(result.data).to.have.property(realPoolId);
 
     expect(result.data[realPoolId]).to.have.property("info");
