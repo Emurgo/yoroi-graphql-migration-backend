@@ -114,7 +114,6 @@ export const validateHistoryReq = (addressRequestLimit:number, apiResponseLimit:
     return {kind: "error", errMsg: "body.addresses: " +validatedAddresses.errMsg};
   default: return assertNever(validatedAddresses);
   }
-
 };
 
 
@@ -124,7 +123,7 @@ export function getCardanoSpendingKeyHash(
   const getResult = (bytes: Uint8Array | undefined) => {
     if (bytes == null) return undefined;
     return Buffer.from(bytes).toString("hex");
-  }
+  };
   try {
     const wasmAddr = Address.from_bech32(bech32Addr);
     {

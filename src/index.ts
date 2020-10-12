@@ -10,7 +10,7 @@ import { Pool } from "pg";
 const semverCompare = require("semver-compare");
 
 import { connectionHandler} from "./ws-server"; 
-import { applyMiddleware, applyRoutes, contentTypeHeaders, graphqlEndpoint, Route } from "./utils";
+import { applyMiddleware, applyRoutes, Route } from "./utils";
 import * as utils from "./utils";
 import * as middleware from "./middleware";
 
