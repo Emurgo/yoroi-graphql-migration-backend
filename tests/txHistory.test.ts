@@ -103,8 +103,11 @@ const dataTxOrdering = {
 };
 
 const dataShelleyCerts = {
-  addresses: ["addr1q9ya8v4pe33nlkgftyd70nhhp407pvnjjcsddhf64sh9gegwtvyxm7r69gx9cwvtg82p87zpwmzj0kj7tjmyraze3pzqe6zxzv"
-    ,"addr1v8vqle5aa50ljr6pu5ndqve29luch29qmpwwhz2pk5tcggqn3q8mu"]
+  addresses: [
+     "addr1q9ya8v4pe33nlkgftyd70nhhp407pvnjjcsddhf64sh9gegwtvyxm7r69gx9cwvtg82p87zpwmzj0kj7tjmyraze3pzqe6zxzv"
+     // enterprise address
+    ,"addr1v8vqle5aa50ljr6pu5ndqve29luch29qmpwwhz2pk5tcggqn3q8mu"
+  ]
   , untilBlock: "d6f6cd7101ce4fa80f7d7fe78745d2ca404705f58247320bc2cef975e7574939"
 };
 
@@ -114,12 +117,46 @@ const dataPaymentCreds = {
   , untilBlock: "d6f6cd7101ce4fa80f7d7fe78745d2ca404705f58247320bc2cef975e7574939"
 };
 
-const dataRewardAddresses = {
-  addresses: ["e10e5b086df87a2a0c5c398b41d413f84176c527da5e5cb641f4598844"
-    ,"e1279cf18e075b222f093746f4f9cad980fd3fc5fcc5f69decef4f9ee9"
-    ,"e19842145a1693dfbf809963c7a605b463dce5ca6b66820341a443501e"]
+const withdrawalRewardAddresses = {
+  addresses: [
+    "e19842145a1693dfbf809963c7a605b463dce5ca6b66820341a443501e"
+  ]
   , untilBlock: "d6f6cd7101ce4fa80f7d7fe78745d2ca404705f58247320bc2cef975e7574939"
 };
+
+const certificateRegistrationRewardAddresses = {
+  addresses: [
+    "e19842145a1693dfbf809963c7a605b463dce5ca6b66820341a443501e"
+  ]
+  , after: {
+    tx: "a235a7bb9b92cd04bd3c445f5659c2f1d55b3c71b51a0b2718a06ffe56095c66",
+    block: "55ee284def9e92a08246752a9e6c2d4143b94e86dc32b06eeb4db042a415a6f9",
+  }
+  , untilBlock: "7e75460322424b2fa77b4550090977c51d3342668ad688186c2443f292c2932b"
+};
+const certificateDelegationRewardAddresses = {
+  addresses: [
+    "e1c3892366f174a76af9252f78368f5747d3155ab3568ea3b6bf40b01e", // fake address
+    "e1c3892366f174a76af9252f78368f5747d3055ab3568ea3b6bf40b01e"
+  ]
+  , after: {
+    tx: "717ee5005ec1888b2b67195047d5d5d08a278fa52201d33686010c834cde24bd",
+    block: "094ae9802b7e0a8cee97e88cc14a3029f8788d9cb9568ae32337e6ba2c0c1a5b",
+  }
+  , untilBlock: "fa0a6a6c3bea2a9dfae92ca2dfe89ec608ccf22f259e26d1e510503d74e7d3a0"
+};
+
+const certificateDeregistrationRewardAddresses = {
+  addresses: [
+    "e1aa377459e2cc1f7d81752f5a13e0eb1a4f85deebe8bb14bb1e157487"
+  ]
+  , after: {
+    tx: "9f93abce0b293b01f62ce9c8b0257a3da8aef27de164a609c32c92dc0a04f58e",
+    block: "3d85a2fca53596e3b91d031d1d675b64c3b85db235ead56e04e951debd1833ec",
+  }
+  , untilBlock: "8fe8cafa28015c57225dda10d780c61479679124674f3db6ae6572b38b8feee1"
+};
+
 
 const testableUri = endpoint + "v2/txs/history";
 
@@ -279,17 +316,43 @@ describe("/txs/history", function() {
       expect(typeof mirCert.rewards[addr]).to.be.equal("string");
     }
   });
-  it("should respond to reward addresses with relevant txs and certs", async() => {
-    const result = await axios.post(testableUri, dataRewardAddresses);
+  it("should respond to reward addresses with relevant witnesses", async() => {
+    const result = await axios.post(testableUri, withdrawalRewardAddresses);
     expect(result.data).to.not.be.empty;
 
     // ensures that withdrawal txs on a reward address appear
-    assert.oneOf("f6ee8bc837e3a1bc187da5d28ba67acaf10a9336ff63a243abb879c47b855132", 
-      result.data.map( (obj: TransactionFrag) => obj.hash));  
+    assert.oneOf(
+      "f6ee8bc837e3a1bc187da5d28ba67acaf10a9336ff63a243abb879c47b855132", 
+      result.data.map( (obj: TransactionFrag) => obj.hash)
+    );
+  });
+  it("should respond to reward addresses with relevant certificates", async() => {
+    // registration cert
+    {
+      const result = await axios.post(testableUri, certificateRegistrationRewardAddresses);
+      expect(result.data).to.not.be.empty;
 
-    const resultsWithCerts = result.data.filter( (obj: TransactionFrag) => obj.certificates.length > 0);
-    const certs = resultsWithCerts.map( (obj: TransactionFrag) => obj.certificates).flat();
-    expect(certs).to.not.be.empty;
+      const resultsWithCerts = result.data.filter( (obj: TransactionFrag) => obj.certificates.length > 0);
+      const certs = resultsWithCerts.map( (obj: TransactionFrag) => obj.certificates).flat();
+      expect(certs).to.not.be.empty;
+    }
+    // delegation cert
+    {
+      const result = await axios.post(testableUri, certificateDelegationRewardAddresses);
+      expect(result.data).to.not.be.empty;
 
+      const resultsWithCerts = result.data.filter( (obj: TransactionFrag) => obj.certificates.length > 0);
+      const certs = resultsWithCerts.map( (obj: TransactionFrag) => obj.certificates).flat();
+      expect(certs).to.not.be.empty;
+    }
+    // deregistration cert
+    {
+      const result = await axios.post(testableUri, certificateDeregistrationRewardAddresses);
+      expect(result.data).to.not.be.empty;
+
+      const resultsWithCerts = result.data.filter( (obj: TransactionFrag) => obj.certificates.length > 0);
+      const certs = resultsWithCerts.map( (obj: TransactionFrag) => obj.certificates).flat();
+      expect(certs).to.not.be.empty;
+    }
   });
 });

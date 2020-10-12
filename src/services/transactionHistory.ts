@@ -5,7 +5,7 @@ import {  assertNever, contentTypeHeaders, errMsgs, graphqlEndpoint, UtilEither}
 import { rowToCertificate, BlockEra, BlockFrag, Certificate, TransInputFrag, TransOutputFrag, TransactionFrag} from "../Transactions/types";
 
 import { Pool } from "pg";
-
+import { ByronAddress, Address } from "@emurgo/cardano-serialization-lib-nodejs";
 
 
 
@@ -26,39 +26,66 @@ const askTransactionSqlQuery = `
     hashes as (
       select distinct hash
       from (
+            ${/* 1) Get all inputs for the transaction */""}
+
             select tx.hash as hash
             FROM tx
+
             JOIN tx_in 
               ON tx_in.tx_in_id = tx.id
+
+            ${/**
+              note: input table doesn't contain addresses directly
+              so to check for all inputs that use address X
+              we have to check the address for all outputs that occur in the input table
+            **/""}
             JOIN tx_out source_tx_out 
               ON tx_in.tx_out_id = source_tx_out.tx_id 
              AND tx_in.tx_out_index::smallint = source_tx_out.index::smallint
+
             JOIN tx source_tx 
               ON source_tx_out.tx_id = source_tx.id
+
             WHERE source_tx_out.address = ANY(($1)::varchar array)
                OR source_tx_out.payment_cred = ANY(($5)::bytea array)
-            union
+
+          UNION
+            ${/* 2) Get all outputs for the transaction */""}
             select tx.hash as hash
             from tx
-            join tx_out
+
+            JOIN tx_out
               on tx.id = tx_out.tx_id
+
             where tx_out.address = ANY(($1)::varchar array)
-               or tx_out.payment_cred = ANY(($5)::bytea array)
-            union
+              or tx_out.payment_cred = ANY(($6)::bytea array)
+
+          UNION
+            ${/* 3) Get all certificates for the transaction */""}
             select tx.hash as hash
             from tx 
-            join combined_certificates as certs 
+
+            JOIN combined_certificates as certs 
               on tx.id = certs."txId" 
             where certs."formalType" in ('CertRegKey', 'CertDeregKey','CertDelegate')
-              and certs."stakeCred" = any(($1)::varchar array)
-            union
+              and certs."stakeCred" = any(
+                ${/* stakeCred is encoded as a string, so we have to convert from a byte array to a hex string */""}
+                (SELECT array_agg(encode(addr, 'hex')) from UNNEST($6) as addr)::varchar array
+              )
+
+          UNION
+            ${/* 4) Get all withdrawals for the transaction */""}
+
             select tx.hash as hash
             from tx
-            join withdrawal as w
+
+            JOIN withdrawal as w
             on tx.id = w."tx_id"
-            join stake_address as addr
+
+            JOIN stake_address as addr
             on w.addr_id = addr.id
-            where addr.hash_raw = any(($5)::bytea array)
+
+            where addr.hash_raw = any(($6)::bytea array)
            ) hashes
     )
   select tx.hash
@@ -99,17 +126,23 @@ const askTransactionSqlQuery = `
           where "txId" = tx.id) as certificates
                             
   from tx
-  join hashes
+
+  JOIN hashes
     on hashes.hash = tx.hash
-  join block
+
+  JOIN block
     on block.id = tx.block
-  left join pool_meta_data 
+
+  LEFT JOIN pool_meta_data 
     on tx.id = pool_meta_data.registered_tx_id 
+
   where     block.block_no <= $2
         and block.block_no > $3 
+
   order by block.time asc, tx.block_index asc
   limit $4;
 `;
+
 
 const graphQLQuery = `
   query TxsHistory(
@@ -156,9 +189,63 @@ const graphQLQuery = `
 
 const MAX_INT = "2147483647";
 
-const HEX_LENGTH = 56;
+// ex: TODO example
+const PAYMENT_KEY_HEX_LENGTH = 56;
+
+// ex: e19842145a1693dfbf809963c7a605b463dce5ca6b66820341a443501e
+const STAKING_ADDR_HEX_LENGTH = 58;
 
 const HEX_REGEXP = RegExp("^[0-9a-fA-F]+$");
+
+function getAddressesByType(addresses: string[]): {
+  /**
+   * note: we keep track of explicit bech32 addresses
+   * since it's possible somebody wants the tx history for a specific address
+   * and not the tx history for the payment key of the address
+   */
+  legacyAddr: string[],
+  bech32: string[],
+  paymentCreds: string[],
+  stakingKeys: string[],
+} {
+  const legacyAddr = [];
+  const bech32 = [];
+  const paymentCreds = [];
+  const stakingKeys = [];
+  for (const address of addresses) {
+    // 1) Check if it's a Byron-era address
+    if (ByronAddress.is_valid(address)) {
+      legacyAddr.push(address);
+      continue;
+    }
+    // 2) check if it's a valid bech32 address
+    try {
+      const wasmBech32 = Address.from_bech32(address);
+      bech32.push(address);
+      wasmBech32.free();
+      continue;
+    } catch (_e) {
+      // silently discard any non-valid Cardano addresses
+    }
+    // 3) check if it's a payment key
+    if (address.length === PAYMENT_KEY_HEX_LENGTH && HEX_REGEXP.test(address)) {
+      paymentCreds.push(`\\x${address}`);
+      continue;
+    }
+    // 4) check if it's a staking key
+    if (address.length === STAKING_ADDR_HEX_LENGTH && HEX_REGEXP.test(address)) {
+      stakingKeys.push(`\\x${address}`);
+      continue;
+    }
+  }
+
+  return {
+    legacyAddr,
+    bech32,
+    paymentCreds,
+    stakingKeys,
+  };
+}
 
 export const askTransactionHistory = async ( 
   pool: Pool
@@ -166,13 +253,18 @@ export const askTransactionHistory = async (
   , addresses: string[]
   , afterNum: UtilEither<BlockNumByTxHashFrag>
   , untilNum: UtilEither<number>) : Promise<UtilEither<TransactionFrag[]>> => {
-  const paymentCreds = addresses.filter((s:string) => s.length === HEX_LENGTH && HEX_REGEXP.test(s))
-    .map((s:string) => `\\x${s}`);
-  const ret = await pool.query(askTransactionSqlQuery, [ addresses
+  const addressTypes = getAddressesByType(addresses);
+  const ret = await pool.query(askTransactionSqlQuery, [
+      [
+        ...addressTypes.legacyAddr,
+        ...addressTypes.bech32,
+      ]
     , untilNum.kind === "ok" ? untilNum.value : 0
     , afterNum.kind === "ok" ? afterNum.value.block.number : 0
     , limit
-    , paymentCreds]);
+    , addressTypes.paymentCreds
+    , addressTypes.stakingKeys
+  ]);
   const txs = ret.rows.map( (row: any):TransactionFrag => {
     const inputs = row.inAddrValPairs 
       ? row.inAddrValPairs.map( ( obj:any ): TransInputFrag => 
