@@ -222,7 +222,23 @@ describe("/txs/history", function() {
     const result2 = await axios.post(testableUri, dataRepeatHistory );
     expect(result1.data).to.be.eql(result2.data);
   });
-
+  it("untilBlock should limit the response", async() => {
+    const result = await axios.post(testableUri, {
+      addresses: [
+        "addr1q84shx6jr9s258r9m45ujeyde7u4z7tthkedezjm5kdr4um64gv6jqqncjd205c540fgu5450tzvu27n9lk8ulm3s99spva2ru"
+      ]
+      // make sure if we as for after txIndex 0, txIndex 1 is included in the response
+      // AKA support pagination mid-block
+      , after: {
+        tx: "f07d7d5cb0126da7da9f6a067aee00fd42efae94891a42544abfd1759248019d",
+        block: "728ceadf2d949281591175a6d1641f10f2307eff80eaf59c5300dbd4a5f83554",
+      }
+      // make sure untilBlock is inclusive
+      , untilBlock: "728ceadf2d949281591175a6d1641f10f2307eff80eaf59c5300dbd4a5f83554"
+    });
+    expect(result.data).to.have.lengthOf(1);
+    expect(result.data[0].hash).to.equal("00d6d64b251514c48a9ad75940c5e7031bae5f0d002e9be7f6caf4cc1a78b57f");
+  });
   it("untilBlock should limit the response", async() => {
     const data = R.merge(dataForAddresses, { untilBlock: hashForOlderBlock } );
     const result = await axios.post(testableUri, data);
