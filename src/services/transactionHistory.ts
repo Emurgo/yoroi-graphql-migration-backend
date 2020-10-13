@@ -1,6 +1,6 @@
 import axios from "axios";
 
-import {  assertNever, contentTypeHeaders, errMsgs, graphqlEndpoint, UtilEither} from "../utils";
+import {  contentTypeHeaders, errMsgs, graphqlEndpoint, UtilEither} from "../utils";
 
 import { rowToCertificate, BlockEra, BlockFrag, Certificate, TransInputFrag, TransOutputFrag, TransactionFrag} from "../Transactions/types";
 
@@ -47,7 +47,7 @@ const askTransactionSqlQuery = `
               ON source_tx_out.tx_id = source_tx.id
 
             WHERE source_tx_out.address = ANY(($1)::varchar array)
-               OR source_tx_out.payment_cred = ANY(($5)::bytea array)
+               OR source_tx_out.payment_cred = ANY(($6)::bytea array)
 
           UNION
             ${/* 2) Get all outputs for the transaction */""}
@@ -58,7 +58,7 @@ const askTransactionSqlQuery = `
               on tx.id = tx_out.tx_id
 
             where tx_out.address = ANY(($1)::varchar array)
-              or tx_out.payment_cred = ANY(($6)::bytea array)
+              or tx_out.payment_cred = ANY(($7)::bytea array)
 
           UNION
             ${/* 3) Get all certificates for the transaction */""}
@@ -70,7 +70,7 @@ const askTransactionSqlQuery = `
             where certs."formalType" in ('CertRegKey', 'CertDeregKey','CertDelegate')
               and certs."stakeCred" = any(
                 ${/* stakeCred is encoded as a string, so we have to convert from a byte array to a hex string */""}
-                (SELECT array_agg(encode(addr, 'hex')) from UNNEST($6) as addr)::varchar array
+                (SELECT array_agg(encode(addr, 'hex')) from UNNEST($7) as addr)::varchar array
               )
 
           UNION
@@ -85,7 +85,7 @@ const askTransactionSqlQuery = `
             JOIN stake_address as addr
             on w.addr_id = addr.id
 
-            where addr.hash_raw = any(($6)::bytea array)
+            where addr.hash_raw = any(($7)::bytea array)
            ) hashes
     )
   select tx.hash
@@ -136,11 +136,20 @@ const askTransactionSqlQuery = `
   LEFT JOIN pool_meta_data 
     on tx.id = pool_meta_data.registered_tx_id 
 
-  where     block.block_no <= $2
-        and block.block_no > $3 
+  where 
+        ${/* is within untilBlock (inclusive) */""}
+        block.block_no <= $2
+        and (
+          ${/* Either: */""}
+          ${/* 1) comes in block strict after the "after" field */""}
+          block.block_no > $3
+            or
+          ${/* 2) Is in the same block as the "after" field, but is tx that appears afterwards */""}
+          (block.block_no = $3 and tx.block_index > $4)
+        ) 
 
   order by block.time asc, tx.block_index asc
-  limit $4;
+  limit $5;
 `;
 
 
@@ -251,16 +260,21 @@ export const askTransactionHistory = async (
   pool: Pool
   , limit: number
   , addresses: string[]
-  , afterNum: UtilEither<BlockNumByTxHashFrag>
-  , untilNum: UtilEither<number>) : Promise<UtilEither<TransactionFrag[]>> => {
+  , after: {
+    blockNumber: number,
+    txIndex: number,
+  }
+  , untilNum: number
+) : Promise<UtilEither<TransactionFrag[]>> => {
   const addressTypes = getAddressesByType(addresses);
   const ret = await pool.query(askTransactionSqlQuery, [
       [
         ...addressTypes.legacyAddr,
         ...addressTypes.bech32,
       ]
-    , untilNum.kind === "ok" ? untilNum.value : 0
-    , afterNum.kind === "ok" ? afterNum.value.block.number : 0
+    , untilNum
+    , after.blockNumber
+    , after.txIndex
     , limit
     , addressTypes.paymentCreds
     , addressTypes.stakingKeys
@@ -314,9 +328,10 @@ export const askTransactionHistory = async (
 
 };
 
-interface BlockNumByTxHashFrag {
+export interface BlockNumByTxHashFrag {
   block: BlockByTxHashFrag;
   hash: string;
+  blockIndex: number, // this is actually the index of the transaction in the block
 }
 interface BlockByTxHashFrag {
   hash: string;
@@ -334,6 +349,7 @@ export const askBlockNumByTxHash = async (hash : string|undefined): Promise<Util
                   }
                 }
               ) {
+                blockIndex
                 hash
                 block {
                   number

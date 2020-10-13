@@ -10,13 +10,14 @@ import { Pool } from "pg";
 const semverCompare = require("semver-compare");
 
 import { connectionHandler} from "./ws-server"; 
-import { applyMiddleware, applyRoutes, Route } from "./utils";
+import { applyMiddleware, applyRoutes, Route, UtilEither, errMsgs } from "./utils";
 import * as utils from "./utils";
 import * as middleware from "./middleware";
 
 import { askBestBlock } from "./services/bestblock";
 import { utxoForAddresses } from "./services/utxoForAddress";
 import { askBlockNumByHash, askBlockNumByTxHash, askTransactionHistory } from "./services/transactionHistory";
+import type { BlockNumByTxHashFrag } from "./services/transactionHistory";
 import { filterUsedAddresses } from "./services/filterUsedAddress";
 import { askUtxoSumForAddresses } from "./services/utxoSumForAddress";
 import { handleSignedTx } from "./services/signedTransaction";
@@ -103,6 +104,28 @@ const utxoSumForAddresses = async (req:  Request, res:Response) => {
   }
 };
 
+const getOrDefaultAfterParam = (
+  result: UtilEither<BlockNumByTxHashFrag>
+): {
+  blockNumber: number,
+  txIndex: number,
+} => {
+  if (result.kind !== "ok") {
+    if (result.errMsg === errMsgs.noValue) {
+      // default value since this is an optional field
+      return {
+        blockNumber: -1,
+        txIndex: -1,
+      };
+    }
+    throw new Error(result.errMsg);
+  }
+  return {
+    blockNumber: result.value.block.number,
+    txIndex: result.value.blockIndex,
+  };
+};
+
 const txHistory = async (req: Request, res: Response) => {
   if(!req.body){
     throw new Error("error, no body");
@@ -116,23 +139,29 @@ const txHistory = async (req: Request, res: Response) => {
     const [referenceTx, referenceBlock] = (body.after && [body.after.tx, body.after.block]) || [];
     const referenceBestBlock = body.untilBlock;
     const untilBlockNum = await askBlockNumByHash(referenceBestBlock);
-    const afterBlockNum = await askBlockNumByTxHash(referenceTx );
+    const afterBlockInfo = await askBlockNumByTxHash(referenceTx);
 
-    if(untilBlockNum.kind === "error" && untilBlockNum.errMsg !== utils.errMsgs.noValue ){
+    if(untilBlockNum.kind === "error" && untilBlockNum.errMsg !== utils.errMsgs.noValue){
       throw new Error("REFERENCE_BEST_BLOCK_MISMATCH");
       return;
     }
-    if(afterBlockNum.kind === "error" && typeof referenceTx !== "undefined") {
+    if(afterBlockInfo.kind === "error" && typeof referenceTx !== "undefined") {
       throw new Error("REFERENCE_TX_NOT_FOUND");
       return;
     }
 
-    if(afterBlockNum.kind === "ok" && afterBlockNum.value.block.hash !== referenceBlock) {
+    if(afterBlockInfo.kind === "ok" && afterBlockInfo.value.block.hash !== referenceBlock) {
       throw new Error("REFERENCE_BLOCK_MISMATCH");
       return;
     }
 
-    const maybeTxs = await askTransactionHistory(pool, limit, body.addresses, afterBlockNum, untilBlockNum);
+    // when things are running smoothly, we would never hit this case case
+    if (untilBlockNum.kind !== "ok") {
+      throw new Error(untilBlockNum.errMsg);
+    }
+    const afterInfo = getOrDefaultAfterParam(afterBlockInfo);
+
+    const maybeTxs = await askTransactionHistory(pool, limit, body.addresses, afterInfo, untilBlockNum.value);
     switch(maybeTxs.kind) {
     case "ok":{
       const txs = maybeTxs.value.map( tx => ({
