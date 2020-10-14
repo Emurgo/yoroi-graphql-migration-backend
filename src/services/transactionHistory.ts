@@ -98,7 +98,7 @@ const askTransactionSqlQuery = `
        , block.epoch_slot_no as "blockSlotInEpoch"
        , case when vrf_key is null then 'byron' 
               else 'shelley' end 
-         as blockEra
+         as "blockEra"
        , block.time at time zone 'UTC' as "includedAt"
        , (select json_agg(( source_tx_out.address
                           , source_tx_out.value
@@ -120,7 +120,6 @@ const askTransactionSqlQuery = `
           join stake_address as addr
           on addr.id = w.addr_id
           where tx_id = tx.id) as withdrawals
-       , pool_meta_data.hash as metadata
        , (select json_agg(row_to_json(combined_certificates) order by "certIndex" asc)
           from combined_certificates 
           where "txId" = tx.id) as certificates
@@ -306,11 +305,11 @@ export const askTransactionHistory = async (
     return { hash: row.hash.toString("hex")
       , block: blockFrag
       , fee: row.fee.toString()
-      , metadata: (row.metadata) ? row.metadata.toString("hex") : null
+      , metadata: null // TODO
       , includedAt: row.includedAt
       , inputs: inputs
       , outputs: outputs
-      , ttl: MAX_INT
+      , ttl: MAX_INT // https://github.com/input-output-hk/cardano-db-sync/issues/212
       , blockEra: row.blockEra === "byron" ? BlockEra.Byron : BlockEra.Shelley
       , txIndex: row.txIndex
       , withdrawals: withdrawals

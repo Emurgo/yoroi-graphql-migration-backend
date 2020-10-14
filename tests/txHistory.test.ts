@@ -222,7 +222,7 @@ describe("/txs/history", function() {
     const result2 = await axios.post(testableUri, dataRepeatHistory );
     expect(result1.data).to.be.eql(result2.data);
   });
-  it("untilBlock should limit the response", async() => {
+  it("Pagination mid-block should be supported", async() => {
     const result = await axios.post(testableUri, {
       addresses: [
         "addr1q84shx6jr9s258r9m45ujeyde7u4z7tthkedezjm5kdr4um64gv6jqqncjd205c540fgu5450tzvu27n9lk8ulm3s99spva2ru"
@@ -238,6 +238,38 @@ describe("/txs/history", function() {
     });
     expect(result.data).to.have.lengthOf(1);
     expect(result.data[0].hash).to.equal("00d6d64b251514c48a9ad75940c5e7031bae5f0d002e9be7f6caf4cc1a78b57f");
+  });
+  it("Transaction-era transactions should be marked properly", async() => {
+    // Byron era
+    {
+      const result = await axios.post(testableUri, {
+        addresses: [
+          "Ae2tdPwUPEZLs4HtbuNey7tK4hTKrwNwYtGqp7bDfCy2WdR3P6735W5Yfpe"
+        ]
+        , after: {
+          tx: "aef8aa952a11b1225f1c067824f38e0c4b6d478900db6b57f6503b81fbc09427",
+          block: "07d8aee8a94c6a65b0a6dac7bb43e7f8ddb7320d3c7770db8b1be4fbd685c0aa",
+        }
+        , untilBlock: "187c5137b0c2660ad8277c843ddec0deede6da5c2ba50ac8b958127c328ddbee"
+      });
+      console.log(result.data);
+      expect(result.data).to.have.lengthOf(1);
+      expect(result.data[0].hash).to.equal("130f9c6f3dcb0af0733757b301c877ec63d5c127373e75268e8b20c09fa645df");
+      expect(result.data[0].type).to.equal("byron");
+    }
+    // Shelley era
+    {
+      const result = await axios.post(testableUri, {
+        addresses: [
+          "addr1q9ya8v4pe33nlkgftyd70nhhp407pvnjjcsddhf64sh9gegwtvyxm7r69gx9cwvtg82p87zpwmzj0kj7tjmyraze3pzqe6zxzv"
+        ]
+        , untilBlock: "e99b06115fc0cd221671b686b6d9ef1c6dc047abed2c4f7d3ae528427a746f60"
+      });
+      console.log(result.data);
+      expect(result.data).to.have.lengthOf(1);
+      expect(result.data[0].hash).to.equal("871b14fbe5abb6cacc63f922187c4f10ea9499055a972eb5d3d4e8771af643df");
+      expect(result.data[0].type).to.equal("shelley");
+    }
   });
   it("untilBlock should limit the response", async() => {
     const data = R.merge(dataForAddresses, { untilBlock: hashForOlderBlock } );
