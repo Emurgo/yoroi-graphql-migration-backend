@@ -403,16 +403,18 @@ describe("/txs/history", function() {
     // registration cert
     {
       const result = await axios.post(testableUri, certificateRegistrationRewardAddresses);
-      expect(result.data).to.not.be.empty;
 
-      const resultsWithCerts = result.data.filter( (obj: TransactionFrag) => obj.certificates.length > 0);
-      const certs = resultsWithCerts.map( (obj: TransactionFrag) => obj.certificates).flat();
-      expect(certs).to.not.be.empty;
+      expect(result.data).to.have.lengthOf(1);
+      expect(result.data[0].hash).to.equal("e130a413db6f78b585e6a674e4e0241f770d8fcf82dcaa79922ee265b8a5145d");
+      expect(result.data[0].certificates[0].kind).to.equal("StakeRegistration");
     }
     // delegation cert
     {
       const result = await axios.post(testableUri, certificateDelegationRewardAddresses);
-      expect(result.data).to.not.be.empty;
+
+      expect(result.data).to.have.lengthOf(1);
+      expect(result.data[0].hash).to.equal("b84471f9dda4e5381f8986b0db8cfe9ebaf88472c68076af326d88b46ae915e7");
+      expect(result.data[0].certificates[0].kind).to.equal("StakeDelegation");
 
       const resultsWithCerts = result.data.filter( (obj: TransactionFrag) => obj.certificates.length > 0);
       const certs = resultsWithCerts.map( (obj: TransactionFrag) => obj.certificates).flat();
@@ -421,11 +423,28 @@ describe("/txs/history", function() {
     // deregistration cert
     {
       const result = await axios.post(testableUri, certificateDeregistrationRewardAddresses);
+
+      expect(result.data).to.have.lengthOf(1);
+      expect(result.data[0].hash).to.equal("c7eecab99bb1879388c133baadb78f89268beb1be3907a71b5749009a8bc4206");
+      expect(result.data[0].certificates[0].kind).to.equal("StakeDeregistration");
+    }
+    // pool registration cert
+    {
+      const result = await axios.post(testableUri, {
+        addresses: [
+          "e17ee7b9a540f56912c3e6937f1ef819c8862c33efe80ab1605105aeae"
+        ]
+        , after: {
+          tx: "b5a02c29a0ea54e1b371d63cd2997c922398d66a733a6701e7cb5aa6f59fbebb",
+          block: "22f010b4aa18ad964dae9feac5407cbe453110ebd85fc977c9ffdb7a193a1378",
+        }
+        , untilBlock: "f094414de98d9c7e80ed8c29b14f5866bcbb648c2aee8e8869df89c23c45fe25"
+      });
       expect(result.data).to.not.be.empty;
 
-      const resultsWithCerts = result.data.filter( (obj: TransactionFrag) => obj.certificates.length > 0);
-      const certs = resultsWithCerts.map( (obj: TransactionFrag) => obj.certificates).flat();
-      expect(certs).to.not.be.empty;
+      expect(result.data).to.have.lengthOf(1);
+      expect(result.data[0].hash).to.equal("477b17052e518e8b225f05b9c474057ee25cc6e7c68fcb044b518025b4995e02");
+      expect(result.data[0].certificates[0].kind).to.equal("PoolRegistration");
     }
   });
 });

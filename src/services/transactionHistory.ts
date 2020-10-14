@@ -67,10 +67,20 @@ const askTransactionSqlQuery = `
 
             JOIN combined_certificates as certs 
               on tx.id = certs."txId" 
-            where certs."formalType" in ('CertRegKey', 'CertDeregKey','CertDelegate')
-              and certs."stakeCred" = any(
-                ${/* stakeCred is encoded as a string, so we have to convert from a byte array to a hex string */""}
-                (SELECT array_agg(encode(addr, 'hex')) from UNNEST($7) as addr)::varchar array
+            where
+              (
+                certs."formalType" in ('CertRegKey', 'CertDeregKey','CertDelegate')
+                and certs."stakeCred" = any(
+                  ${/* stakeCred is encoded as a string, so we have to convert from a byte array to a hex string */""}
+                  (SELECT array_agg(encode(addr, 'hex')) from UNNEST($7) as addr)::varchar array
+                )
+              ) or (
+                ${/* note: PoolRetirement only contains pool key hash, so no way to map it to an address */""}
+                certs."formalType" in ('CertRegPool')
+                and certs."poolParamsRewardAccount" = any(
+                  ${/* poolParamsRewardAccount is encoded as a string, so we have to convert from a byte array to a hex string */""}
+                  (SELECT array_agg(encode(addr, 'hex')) from UNNEST($7) as addr)::varchar array
+                )
               )
 
           UNION
