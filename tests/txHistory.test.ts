@@ -47,14 +47,6 @@ const dataEmptyForNoTxAfterAddr = {
     tx: "a5fb58900cbd0a6f5b77bac47fa950555dddb85f684a074b7a748f5b6e3b1aad",
     block: "6575c26f4eb1533d2087e5e755ff0b606f4fc663a40f7aa558c38c389400f2f0"},
 };
-const dataShouldThrowReferenceErrors = {
-  addresses: [
-    "Ae2tdPwUPEZHu3NZa6kCwet2msq4xrBXKHBDvogFKwMsF18Jca8JHLRBas7"],
-  untilBlock: hashForUntilBlock,
-  after: {
-    tx: "0000000000000000000000000000000000000000000000000000000000000000",
-    block: "790eb4d6ef2fea7cceebf22c66c20518616d5331966f6f9b4ca3a308b9c3ceb1"},
-};
 
 const dataSortedDescHashOnAfter = {
   addresses: [
@@ -174,15 +166,50 @@ describe("/txs/history", function() {
 
   });
 
-  it("should throw reference errors for a tx that doesn't match the block in after.", async() => {
+  it("should throw reference errors for a until block that doesn't exist.", async() => {
     try {
-      const ret = await axios.post(testableUri,  dataShouldThrowReferenceErrors );
+      const ret = await axios.post(testableUri, {
+        addresses: [
+          "Ae2tdPwUPEZHu3NZa6kCwet2msq4xrBXKHBDvogFKwMsF18Jca8JHLRBas7"],
+        untilBlock: "0000000000000000000000000000000000000000000000000000000000000000",
+      });
+      expect(1).to.be.equal(0);
+    } catch (err) {
+      expect(err.response.status).to.be.equal(500);
+      expect(err.response.data.error.response).to.be.equal("REFERENCE_BEST_BLOCK_MISMATCH");
+    }
+  });
+  it("should throw reference errors for a tx that doesn't exist.", async() => {
+    try {
+      const ret = await axios.post(testableUri, {
+        addresses: [
+          "Ae2tdPwUPEZHu3NZa6kCwet2msq4xrBXKHBDvogFKwMsF18Jca8JHLRBas7"],
+        untilBlock: hashForUntilBlock,
+        after: {
+          tx: "0000000000000000000000000000000000000000000000000000000000000000",
+          block: "790eb4d6ef2fea7cceebf22c66c20518616d5331966f6f9b4ca3a308b9c3ceb1"},
+      });
       expect(1).to.be.equal(0);
     } catch (err) {
       expect(err.response.status).to.be.equal(500);
       expect(err.response.data.error.response).to.be.equal("REFERENCE_TX_NOT_FOUND");
     }
-
+  });
+  it("should throw reference errors for a tx that doesn't match the block in after.", async() => {
+    try {
+      const ret = await axios.post(testableUri, {
+        addresses: [
+          "Ae2tdPwUPEZHu3NZa6kCwet2msq4xrBXKHBDvogFKwMsF18Jca8JHLRBas7"],
+        untilBlock: hashForUntilBlock,
+        after: {
+          tx: "9f93abce0b293b01f62ce9c8b0257a3da8aef27de164a609c32c92dc0a04f58e",
+          block: "0000000000000000000000000000000000000000000000000000000000000000"},
+      });
+      expect(1).to.be.equal(0);
+    } catch (err) {
+      expect(err.response.status).to.be.equal(500);
+      expect(err.response.data.error.response).to.be.equal("REFERENCE_BLOCK_MISMATCH");
+    }
   });
 
   it("should return elements sorted by time asc (and hash asc but that is not tested) if after is present", async () => {
@@ -252,7 +279,6 @@ describe("/txs/history", function() {
         }
         , untilBlock: "187c5137b0c2660ad8277c843ddec0deede6da5c2ba50ac8b958127c328ddbee"
       });
-      console.log(result.data);
       expect(result.data).to.have.lengthOf(1);
       expect(result.data[0].hash).to.equal("130f9c6f3dcb0af0733757b301c877ec63d5c127373e75268e8b20c09fa645df");
       expect(result.data[0].type).to.equal("byron");
@@ -265,7 +291,6 @@ describe("/txs/history", function() {
         ]
         , untilBlock: "e99b06115fc0cd221671b686b6d9ef1c6dc047abed2c4f7d3ae528427a746f60"
       });
-      console.log(result.data);
       expect(result.data).to.have.lengthOf(1);
       expect(result.data[0].hash).to.equal("871b14fbe5abb6cacc63f922187c4f10ea9499055a972eb5d3d4e8771af643df");
       expect(result.data[0].type).to.equal("shelley");
