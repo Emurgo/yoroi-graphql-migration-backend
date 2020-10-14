@@ -255,6 +255,7 @@ Array<{
   slot: null | number,
 
   // information that is always present
+  type: 'byron' | 'shelley',
   hash: string,
   last_update: string, // timestamp with timezone
   tx_state: 'Successful' | 'Failed' | 'Pending',

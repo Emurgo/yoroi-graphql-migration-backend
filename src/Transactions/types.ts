@@ -8,7 +8,7 @@ export interface TransactionFrag {
     fee: string;
     ttl: string;
     blockEra: BlockEra;
-    metadata: string;
+    metadata: null | string;
     block: BlockFrag;
     includedAt: Date;
     inputs: TransInputFrag[];
