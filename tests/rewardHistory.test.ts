@@ -15,8 +15,6 @@ describe("/api/v2/account/rewards", function() {
     expect(result.data).not.be.empty;
     expect(result.data).to.have.property(realAddress);
 
-    console.log(result.data);
-
     // test that some subset matches what we expect
     let sum = 0;
     for (const epochReward of result.data[realAddress]) {
