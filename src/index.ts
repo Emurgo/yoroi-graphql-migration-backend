@@ -24,6 +24,7 @@ import { handleSignedTx } from "./services/signedTransaction";
 import { handlePoolInfo } from "./services/poolInfo";
 import { handleGetAccountState } from "./services/accountState";
 import { handleGetRegHistory } from "./services/regHistory";
+import { handleGetRewardHistory } from "./services/rewardHistory";
 
 import { HealthChecker } from "./HealthChecker";
 
@@ -266,6 +267,10 @@ const routes : Route[] = [ { path: "/v2/bestblock"
 , { path: "/getRegistrationHistory"
   , method: "post"
   , handler: handleGetRegHistory(pool)
+}
+, { path: "/getRewardHistory"
+  , method: "post"
+  , handler: handleGetRewardHistory(pool)
 }
 , { path: "/txs/signed"
   , method: "post"

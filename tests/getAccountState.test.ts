@@ -11,12 +11,11 @@ const realAddress = "e15e8600926ab1856e52bf2f2960def3bc59f7ffa5c4162a578ddd264b"
 const mixedAddresses = [fakeAddress, realAddress];
 
 describe("/getAccountState", function() {
-  // todo: not a good test because this endpoint keeps track of MIR, implicit rewards and withdrawals (of both combined)
   it("should return 0 rewards for addresses that have withdrawn everything", async() => {
     const result = await axios({method: "post", url: testableUri, data: {addresses: realAddresses}});
     for(const addr of realAddresses) {
-      expect(result.data[addr]).to.have.property("remainingAmount");
-      // expect(result.data[addr].remainingAmount).to.be.equal("0");
+      expect(result.data[addr].rewards).to.not.be.equal("0");
+      expect(result.data[addr].withdrawals).to.not.be.equal("0");
     }
     expect(result.data).not.be.empty;
   });
@@ -26,6 +25,5 @@ describe("/getAccountState", function() {
     expect(result.data).to.have.property(realAddress);
     expect(result.data[fakeAddress]).to.be.a("null");
     expect(result.data[realAddress]).to.have.property("remainingAmount");
-
   });
 });

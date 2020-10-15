@@ -54,7 +54,6 @@ export const filterUsedAddresses = (pool : Pool) => async (req: Request, res: Re
         },
         ([] as Array<string>)
       );
-      console.log(keysInTxs);
       // 4) filter addresses to the ones we care about for this filterUsed query
       keysInTxs
         .filter(addr => paymentCreds.has(`\\x${addr}`))
