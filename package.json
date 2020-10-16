@@ -54,7 +54,7 @@
     "@typescript-eslint/parser": "^3.10.1",
     "eslint": "^7.10.0",
     "eslint-config-airbnb-typescript": "^9.0.0",
-    "eslint-plugin-import": "^2.22.0",
+    "eslint-plugin-import": "^2.22.1",
     "@types/ws": "^7.2.7",
     "husky": "^4.3.0",
     "ramda": "^0.27.0"
