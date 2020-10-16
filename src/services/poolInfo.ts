@@ -58,7 +58,7 @@ export const handlePoolInfo = (p: Pool) => async (req: Request, res: Response):P
   if(!(hashes instanceof Array) || hashes.length > addressesRequestLimit)
     throw new Error (` poolIds must have between 0 and ${addressesRequestLimit} items`);
    
-  const ret:Dictionary<any> = {};
+  const ret:Dictionary<null | RemotePool> = {};
 
   for (const hash of hashes) {
     if(hash.length !== 56){

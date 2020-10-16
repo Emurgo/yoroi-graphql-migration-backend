@@ -1,6 +1,6 @@
 import axios from "axios";
 import { expect } from "chai";
-import { config, Config } from "./config";
+import { config, } from "./config";
 
 import { UtilEither } from "../src/utils";
 import * as BestBlock from "../src/services/bestblock";
