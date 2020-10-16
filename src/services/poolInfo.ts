@@ -31,7 +31,7 @@ const latestMetadataQuery = `
           on pool_hash.id = pool_update.hash_id 
      join pool_meta_data 
           on pool_update.meta = pool_meta_data.id
-     where encode(pool_hash.hash, 'hex') = $1
+     where encode(pool_hash.hash_raw, 'hex') = $1
     order by pool_update.id desc limit 1;
 `;
 

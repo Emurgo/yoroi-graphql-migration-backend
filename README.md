@@ -133,6 +133,27 @@ type RewardInfo = null | {|
     |};
 ```
 
+### `/api/getRewardHistory`
+
+#### Input
+
+```js
+{
+  addresses: Array<string> // hex of reward stake addresses
+}
+```
+
+#### Output
+
+```js
+{
+  [addresses: string]: Array<{
+    epoch: number,
+    reward: string,
+  }>;
+};
+```
+
 ### `/api/getPoolInfo`
 
 #### Input
