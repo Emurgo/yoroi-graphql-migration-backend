@@ -45,7 +45,7 @@
     "@types/ramda": "github:types/npm-ramda#dist",
     "@types/semver-compare": "^1.0.1",
     "@typescript-eslint/eslint-plugin": "^3.10.1",
-    "@typescript-eslint/parser": "^3.7.0",
+    "@typescript-eslint/parser": "^3.10.1",
     "eslint": "^7.10.0",
     "eslint-config-airbnb-typescript": "^9.0.0",
     "eslint-plugin-import": "^2.22.0",
