@@ -1,7 +1,7 @@
 import axios from "axios";
 import { expect, should } from "chai";
 
-import { config, Config } from "./config";
+import { config, } from "./config";
 
 const endpoint = config.apiUrl;
 const s = should();

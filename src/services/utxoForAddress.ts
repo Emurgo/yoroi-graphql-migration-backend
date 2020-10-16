@@ -1,9 +1,8 @@
-import axios from "axios";
 import { Pool } from "pg";
 import { Request, Response } from "express";
 
 import config from "config";
-import { assertNever, contentTypeHeaders, graphqlEndpoint, isHex, UtilEither, validateAddressesReq } from "../utils";
+import { assertNever, isHex, validateAddressesReq } from "../utils";
 
 const utxoForAddressQuery = `
   select tx_out.address

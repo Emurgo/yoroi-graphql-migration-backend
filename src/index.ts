@@ -54,9 +54,8 @@ applyMiddleware(middlewares, router);
 const port:number= config.get("server.port");
 const addressesRequestLimit:number = config.get("server.addressRequestLimit");
 const apiResponseLimit:number = config.get("server.apiResponseLimit"); 
-const txsHashesRequestLimit:number = config.get("server.txsHashesRequestLimit");
 
-const bestBlock = async (req: Request, res: Response) => {
+const bestBlock = async (_req: Request, res: Response) => {
   const result = await askBestBlock();
   switch(result.kind) {
   case "ok": {
@@ -77,7 +76,7 @@ const bestBlock = async (req: Request, res: Response) => {
   }
 };
 
-const utxoSumForAddresses = async (req:  Request, res:Response) => {
+const utxoSumForAddresses = async (req: Request, res:Response) => {
   if(!req.body || !req.body.addresses) {
     throw new Error("error, no addresses.");
     return;
@@ -282,7 +281,7 @@ const routes : Route[] = [ { path: "/v2/bestblock"
 }
 , { path: "/v2/importerhealthcheck"
   , method: "get"
-  , handler: async (req: Request, res: Response) => {
+  , handler: async (_req: Request, res: Response) => {
     const status = healthChecker.getStatus();
     if (status === "OK")
       res.send({ code: 200, message: "Importer is OK" });

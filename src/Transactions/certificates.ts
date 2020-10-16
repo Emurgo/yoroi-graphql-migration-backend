@@ -1,4 +1,4 @@
-import { Pool } from "pg";
+import { Pool, } from "pg";
 
 export const createViewSql = `
 drop view if exists combined_certificates;
@@ -199,6 +199,6 @@ join stake_address as addr
 group by treasury.tx_id;
 ;`;
 
-export const createCertificatesView = (pool: Pool) => {
+export const createCertificatesView = (pool: Pool): void => {
   pool.query(createViewSql);
 };

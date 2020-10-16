@@ -8,11 +8,17 @@
     "start": "pm2 start pm2.yaml",
     "stop": "pm2 stop pm2.yaml",
     "dev": "tsc-watch --onSuccess \"node ./dist/index.js\"",
+    "eslint": "eslint src tests",
     "test": "mocha -r ts-node/register tests/**/*.test.ts --slow 0",
     "testtxhist": "mocha -r ts-node/register tests/txHistory.test.ts"
   },
   "author": "",
   "license": "MIT",
+  "husky": {
+    "hooks": {
+      "pre-push": "tsc && npm run eslint"
+    }
+  },
   "dependencies": {
     "@emurgo/cardano-serialization-lib-nodejs": "^4.0.0",
     "@types/chai": "^4.2.11",
@@ -50,6 +56,7 @@
     "eslint-config-airbnb-typescript": "^9.0.0",
     "eslint-plugin-import": "^2.22.0",
     "@types/ws": "^7.2.7",
+    "husky": "^4.3.0",
     "ramda": "^0.27.0"
   }
 }

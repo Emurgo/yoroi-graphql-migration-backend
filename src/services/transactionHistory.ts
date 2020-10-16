@@ -162,48 +162,48 @@ const askTransactionSqlQuery = `
 `;
 
 
-const graphQLQuery = `
-  query TxsHistory(
-    $addresses: [String]
-    $limit: Int
-    $afterBlockNum: Int
-    $untilBlockNum: Int
-  ) {
-    transactions(
-      where: {
-        _and: [
-          { block: { number: { _gte: $afterBlockNum, _lte: $untilBlockNum } } }
-          {
-            _or: [
-              { inputs: { address: { _in: $addresses } } }
-              { outputs: { address: { _in: $addresses } } }
-            ]
-          }
-        ]
-      }
-      limit: $limit
-      order_by: { includedAt: asc }
-    ) {
-      hash
+// const graphQLQuery = `
+//   query TxsHistory(
+//     $addresses: [String]
+//     $limit: Int
+//     $afterBlockNum: Int
+//     $untilBlockNum: Int
+//   ) {
+//     transactions(
+//       where: {
+//         _and: [
+//           { block: { number: { _gte: $afterBlockNum, _lte: $untilBlockNum } } }
+//           {
+//             _or: [
+//               { inputs: { address: { _in: $addresses } } }
+//               { outputs: { address: { _in: $addresses } } }
+//             ]
+//           }
+//         ]
+//       }
+//       limit: $limit
+//       order_by: { includedAt: asc }
+//     ) {
+//       hash
   
-      block {
-        number
-        hash
-        epochNo
-        slotNo
-      }
-      includedAt
-      inputs {
-        address
-        value
-      }
-      outputs {
-        address
-        value
-      }
-    }
-  }
-`;
+//       block {
+//         number
+//         hash
+//         epochNo
+//         slotNo
+//       }
+//       includedAt
+//       inputs {
+//         address
+//         value
+//       }
+//       outputs {
+//         address
+//         value
+//       }
+//     }
+//   }
+// `;
 
 const MAX_INT = "2147483647";
 

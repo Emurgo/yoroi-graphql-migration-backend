@@ -1,7 +1,7 @@
 import axios from "axios";
 import { assert, expect } from "chai";
 import { resultsForSingleHistory } from "./dataSingleHistory";
-import { config, Config } from "./config";
+import { config, } from "./config";
 import { Certificate, MirCertPot, TransactionFrag } from "../src/Transactions/types";
 import * as R from "ramda";
 
@@ -168,12 +168,12 @@ describe("/txs/history", function() {
 
   it("should throw reference errors for a until block that doesn't exist.", async() => {
     try {
-      const ret = await axios.post(testableUri, {
+      await axios.post(testableUri, {
         addresses: [
           "Ae2tdPwUPEZHu3NZa6kCwet2msq4xrBXKHBDvogFKwMsF18Jca8JHLRBas7"],
         untilBlock: "0000000000000000000000000000000000000000000000000000000000000000",
       });
-      expect(1).to.be.equal(0);
+      expect(1).to.be.equal(0); // equivalent to asset false
     } catch (err) {
       expect(err.response.status).to.be.equal(500);
       expect(err.response.data.error.response).to.be.equal("REFERENCE_BEST_BLOCK_MISMATCH");
@@ -181,7 +181,7 @@ describe("/txs/history", function() {
   });
   it("should throw reference errors for a tx that doesn't exist.", async() => {
     try {
-      const ret = await axios.post(testableUri, {
+      await axios.post(testableUri, {
         addresses: [
           "Ae2tdPwUPEZHu3NZa6kCwet2msq4xrBXKHBDvogFKwMsF18Jca8JHLRBas7"],
         untilBlock: hashForUntilBlock,
@@ -189,7 +189,7 @@ describe("/txs/history", function() {
           tx: "0000000000000000000000000000000000000000000000000000000000000000",
           block: "790eb4d6ef2fea7cceebf22c66c20518616d5331966f6f9b4ca3a308b9c3ceb1"},
       });
-      expect(1).to.be.equal(0);
+      expect(1).to.be.equal(0); // equivalent to asset false
     } catch (err) {
       expect(err.response.status).to.be.equal(500);
       expect(err.response.data.error.response).to.be.equal("REFERENCE_TX_NOT_FOUND");
@@ -197,7 +197,7 @@ describe("/txs/history", function() {
   });
   it("should throw reference errors for a tx that doesn't match the block in after.", async() => {
     try {
-      const ret = await axios.post(testableUri, {
+      await axios.post(testableUri, {
         addresses: [
           "Ae2tdPwUPEZHu3NZa6kCwet2msq4xrBXKHBDvogFKwMsF18Jca8JHLRBas7"],
         untilBlock: hashForUntilBlock,
@@ -205,7 +205,7 @@ describe("/txs/history", function() {
           tx: "9f93abce0b293b01f62ce9c8b0257a3da8aef27de164a609c32c92dc0a04f58e",
           block: "0000000000000000000000000000000000000000000000000000000000000000"},
       });
-      expect(1).to.be.equal(0);
+      expect(1).to.be.equal(0); // equivalent to asset false
     } catch (err) {
       expect(err.response.status).to.be.equal(500);
       expect(err.response.data.error.response).to.be.equal("REFERENCE_BLOCK_MISMATCH");
@@ -304,8 +304,7 @@ describe("/txs/history", function() {
   });
   it("single history objects should match iohk-mainnet", async () => {
     const result = await axios.post(testableUri, dataSingleHistory );
-    //expect(result.data).to.be.eql(resultsForSingleHistory);
-    //passing because we have diverged from reference url due to the addition of fee, ttl, etc fields
+    expect(result.data).to.be.eql(resultsForSingleHistory);
   });
   it("objects should have all the properties", async() => {
     const result = await axios.post(testableUri, dataSingleHistory );
