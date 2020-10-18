@@ -62,6 +62,7 @@ npm run test
 
   ```js
   {
+    // bech32 address for strict match. hex-encoded address for matching on the payment key
     addresses: Array<string>
   }
   ```
@@ -205,6 +206,7 @@ npm run test
 
   ```js
   {
+    // bech32 address for strict match. hex-encoded address for matching on the payment key
     addresses: Array<string>
   }
   ```
@@ -238,8 +240,9 @@ npm run test
   {
     // addresses may contain several different things.
     // 1. For reward addresses, this field accepts the hex (as a string)
-    // 2. For Ptr / enterprise / base addresses, this field will accept the hex of the _payment key_ as a string.
-    // 3. For Byone, use the Ae2/Dd address.
+    // 2. Bech32 addresses will strictly match the address passed in
+    // 3. hex-encoded addresses will match on any address with the same payment key
+    // 4. For Byron, use the Ae2/Dd address.
     addresses: Array<string>,
     // omitting "after" means you query starting from the genesis block
     after?: {

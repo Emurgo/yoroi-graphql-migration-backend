@@ -3,6 +3,7 @@ import axios from "axios";
 import { contentTypeHeaders, graphqlEndpoint, UtilEither} from "../utils";
 
 export const askUtxoSumForAddresses = async (addresses: string[]): Promise<UtilEither<string>> => {
+  // TODO: support for payment keys
   const query = `
             query UtxoForAddresses($addresses: [String]) {
               utxos_aggregate(where: {
@@ -28,7 +29,7 @@ export const askUtxoSumForAddresses = async (addresses: string[]): Promise<UtilE
        && "value" in ret.data.data.utxos_aggregate.aggregate.sum)
     return { kind: "ok", value: ret.data.data.utxos_aggregate.aggregate.sum.value };
   else
-    return { kind: "error", errMsg: "utxoSumforAddresses, could not unstand graphql response."};
+    return { kind: "error", errMsg: "utxoSumforAddresses, could not understand graphql response."};
 
 
 };

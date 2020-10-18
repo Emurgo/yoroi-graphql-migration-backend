@@ -1,13 +1,10 @@
 import axios from "axios";
 
-import {  contentTypeHeaders, errMsgs, graphqlEndpoint, UtilEither} from "../utils";
+import {  contentTypeHeaders, errMsgs, graphqlEndpoint, UtilEither, getAddressesByType } from "../utils";
 
 import { rowToCertificate, BlockEra, BlockFrag, Certificate, TransInputFrag, TransOutputFrag, TransactionFrag} from "../Transactions/types";
 
 import { Pool } from "pg";
-import { ByronAddress, Address } from "@emurgo/cardano-serialization-lib-nodejs";
-
-
 
 /**
   Everything else in this repo is using graphql, so why psql here?
@@ -206,64 +203,6 @@ const askTransactionSqlQuery = `
 // `;
 
 const MAX_INT = "2147483647";
-
-// ex: TODO example
-const PAYMENT_KEY_HEX_LENGTH = 56;
-
-// ex: e19842145a1693dfbf809963c7a605b463dce5ca6b66820341a443501e
-const STAKING_ADDR_HEX_LENGTH = 58;
-
-const HEX_REGEXP = RegExp("^[0-9a-fA-F]+$");
-
-function getAddressesByType(addresses: string[]): {
-  /**
-   * note: we keep track of explicit bech32 addresses
-   * since it's possible somebody wants the tx history for a specific address
-   * and not the tx history for the payment key of the address
-   */
-  legacyAddr: string[],
-  bech32: string[],
-  paymentCreds: string[],
-  stakingKeys: string[],
-} {
-  const legacyAddr = [];
-  const bech32 = [];
-  const paymentCreds = [];
-  const stakingKeys = [];
-  for (const address of addresses) {
-    // 1) Check if it's a Byron-era address
-    if (ByronAddress.is_valid(address)) {
-      legacyAddr.push(address);
-      continue;
-    }
-    // 2) check if it's a valid bech32 address
-    try {
-      const wasmBech32 = Address.from_bech32(address);
-      bech32.push(address);
-      wasmBech32.free();
-      continue;
-    } catch (_e) {
-      // silently discard any non-valid Cardano addresses
-    }
-    // 3) check if it's a payment key
-    if (address.length === PAYMENT_KEY_HEX_LENGTH && HEX_REGEXP.test(address)) {
-      paymentCreds.push(`\\x${address}`);
-      continue;
-    }
-    // 4) check if it's a staking key
-    if (address.length === STAKING_ADDR_HEX_LENGTH && HEX_REGEXP.test(address)) {
-      stakingKeys.push(`\\x${address}`);
-      continue;
-    }
-  }
-
-  return {
-    legacyAddr,
-    bech32,
-    paymentCreds,
-    stakingKeys,
-  };
-}
 
 export const askTransactionHistory = async ( 
   pool: Pool

@@ -2,9 +2,11 @@ import config from "config";
 import { Router, Request, Response, NextFunction } from "express";
 import {
   Address,
+  ByronAddress,
   BaseAddress,
   PointerAddress,
   EnterpriseAddress,
+  RewardAddress,
 } from "@emurgo/cardano-serialization-lib-nodejs";
 
 export const contentTypeHeaders = { headers: {"Content-Type": "application/json"}};
@@ -24,9 +26,6 @@ export const applyMiddleware = (
 };
 
 export const HEX_REGEXP = RegExp("^[0-9a-fA-F]+$"); 
-const HEX_LENGTH = 56;
-export const isHex = (s:string) =>
-  s.length === HEX_LENGTH && HEX_REGEXP.test(s);
 
 export interface Dictionary<T> {
  [key: string]: T;
@@ -116,43 +115,98 @@ export const validateHistoryReq = (addressRequestLimit:number, apiResponseLimit:
   }
 };
 
-
-export function getCardanoSpendingKeyHash(
-  bech32Addr: string,
+export function getSpendingKeyHash(
+  wasmAddr: Address,
 ): (undefined | string) {
   const getResult = (bytes: Uint8Array | undefined) => {
     if (bytes == null) return undefined;
     return Buffer.from(bytes).toString("hex");
   };
-  try {
-    const wasmAddr = Address.from_bech32(bech32Addr);
-    {
-      const baseAddr = BaseAddress.from_address(wasmAddr);
-      if (baseAddr) {
-        const result = getResult(baseAddr.payment_cred().to_keyhash()?.to_bytes());
-        baseAddr.free();
-        wasmAddr.free();
-        return result;
-      }
+
+  {
+    const baseAddr = BaseAddress.from_address(wasmAddr);
+    if (baseAddr) {
+      const result = getResult(baseAddr.payment_cred().to_keyhash()?.to_bytes());
+      baseAddr.free();
+      return result;
     }
-    {
-      const ptrAddr = PointerAddress.from_address(wasmAddr);
-      if (ptrAddr) {
-        const result = getResult(ptrAddr.payment_cred().to_keyhash()?.to_bytes());
-        ptrAddr.free();
-        wasmAddr.free();
-        return result;
-      }
+  }
+  {
+    const ptrAddr = PointerAddress.from_address(wasmAddr);
+    if (ptrAddr) {
+      const result = getResult(ptrAddr.payment_cred().to_keyhash()?.to_bytes());
+      ptrAddr.free();
+      return result;
     }
-    {
-      const enterpriseAddr = EnterpriseAddress.from_address(wasmAddr);
-      if (enterpriseAddr) {
-        const result = getResult(enterpriseAddr.payment_cred().to_keyhash()?.to_bytes());
-        enterpriseAddr.free();
-        wasmAddr.free();
-        return result;
-      }
+  }
+  {
+    const enterpriseAddr = EnterpriseAddress.from_address(wasmAddr);
+    if (enterpriseAddr) {
+      const result = getResult(enterpriseAddr.payment_cred().to_keyhash()?.to_bytes());
+      enterpriseAddr.free();
+      return result;
     }
-  } catch (_e) { return undefined; }
-  return undefined;
+  }
+}
+
+export function validateRewardAddress(
+  wasmAddr: Address,
+): boolean {
+  const rewardAddr = RewardAddress.from_address(wasmAddr);
+  return rewardAddr != null;
+}
+
+export function getAddressesByType(addresses: string[]): {
+  /**
+   * note: we keep track of explicit bech32 addresses
+   * since it's possible somebody wants the tx history for a specific address
+   * and not the tx history for the payment key of the address
+   */
+  legacyAddr: string[],
+  bech32: string[],
+  paymentCreds: string[],
+  stakingKeys: string[],
+} {
+  const legacyAddr = [];
+  const bech32 = [];
+  const paymentCreds = [];
+  const stakingKeys = [];
+  for (const address of addresses) {
+    // 1) Check if it's a Byron-era address
+    if (ByronAddress.is_valid(address)) {
+      legacyAddr.push(address);
+      continue;
+    }
+    // 2) check if it's a valid bech32 address
+    try {
+      const wasmBech32 = Address.from_bech32(address);
+      bech32.push(address);
+      wasmBech32.free();
+      continue;
+    } catch (_e) {
+      // silently discard any non-valid Cardano addresses
+    }
+    try {
+      const wasmAddr = Address.from_bytes(
+        Buffer.from(address, "hex")
+      );
+      const spendingKeyHash = getSpendingKeyHash(wasmAddr);
+      if (spendingKeyHash != null) {
+        paymentCreds.push(`\\x${spendingKeyHash}`);
+      } else if (validateRewardAddress(wasmAddr)) {
+        stakingKeys.push(`\\x${address}`);
+      }
+      wasmAddr.free();
+      continue;
+    } catch (_e) {
+      // silently discard any non-valid Cardano addresses
+    }
+  }
+
+  return {
+    legacyAddr,
+    bech32,
+    paymentCreds,
+    stakingKeys,
+  };
 }
