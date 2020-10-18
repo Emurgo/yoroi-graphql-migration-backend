@@ -43,6 +43,10 @@ const askRegHistory = async (pool: Pool, addresses: string[]): Promise<Dictionar
   const history = await pool.query(regHistoryQuery, [stakeCred]);
   const ret : Dictionary<Pointer[]> = {};
   for(const addr of addresses) {
+    // default value
+    ret[addr] = [];
+  }
+  for(const addr of addresses) {
     const pointers = history.rows.filter( (r:any) => r.stakeCred.toString("hex") === addr)
       .map( (r:any) => ({ slot: r.slotNo
         , txIndex: r.txIndex
