@@ -38,7 +38,7 @@ in rec {
       mkdir -p $out/bin
       cat <<EOF > $out/bin/yoroi-graphql-migration-backend
       #!${runtimeShell}
-      exec ${nodejs}/bin/node $out/dist/index.js
+      exec ${nodejs-12_x}/bin/node $out/dist/index.js
       EOF
       chmod +x $out/bin/yoroi-graphql-migration-backend
     '';
