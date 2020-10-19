@@ -239,7 +239,43 @@ const getStatus = async (req: Request, res:  Response) => {
   res.send({ isServerOk: true, isMaintenance: false, serverTime: Date.now() });
 };
 
-const routes : Route[] = [ { path: "/v2/bestblock"
+const routes : Route[] = [
+  // deprecated endpoints
+{   path: "/getAccountState"
+  , method: "post"
+  , handler: handleGetAccountState(pool)
+}
+, { path: "/getRegistrationHistory"
+  , method: "post"
+  , handler: handleGetRegHistory(pool)
+}
+, { path: "/getRewardHistory"
+  , method: "post"
+  , handler: handleGetRewardHistory(pool)
+}
+, { path: "/getPoolInfo"
+  , method: "post"
+  , handler: handlePoolInfo(pool)
+}
+// replacement endpoints
+, { path: "/account/state"
+  , method: "post"
+  , handler: handleGetAccountState(pool)
+}
+, { path: "/account/registrationHistory"
+  , method: "post"
+  , handler: handleGetRegHistory(pool)
+}
+, { path: "/account/rewardHistory"
+  , method: "post"
+  , handler: handleGetRewardHistory(pool)
+}
+, { path: "/pool/info"
+  , method: "post"
+  , handler: handlePoolInfo(pool)
+}
+// regular endpoints
+, {   path: "/v2/bestblock"
   , method: "get"
   , handler: bestBlock
 }
@@ -259,25 +295,9 @@ const routes : Route[] = [ { path: "/v2/bestblock"
   , method: "post"
   , handler: txHistory 
 }
-, { path: "/getAccountState"
-  , method: "post"
-  , handler: handleGetAccountState(pool)
-}
-, { path: "/getRegistrationHistory"
-  , method: "post"
-  , handler: handleGetRegHistory(pool)
-}
-, { path: "/getRewardHistory"
-  , method: "post"
-  , handler: handleGetRewardHistory(pool)
-}
 , { path: "/txs/signed"
   , method: "post"
   , handler: handleSignedTx
-}
-, { path: "/getPoolInfo"
-  , method: "post"
-  , handler: handlePoolInfo(pool)
 }
 , { path: "/v2/importerhealthcheck"
   , method: "get"

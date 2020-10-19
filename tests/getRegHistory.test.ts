@@ -3,13 +3,13 @@ import { expect } from "chai";
 import { config, } from "./config";
 
 const endpoint = config.apiUrl;
-const testableUri = endpoint + "getRegistrationHistory";
+const testableUri = endpoint + "account/registrationHistory";
 
 const realAddress = "e10408e68eafe1a57cf99a2793787a22dbb908d7d57c9976c440cbfc68";
 const fakeAddress = "I am fake";
 const mixedAddresses = [fakeAddress, realAddress];
 
-describe("/getRegistrationHistory", function() {
+describe("/account/registrationHistory", function() {
   it("should return a pointer", async() => {
     const result = await axios({method: "post", url: testableUri, data: {addresses: [realAddress]}});
     expect(result.data).not.be.empty;

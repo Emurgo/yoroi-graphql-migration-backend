@@ -81,7 +81,7 @@ npm run test
   ```
 </details>
 <details>
-  <summary>api/getRegistrationHistory</summary>
+  <summary>api/account/registrationHistory</summary>
   Input
 
   ```js
@@ -104,7 +104,7 @@ npm run test
   ```
 </details>
 <details>
-  <summary>api/getAccountState</summary>
+  <summary>api/account/state</summary>
   Input
 
   ```js
@@ -127,7 +127,7 @@ npm run test
   ```
 </details>
 <details>
-  <summary>api/getRewardHistory</summary>
+  <summary>api/account/rewardHistory</summary>
   Input
 
   ```js
@@ -148,7 +148,7 @@ npm run test
   ```
 </details>
 <details>
-  <summary>api/getPoolInfo</summary>
+  <summary>api/pool/info</summary>
   Input
 
   ```js
