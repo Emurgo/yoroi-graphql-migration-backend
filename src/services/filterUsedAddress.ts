@@ -6,7 +6,8 @@ import {
 } from "@emurgo/cardano-serialization-lib-nodejs";
 
 import config from "config";
-import { assertNever, validateAddressesReq, getSpendingKeyHash } from "../utils";
+import { assertNever, validateAddressesReq, getSpendingKeyHash, HEX_REGEXP } from "../utils";
+import { decode } from "bech32";
 
 const baseQuery = `
   select ( select json_agg((address)) 
@@ -52,6 +53,7 @@ export function getAddressesByType(addresses: string[]): {
     }
     // 2) check if it's a valid bech32 address
     try {
+      decode(address, 1000); // check it's a valid bech32 address
       const wasmBech32 = Address.from_bech32(address);
       bech32.push(address);
       wasmBech32.free();
@@ -60,16 +62,18 @@ export function getAddressesByType(addresses: string[]): {
       // silently discard any non-valid Cardano addresses
     }
     try {
-      const wasmAddr = Address.from_bytes(
-        Buffer.from(address, "hex")
-      );
-      const spendingKeyHash = getSpendingKeyHash(wasmAddr);
-      if (spendingKeyHash != null) {
-        const addressesForKey = paymentKeyMap.get(spendingKeyHash) ?? new Set();
-        addressesForKey.add(address);
-        paymentKeyMap.set(spendingKeyHash, addressesForKey);
+      if (HEX_REGEXP.test(address)) {
+        const wasmAddr = Address.from_bytes(
+          Buffer.from(address, "hex")
+        );
+        const spendingKeyHash = getSpendingKeyHash(wasmAddr);
+        if (spendingKeyHash != null) {
+          const addressesForKey = paymentKeyMap.get(spendingKeyHash) ?? new Set();
+          addressesForKey.add(address);
+          paymentKeyMap.set(spendingKeyHash, addressesForKey);
+        }
+        wasmAddr.free();
       }
-      wasmAddr.free();
       continue;
     } catch (_e) {
       // silently discard any non-valid Cardano addresses
@@ -111,12 +115,11 @@ export const filterUsedAddresses = (pool : Pool) => async (req: Request, res: Re
       );
       // 2) get all the addresses inside these transactions
       const addressesInTxs = queryResult.rows.flatMap( tx => [tx.inputs, tx.outputs]).flat();
-      console.log(queryResult.rows);
-      console.log(Array.from(addressTypes.paymentKeyMap.keys()));
       // 3) get the payment credential for each address in the transaction
       const keysInTxs: Array<string> = addressesInTxs.reduce(
         (arr, next) => {
           try {
+            decode(next, 1000); // check it's a valid bech32 address
             const wasmAddr = Address.from_bech32(next);
             const paymentCred = getSpendingKeyHash(wasmAddr);
             if (paymentCred != null) arr.push(paymentCred);

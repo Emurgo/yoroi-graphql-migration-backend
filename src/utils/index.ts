@@ -8,6 +8,7 @@ import {
   EnterpriseAddress,
   RewardAddress,
 } from "@emurgo/cardano-serialization-lib-nodejs";
+import { decode } from "bech32";
 
 export const contentTypeHeaders = { headers: {"Content-Type": "application/json"}};
 export const graphqlEndpoint:string = config.get("server.graphqlEndpoint");
@@ -179,6 +180,7 @@ export function getAddressesByType(addresses: string[]): {
     }
     // 2) check if it's a valid bech32 address
     try {
+      decode(address, 1000); // check it's a valid bech32 address
       const wasmBech32 = Address.from_bech32(address);
       bech32.push(address);
       wasmBech32.free();
@@ -187,17 +189,19 @@ export function getAddressesByType(addresses: string[]): {
       // silently discard any non-valid Cardano addresses
     }
     try {
-      const wasmAddr = Address.from_bytes(
-        Buffer.from(address, "hex")
-      );
-      const spendingKeyHash = getSpendingKeyHash(wasmAddr);
-      if (spendingKeyHash != null) {
-        paymentCreds.push(`\\x${spendingKeyHash}`);
-      } else if (validateRewardAddress(wasmAddr)) {
-        stakingKeys.push(`\\x${address}`);
+      if (HEX_REGEXP.test(address)) {
+        const wasmAddr = Address.from_bytes(
+          Buffer.from(address, "hex")
+        );
+        const spendingKeyHash = getSpendingKeyHash(wasmAddr);
+        if (spendingKeyHash != null) {
+          paymentCreds.push(`\\x${spendingKeyHash}`);
+        } else if (validateRewardAddress(wasmAddr)) {
+          stakingKeys.push(`\\x${address}`);
+        }
+        wasmAddr.free();
+        continue;
       }
-      wasmAddr.free();
-      continue;
     } catch (_e) {
       // silently discard any non-valid Cardano addresses
     }

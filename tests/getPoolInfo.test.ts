@@ -3,13 +3,13 @@ import { expect } from "chai";
 import { config, } from "./config";
 
 const endpoint = config.apiUrl;
-const testableUri = endpoint + "getPoolInfo";
+const testableUri = endpoint + "pool/info";
 
 const realPoolId = "1b268f4cba3faa7e36d8a0cc4adca2096fb856119412ee7330f692b5"; // note: this pool has changed its metadata at least once
 const fakePoolId = "00000000000000000000000000000000000000000000000000000001";
 const privatePool = "b1fe7ac3669604156c20dcfc08355197af5637c37750d862039670c4";
 
-describe("/getPoolInfo", function() {
+describe("/pool/info", function() {
   it("should return information about a pool that has metadata available", async() => {
     const result = await axios({method: "post", url: testableUri, data: {poolIds: [realPoolId]}});
     expect(result.data).to.have.property(realPoolId);
