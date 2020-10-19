@@ -30,7 +30,7 @@ const askRewardHistory = async (pool: Pool, addresses: string[]): Promise<Dictio
     const rewardPairs: RewardForEpoch[] = history.rows
       .filter( (r:any) => r.stakeCred.toString("hex") === addr)
       .map( (r:any) => ({
-        epoch: r.epoch_no,
+        epoch: Number.parseInt(r.epoch_no, 10),
         reward: r.amount
       }));
 
