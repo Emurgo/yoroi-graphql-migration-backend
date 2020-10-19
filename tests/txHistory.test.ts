@@ -97,15 +97,9 @@ const dataTxOrdering = {
 const dataShelleyCerts = {
   addresses: [
      "addr1q9ya8v4pe33nlkgftyd70nhhp407pvnjjcsddhf64sh9gegwtvyxm7r69gx9cwvtg82p87zpwmzj0kj7tjmyraze3pzqe6zxzv"
-     // enterprise address
+      // enterprise address
     ,"addr1v8vqle5aa50ljr6pu5ndqve29luch29qmpwwhz2pk5tcggqn3q8mu"
   ]
-  , untilBlock: "d6f6cd7101ce4fa80f7d7fe78745d2ca404705f58247320bc2cef975e7574939"
-};
-
-const dataPaymentCreds = {
-  addresses: ["x9566a8f301fb8a046e44557bb38dfb9080a1213f17f200dcd3808169"
-    ,"211c082781577c6b8a4832d29011baab323947e59fbd6ec8995b6c5a"]
   , untilBlock: "d6f6cd7101ce4fa80f7d7fe78745d2ca404705f58247320bc2cef975e7574939"
 };
 
@@ -357,9 +351,15 @@ describe("/txs/history", function() {
     expect(result.data[0].outputs[1].address).to.be.eql("Ae2tdPwUPEYynjShTL8D2L2GGggTH3AGtMteb7r65oLar1vzZ4JPfxob4b8");
     expect(result.data[0].outputs[1].amount).to.be.eql("98000000");
   });
-  it("should get txs by payment creds", async() => {
-    const result = await axios.post(testableUri, dataPaymentCreds);
-    expect(result.data).to.not.be.empty;
+  it("should get txs by enterprise address", async() => {
+    const result = await axios.post(testableUri, {
+      addresses: [
+        "61211c082781577c6b8a4832d29011baab323947e59fbd6ec8995b6c5a"
+      ]
+      , untilBlock: "d6f6cd7101ce4fa80f7d7fe78745d2ca404705f58247320bc2cef975e7574939"
+    });
+    expect(result.data).to.have.lengthOf(1);
+    expect(result.data[0].hash).to.equal("92bdc4f35fd9b363a4eac47898148fd1816efd4260d71e8251ca80dbb7a39ca3");
   });
   it("should get sensible shelley certificates", async() => {
     const result = await axios.post(testableUri, dataShelleyCerts);

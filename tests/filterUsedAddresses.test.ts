@@ -21,11 +21,11 @@ const expectedResult = [
 ];
 
 const paymentCreds = [
-  "211c082781577c6b8a4832d29011baab323947e59fbd6ec8995b6c5a",
-  "0000082781577c6b8a4832d29011baab323947e59fbd6ec8995b6c5a",
+  "61211c082781577c6b8a4832d29011baab323947e59fbd6ec8995b6c5a",
+  "610000082781577c6b8a4832d29011baab323947e59fbd6ec8995b6c5a",
 ];
 const expectedPaymentCredResult = [
-  "211c082781577c6b8a4832d29011baab323947e59fbd6ec8995b6c5a",
+  "61211c082781577c6b8a4832d29011baab323947e59fbd6ec8995b6c5a",
 ];
 
 describe("/addresses/filterUsed", function() {
@@ -35,7 +35,7 @@ describe("/addresses/filterUsed", function() {
     expect(result.data).to.be.an("array");
     expect(result.data.sort()).to.be.eql(expectedResult.sort());
   });
-  it("can handle payment creds", async function () {
+  it("can handle enterprise addresses", async function () {
     const postData = { addresses: paymentCreds };
     const result = await axios.post(endpoint+"v2/addresses/filterUsed", postData);
     expect(result.data).to.be.an("array");

@@ -2,7 +2,7 @@ import { Pool } from "pg";
 import { Request, Response } from "express";
 
 import config from "config";
-import { assertNever, isHex, validateAddressesReq } from "../utils";
+import { assertNever, validateAddressesReq, getAddressesByType, } from "../utils";
 
 const utxoForAddressQuery = `
   select tx_out.address
@@ -30,12 +30,21 @@ export const utxoForAddresses = (pool: Pool) => async (req: Request, res: Respon
     throw new Error("error, no addresses.");
     return;
   }
+  const addressTypes = getAddressesByType(req.body.addresses);
   const verifiedAddresses = validateAddressesReq(addressesRequestLimit
     , req.body.addresses);
   switch(verifiedAddresses.kind){
   case "ok": {
-    const paymentCreds = verifiedAddresses.value.filter(isHex).map((s:string) => `\\x${s}`);
-    const result = await pool.query(utxoForAddressQuery, [verifiedAddresses.value, paymentCreds]);
+    const result = await pool.query(
+      utxoForAddressQuery,
+      [
+        [
+          ...addressTypes.legacyAddr,
+          ...addressTypes.bech32,
+        ]
+        , addressTypes.paymentCreds
+      ]
+    );
     const utxos = result.rows.map ( utxo => 
       ({ utxo_id: `${utxo.hash}:${utxo.index}`
         , tx_hash: utxo.hash
@@ -52,7 +61,3 @@ export const utxoForAddresses = (pool: Pool) => async (req: Request, res: Respon
   default: return assertNever(verifiedAddresses);
   }
 };
-
-
-
-
