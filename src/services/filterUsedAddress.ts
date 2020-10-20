@@ -148,7 +148,7 @@ export const filterUsedAddresses = (pool : Pool) => async (req: Request, res: Re
         .filter(addr => addressSet.has(addr))
         .forEach(addr => result.add(addr));
     }
-    res.send([...result]);
+    res.send(Array.from(result));
     return;
 
   }
