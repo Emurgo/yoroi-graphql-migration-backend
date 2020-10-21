@@ -351,15 +351,27 @@ describe("/txs/history", function() {
     expect(result.data[0].outputs[1].address).to.be.eql("Ae2tdPwUPEYynjShTL8D2L2GGggTH3AGtMteb7r65oLar1vzZ4JPfxob4b8");
     expect(result.data[0].outputs[1].amount).to.be.eql("98000000");
   });
-  it("should get txs by enterprise address", async() => {
+  it("Get payment key that only occurs in input", async() => {
     const result = await axios.post(testableUri, {
       addresses: [
         "61211c082781577c6b8a4832d29011baab323947e59fbd6ec8995b6c5a"
       ]
-      , untilBlock: "d6f6cd7101ce4fa80f7d7fe78745d2ca404705f58247320bc2cef975e7574939"
+      , after: {
+        block: "b51b1605cc27b0be3a1ab07dfcc2ceb0b0da5e8ab5d0cb944c16366edba92e83",
+        tx: "79acf08126546b68d0464417af9530473b8c56c63b2a937bf6451e96e55cb96a",
+      }, untilBlock: "f0d4b1eed671770194a223eaba3fc0cb0b6787d83c432ec5c24b83620c9b7474"
     });
     expect(result.data).to.have.lengthOf(1);
     expect(result.data[0].hash).to.equal("92bdc4f35fd9b363a4eac47898148fd1816efd4260d71e8251ca80dbb7a39ca3");
+  });
+  it("Get payment key that only occurs in output", async() => {
+    const result = await axios.post(testableUri, {
+      addresses: [
+        "6085abf3eca55024aa1c22b944599b5e890ec12dfb19941229da4ba293"
+      ]
+      , untilBlock: "094ae9802b7e0a8cee97e88cc14a3029f8788d9cb9568ae32337e6ba2c0c1a5b"
+    });
+    expect(result.data).to.have.lengthOf(1);
   });
   it("should get sensible shelley certificates", async() => {
     const result = await axios.post(testableUri, dataShelleyCerts);
