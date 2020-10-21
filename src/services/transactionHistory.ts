@@ -55,7 +55,7 @@ const askTransactionSqlQuery = `
               on tx.id = tx_out.tx_id
 
             where tx_out.address = ANY(($1)::varchar array)
-              or tx_out.payment_cred = ANY(($7)::bytea array)
+              or tx_out.payment_cred = ANY(($6)::bytea array)
 
           UNION
             ${/* 3) Get all certificates for the transaction */""}
@@ -69,14 +69,14 @@ const askTransactionSqlQuery = `
                 certs."formalType" in ('CertRegKey', 'CertDeregKey','CertDelegate')
                 and certs."stakeCred" = any(
                   ${/* stakeCred is encoded as a string, so we have to convert from a byte array to a hex string */""}
-                  (SELECT array_agg(encode(addr, 'hex')) from UNNEST($7) as addr)::varchar array
+                  (SELECT array_agg(encode(addr, 'hex')) from UNNEST($7::bytea array) as addr)::varchar array
                 )
               ) or (
                 ${/* note: PoolRetirement only contains pool key hash, so no way to map it to an address */""}
                 certs."formalType" in ('CertRegPool')
                 and certs."poolParamsRewardAccount" = any(
                   ${/* poolParamsRewardAccount is encoded as a string, so we have to convert from a byte array to a hex string */""}
-                  (SELECT array_agg(encode(addr, 'hex')) from UNNEST($7) as addr)::varchar array
+                  (SELECT array_agg(encode(addr, 'hex')) from UNNEST($7::bytea array) as addr)::varchar array
                 )
               )
 
