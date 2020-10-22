@@ -1,5 +1,7 @@
 import axios from "axios";
 import { expect, should } from "chai";
+import { encode, toWords, } from "bech32";
+import { Prefixes } from "../src/utils/cip5";
 
 import { config, } from "./config";
 
@@ -8,7 +10,8 @@ const s = should();
 
 const add1 = "DdzFFzCqrht4wFnWC5TJA5UUVE54JC9xZWq589iKyCrWa6hek3KKevyaXzQt6FsdunbkZGzBFQhwZi1MDpijwRoC7kj1MkEPh2Uu5Ssz";
 
-const enterpriseAddresses = "615c619e192407b2e972f04f0dda7c52aa8013d45ee7ba69d57041cad0";
+
+const enterpriseAddresses = encode(Prefixes.PAYMENT_KEY_HASH, toWords(Buffer.from("5c619e192407b2e972f04f0dda7c52aa8013d45ee7ba69d57041cad0", "hex")));
 
 const addresses = 
     [ "DdzFFzCqrht4wFnWC5TJA5UUVE54JC9xZWq589iKyCrWa6hek3KKevyaXzQt6FsdunbkZGzBFQhwZi1MDpijwRoC7kj1MkEPh2Uu5Ssz",

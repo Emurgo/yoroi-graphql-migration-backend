@@ -54,6 +54,14 @@ npm run test
 
 ## API
 
+For addresses, refer to [CIP5](https://github.com/cardano-foundation/CIPs/tree/master/CIP5) for how they should be encoded. Notably, we support
+
+- `addr` & `addr_test`
+- `stake` & `stake_test`
+- `addr_vkh`
+
+We recommend querying using payment key hashes (`addr_vkh`) when possible (otherwise you may miss addresses for a wallet such as mangled based addresses or other address types like pointer addresses)
+
 <details>
   <summary>api/txs/utxoForAddresses</summary>
   Input
@@ -62,7 +70,7 @@ npm run test
 
   ```js
   {
-    // bech32 address for strict match. hex-encoded address for matching on the payment key
+    // byron addresses, bech32 address, bech32 stake addresses or addr_vkh
     addresses: Array<string>
   }
   ```
@@ -86,7 +94,8 @@ npm run test
 
   ```js
   {
-    addresses: Array<string> // hex of reward stake addresses
+    // bech32 stake address
+    addresses: Array<string>
   }
   ```
 
@@ -109,7 +118,8 @@ npm run test
 
   ```js
   {
-    addresses: Array<string> // hex of reward stake addresses
+    // bech32 stake addresses
+    addresses: Array<string>
   }
   ```
 
@@ -132,7 +142,8 @@ npm run test
 
   ```js
   {
-    addresses: Array<string> // hex of reward stake addresses
+    // bech32 stake address
+    addresses: Array<string>
   }
   ```
 
@@ -153,7 +164,7 @@ npm run test
 
   ```js
   {
-    poolIds: Array<string> // operator key
+    poolIds: Array<string> // operator key (pool id)
   }
   ```
 
@@ -206,7 +217,7 @@ npm run test
 
   ```js
   {
-    // bech32 address for strict match. hex-encoded address for matching on the payment key
+    // byron addresses, bech32 address or addr_vkh
     addresses: Array<string>
   }
   ```
@@ -238,11 +249,7 @@ npm run test
 
   ```js
   {
-    // addresses may contain several different things.
-    // 1. For reward addresses, this field accepts the hex (as a string)
-    // 2. Bech32 addresses will strictly match the address passed in
-    // 3. hex-encoded addresses will match on any address with the same payment key
-    // 4. For Byron, use the Ae2/Dd address.
+    // byron addresses, bech32 address, bech32 stake addresses or addr_vkh
     addresses: Array<string>,
     // omitting "after" means you query starting from the genesis block
     after?: {

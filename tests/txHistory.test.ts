@@ -4,6 +4,8 @@ import { resultsForSingleHistory } from "./dataSingleHistory";
 import { config, } from "./config";
 import { Certificate, MirCertPot, TransactionFrag } from "../src/Transactions/types";
 import * as R from "ramda";
+import { encode, toWords, } from "bech32";
+import { Prefixes } from "../src/utils/cip5";
 
 const endpoint = config.apiUrl;
 
@@ -99,13 +101,6 @@ const dataShelleyCerts = {
      "addr1q9ya8v4pe33nlkgftyd70nhhp407pvnjjcsddhf64sh9gegwtvyxm7r69gx9cwvtg82p87zpwmzj0kj7tjmyraze3pzqe6zxzv"
       // enterprise address
     ,"addr1v8vqle5aa50ljr6pu5ndqve29luch29qmpwwhz2pk5tcggqn3q8mu"
-  ]
-  , untilBlock: "d6f6cd7101ce4fa80f7d7fe78745d2ca404705f58247320bc2cef975e7574939"
-};
-
-const withdrawalRewardAddresses = {
-  addresses: [
-    "e19842145a1693dfbf809963c7a605b463dce5ca6b66820341a443501e"
   ]
   , untilBlock: "d6f6cd7101ce4fa80f7d7fe78745d2ca404705f58247320bc2cef975e7574939"
 };
@@ -354,7 +349,7 @@ describe("/txs/history", function() {
   it("Get payment key that only occurs in input", async() => {
     const result = await axios.post(testableUri, {
       addresses: [
-        "61211c082781577c6b8a4832d29011baab323947e59fbd6ec8995b6c5a"
+        encode(Prefixes.PAYMENT_KEY_HASH, toWords(Buffer.from("211c082781577c6b8a4832d29011baab323947e59fbd6ec8995b6c5a", "hex")))
       ]
       , after: {
         block: "b51b1605cc27b0be3a1ab07dfcc2ceb0b0da5e8ab5d0cb944c16366edba92e83",
@@ -367,7 +362,7 @@ describe("/txs/history", function() {
   it("Get payment key that only occurs in output", async() => {
     const result = await axios.post(testableUri, {
       addresses: [
-        "6085abf3eca55024aa1c22b944599b5e890ec12dfb19941229da4ba293"
+        encode(Prefixes.PAYMENT_KEY_HASH, toWords(Buffer.from("85abf3eca55024aa1c22b944599b5e890ec12dfb19941229da4ba293", "hex")))
       ]
       , untilBlock: "094ae9802b7e0a8cee97e88cc14a3029f8788d9cb9568ae32337e6ba2c0c1a5b"
     });
@@ -400,8 +395,28 @@ describe("/txs/history", function() {
       expect(typeof mirCert.rewards[addr]).to.be.equal("string");
     }
   });
+  it("(deprecated) should respond to reward addresses with relevant witnesses", async() => {
+    const result = await axios.post(testableUri, {
+      addresses: [
+        "e19842145a1693dfbf809963c7a605b463dce5ca6b66820341a443501e"
+      ]
+      , untilBlock: "d6f6cd7101ce4fa80f7d7fe78745d2ca404705f58247320bc2cef975e7574939"
+    });
+    expect(result.data).to.not.be.empty;
+
+    // ensures that withdrawal txs on a reward address appear
+    assert.oneOf(
+      "f6ee8bc837e3a1bc187da5d28ba67acaf10a9336ff63a243abb879c47b855132", 
+      result.data.map( (obj: TransactionFrag) => obj.hash)
+    );
+  });
   it("should respond to reward addresses with relevant witnesses", async() => {
-    const result = await axios.post(testableUri, withdrawalRewardAddresses);
+    const result = await axios.post(testableUri, {
+      addresses: [
+        "stake1uxvyy9z6z6fal0uqn93u0fs9k33aeew2ddngyq6p53p4q8smzq4sz"
+      ]
+      , untilBlock: "d6f6cd7101ce4fa80f7d7fe78745d2ca404705f58247320bc2cef975e7574939"
+    });
     expect(result.data).to.not.be.empty;
 
     // ensures that withdrawal txs on a reward address appear
