@@ -63,7 +63,6 @@ const askAccountRewards = async (pool: Pool, addresses: string[]): Promise<Dicti
       , poolOperator: null //not implemented
     };
   }
-  console.log(rewards.rows);
   for( const addr of addresses)
     if (!(addr in ret))
       ret[addr] = null;
