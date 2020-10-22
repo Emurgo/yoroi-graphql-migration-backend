@@ -1,6 +1,8 @@
 import axios from "axios";
 import { expect } from "chai";
 import { config, } from "./config";
+import { encode, toWords, } from "bech32";
+import { Prefixes } from "../src/utils/cip5";
 
 const endpoint = config.apiUrl;
 
@@ -21,11 +23,11 @@ const expectedResult = [
 ];
 
 const paymentCreds = [
-  "61211c082781577c6b8a4832d29011baab323947e59fbd6ec8995b6c5a",
-  "610000082781577c6b8a4832d29011baab323947e59fbd6ec8995b6c5a",
+  encode(Prefixes.PAYMENT_KEY_HASH, toWords(Buffer.from("211c082781577c6b8a4832d29011baab323947e59fbd6ec8995b6c5a", "hex"))),
+  encode(Prefixes.PAYMENT_KEY_HASH, toWords(Buffer.from("0000082781577c6b8a4832d29011baab323947e59fbd6ec8995b6c5a", "hex"))),
 ];
 const expectedPaymentCredResult = [
-  "61211c082781577c6b8a4832d29011baab323947e59fbd6ec8995b6c5a",
+  encode(Prefixes.PAYMENT_KEY_HASH, toWords(Buffer.from("211c082781577c6b8a4832d29011baab323947e59fbd6ec8995b6c5a", "hex"))),
 ];
 
 describe("/addresses/filterUsed", function() {

@@ -2,12 +2,12 @@ import { Pool } from "pg";
 import { Request, Response } from "express";
 import {
   Address,
-  ByronAddress,
 } from "@emurgo/cardano-serialization-lib-nodejs";
 
 import config from "config";
-import { assertNever, validateAddressesReq, getSpendingKeyHash, HEX_REGEXP } from "../utils";
-import { decode } from "bech32";
+import { assertNever, validateAddressesReq, getSpendingKeyHash, getAddressesByType } from "../utils";
+import { decode, encode, toWords, } from "bech32";
+import { Prefixes } from "../utils/cip5";
 
 const baseQuery = `
   select ( select json_agg((address)) 
@@ -32,62 +32,6 @@ const filterByPaymentCredQuery = `
 
 const addressesRequestLimit:number = config.get("server.addressRequestLimit");
 
-export function getAddressesByType(addresses: string[]): {
-  /**
-   * note: we keep track of explicit bech32 addresses
-   * since it's possible somebody wants the tx history for a specific address
-   * and not the tx history for the payment key of the address
-   */
-  legacyAddr: string[],
-  bech32: string[],
-  paymentKeyMap: Map<string, Set<string>>,
-} {
-  const legacyAddr = [];
-  const bech32 = [];
-  const paymentKeyMap = new Map();
-  for (const address of addresses) {
-    // 1) Check if it's a Byron-era address
-    if (ByronAddress.is_valid(address)) {
-      legacyAddr.push(address);
-      continue;
-    }
-    // 2) check if it's a valid bech32 address
-    try {
-      decode(address, 1000); // check it's a valid bech32 address
-      const wasmBech32 = Address.from_bech32(address);
-      bech32.push(address);
-      wasmBech32.free();
-      continue;
-    } catch (_e) {
-      // silently discard any non-valid Cardano addresses
-    }
-    try {
-      if (HEX_REGEXP.test(address)) {
-        const wasmAddr = Address.from_bytes(
-          Buffer.from(address, "hex")
-        );
-        const spendingKeyHash = getSpendingKeyHash(wasmAddr);
-        if (spendingKeyHash != null) {
-          const addressesForKey = paymentKeyMap.get(spendingKeyHash) ?? new Set();
-          addressesForKey.add(address);
-          paymentKeyMap.set(spendingKeyHash, addressesForKey);
-        }
-        wasmAddr.free();
-      }
-      continue;
-    } catch (_e) {
-      // silently discard any non-valid Cardano addresses
-    }
-  }
-
-  return {
-    legacyAddr,
-    bech32,
-    paymentKeyMap,
-  };
-}
-
-
 export const filterUsedAddresses = (pool : Pool) => async (req: Request, res: Response) => {
   if(!req.body || !req.body.addresses) {
     throw new Error("no addresses in request body.");
@@ -104,14 +48,11 @@ export const filterUsedAddresses = (pool : Pool) => async (req: Request, res: Re
 
     const result: Set<string> = new Set();
 
-    if (addressTypes.paymentKeyMap.size > 0) {
+    if (addressTypes.paymentCreds.length > 0) {
       // 1) Get all transactions that contain one of these payment keys
       const queryResult = await pool.query(
         filterByPaymentCredQuery,
-        [Array
-          .from(addressTypes.paymentKeyMap.keys())
-          .map(addr => `\\x${addr}`)
-        ]
+        [addressTypes.paymentCreds]
       );
       // 2) get all the addresses inside these transactions
       const addressesInTxs = queryResult.rows.flatMap( tx => [tx.inputs, tx.outputs]).flat();
@@ -132,9 +73,13 @@ export const filterUsedAddresses = (pool : Pool) => async (req: Request, res: Re
         },
         ([] as Array<string>)
       );
+      const paymentCredSet = new Set(
+        addressTypes.paymentCreds.map(str => str.substring(2)) // cutoff \\x prefix
+      );
       // 4) filter addresses to the ones we care about for this filterUsed query
       keysInTxs
-        .flatMap(addr => Array.from(addressTypes.paymentKeyMap.get(addr) ?? []))
+        .filter(addr => paymentCredSet.has(addr))
+        .map(addr => encode(Prefixes.PAYMENT_KEY_HASH, toWords(Buffer.from(addr, "hex"))))
         .forEach(addr => result.add(addr));
     }
     if (regularAddresses.length > 0) {
