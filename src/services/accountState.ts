@@ -7,32 +7,38 @@ import { Request, Response } from "express";
 const addrReqLimit:number = config.get("server.addressRequestLimit");
 
 const accountRewardsQuery = `
-  select addr.hash_raw as "stakeAddress"
-       , sum("totalReserve".amount - coalesce("totalWithdrawal".amount,0) + coalesce("totalReward".amount,0)) as "remainingAmount"
-       , sum("totalReserve".amount + coalesce("totalReward".amount,0)) as "reward"
+  select stake_address.hash_raw as "stakeAddress"
+       , sum(coalesce("totalReserve".amount, 0) - coalesce("totalWithdrawal".amount,0) + coalesce("totalReward".amount,0)) as "remainingAmount"
+       , sum(coalesce("totalReserve".amount, 0) + coalesce("totalReward".amount,0)) as "reward"
        , sum(coalesce("totalWithdrawal".amount, 0)) as "withdrawal"
-  from (
+
+  from stake_address
+
+  left outer join (
     ${/* this comes from MIR certificates */""}
     SELECT addr_id, sum(amount) as "amount"
     FROM reserve
     GROUP BY
-	    addr_id
-  ) as "totalReserve"
-  join stake_address as addr on addr.id = "totalReserve".addr_id
+      addr_id
+  ) as "totalReserve" on stake_address.id = "totalReserve".addr_id
+
   left outer join (
     SELECT addr_id, sum(amount) as "amount"
     FROM withdrawal
     GROUP BY
 	    addr_id
-  ) as "totalWithdrawal" on addr.id = "totalWithdrawal".addr_id
+  ) as "totalWithdrawal" on stake_address.id = "totalWithdrawal".addr_id
+
   left outer join (
     SELECT addr_id, sum(amount) as "amount"
     FROM reward
     GROUP BY
 	    addr_id
-  ) as "totalReward" on addr.id = "totalReward".addr_id
-  where encode(addr.hash_raw, 'hex') = any(($1)::varchar array)
-  group by addr.id
+  ) as "totalReward" on stake_address.id = "totalReward".addr_id
+
+  where encode(stake_address.hash_raw, 'hex') = any(($1)::varchar array)
+
+  group by stake_address.id
 `;
 
 interface RewardInfo {
@@ -57,6 +63,7 @@ const askAccountRewards = async (pool: Pool, addresses: string[]): Promise<Dicti
       , poolOperator: null //not implemented
     };
   }
+  console.log(rewards.rows);
   for( const addr of addresses)
     if (!(addr in ret))
       ret[addr] = null;

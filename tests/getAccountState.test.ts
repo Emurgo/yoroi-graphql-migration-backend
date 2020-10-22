@@ -26,4 +26,16 @@ describe("/account/state", function() {
     expect(result.data[fakeAddress]).to.be.a("null");
     expect(result.data[realAddress]).to.have.property("remainingAmount");
   });
+  it("should return the correct result on stake address that didn't get a MIR certificate", async() => {
+    const addr = "e13197a844046baf89a731bf407e712bc650075d105797d01a7966d088";
+    const result = await axios({method: "post", url: testableUri, data: {
+      addresses: [
+        addr
+      ]
+    }});
+    expect(result.data).to.have.property(addr);
+    expect(Number.parseInt(result.data[addr].remainingAmount, 10)).to.be.at.least(0);
+    expect(Number.parseInt(result.data[addr].rewards, 10)).to.be.at.least(0);
+    expect(Number.parseInt(result.data[addr].withdrawals, 10)).to.be.at.least(0);
+  });
 });
