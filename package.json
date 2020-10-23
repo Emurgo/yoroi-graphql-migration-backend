@@ -1,7 +1,7 @@
 {
-  "name": "yoroi-be-mk3",
-  "version": "1.0.0",
-  "description": "like https://github.com/Emurgo/yoroi-backend-service but simpler and missing pieces.",
+  "name": "yoroi-cardano-backend",
+  "version": "1.1.0",
+  "description": "Wrapped for cardano-db-sync and cardano-graphql with endpoints useful for light wallets",
   "main": "src/index.ts",
   "scripts": {
     "postinstall": "tsc",
