@@ -48,7 +48,7 @@ export interface Route {
 export const applyRoutes = (routes: Route[], router: Router) => {
   for (const route of routes) {
     const { method, path, handler } = route;
-    // console.log(`api${path}`);
+    // uncomment this line if you want to test locally
     // (router as any)[method](`/api${path}`, handler);
     (router as any)[method](path, handler);
   }
