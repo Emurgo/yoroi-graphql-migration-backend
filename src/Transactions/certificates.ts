@@ -100,7 +100,12 @@ select 'PoolRegistration' as "jsType"
      , encode(addr.hash_raw,'hex') as "poolParamsRewardAccount"
      , ( select json_agg(encode(hash,'hex'))
          from pool_owner
-         where pool_owner.pool_hash_id = pool_hash.id) as "poolParamsOwners"
+         where
+          pool_owner.pool_hash_id = pool_hash.id
+          and
+          pool_owner.registered_tx_id = pool.registered_tx_id
+       ) as "poolParamsOwners"
+
      , ( select json_agg(json_build_object( 'ipv4',       ipv4
      					  , 'ipv6',       ipv6
      					  , 'dnsName',    dns_name
