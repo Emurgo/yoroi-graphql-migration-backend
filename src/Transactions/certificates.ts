@@ -93,7 +93,7 @@ select 'PoolRegistration' as "jsType"
            -- with the hashkey of the pool operator. looking through Insert.hs,
            -- it is clear that there is a hash that's identified with the stake
            -- pool.  it is this one!
-     , encode(pool.vrf_key,'hex') as "poolParamsVrfKeyHash"
+     , encode(pool.vrf_key_hash,'hex') as "poolParamsVrfKeyHash"
      , pool.pledge as "poolParamsPledge"
      , pool.fixed_cost as "poolParamsCost"
      , pool.margin as "poolParamsMargin"
@@ -124,7 +124,7 @@ join pool_hash
 join stake_address as addr
   on addr.id = pool.reward_addr_id
 left join pool_meta_data as pool_meta
-  on pool_meta.id = pool.meta
+  on pool_meta.id = pool.meta_id
 
 UNION ALL
   

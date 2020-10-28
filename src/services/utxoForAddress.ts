@@ -17,7 +17,7 @@ const utxoForAddressQuery = `
     ON tx_out.tx_id = tx_in.tx_out_id
    AND tx_out.index::smallint = tx_in.tx_out_index::smallint
   JOIN block
-    on block.id = tx.block
+    on block.id = tx.block_id
   WHERE tx_in.tx_in_id IS NULL
     and (   tx_out.address = any(($1)::varchar array) 
          or tx_out.payment_cred = any(($2)::bytea array));
