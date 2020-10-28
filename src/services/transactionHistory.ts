@@ -137,7 +137,7 @@ const askTransactionSqlQuery = `
     on hashes.hash = tx.hash
 
   JOIN block
-    on block.id = tx.block
+    on block.id = tx.block_id
 
   LEFT JOIN pool_meta_data 
     on tx.id = pool_meta_data.registered_tx_id 
@@ -331,7 +331,7 @@ export const askBlockNumByTxHash = async (hash : string|undefined): Promise<Util
 
 export const askBlockNumByHash = async (hash : string) : Promise<UtilEither<number>> => {
   const query = `
-            query BlockNumByHash($id: Hash32HexString!) {
+            query BlockNumByHash($id: Hash32Hex!) {
               blocks(
                 where: {
                   hash: {
