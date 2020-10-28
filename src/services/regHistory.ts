@@ -15,7 +15,7 @@ const regHistoryQuery = `
   from stake_registration cc 
   join stake_address sa on cc.addr_id = sa.id 
   join tx on cc.tx_id = tx.id 
-  join block on tx.block=block.id 
+  join block on tx.block_id=block.id 
   where sa.hash_raw = any(($1)::bytea array) 
   union 
   select block.slot_no as "slotNo"
@@ -25,7 +25,7 @@ const regHistoryQuery = `
        , 'StakeDeregistration' as "certType"
   from stake_deregistration cc 
   join stake_address sa on cc.addr_id = sa.id 
-  join tx on cc.tx_id = tx.id join block on tx.block=block.id 
+  join tx on cc.tx_id = tx.id join block on tx.block_id=block.id 
   where sa.hash_raw = any(($1)::bytea array) 
 `;
 

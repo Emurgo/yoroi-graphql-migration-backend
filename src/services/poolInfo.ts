@@ -30,7 +30,7 @@ const latestMetadataQuery = `
      join pool_update 
           on pool_hash.id = pool_update.hash_id 
      join pool_meta_data 
-          on pool_update.meta = pool_meta_data.id
+          on pool_update.meta_id = pool_meta_data.id
      where encode(pool_hash.hash_raw, 'hex') = $1
     order by pool_update.id desc limit 1;
 `;
@@ -45,7 +45,7 @@ const poolHistoryQuery = `
   join tx
     on tx.id = combined_certificates."txId"
   join block
-    on block.id = tx.block
+    on block.id = tx.block_id
   where "poolHashKey" = $1
     and ("jsType" = 'PoolRegistration' or "jsType" = 'PoolRetirement');
 `;
