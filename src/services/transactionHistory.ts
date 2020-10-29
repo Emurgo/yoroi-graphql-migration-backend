@@ -97,6 +97,9 @@ const askTransactionSqlQuery = `
     )
   select tx.hash
        , tx.fee
+       , case when tx_metadata.bytes is null then null
+              else encode(tx_metadata.bytes,'hex') end
+          as "metadata"
        , tx.block_index as "txIndex"
        , block.block_no as "blockNumber"
        , block.hash as "blockHash"
@@ -132,6 +135,9 @@ const askTransactionSqlQuery = `
           where "txId" = tx.id) as certificates
                             
   from tx
+
+  LEFT OUTER JOIN tx_metadata
+    on tx_metadata.tx_id = tx.id
 
   JOIN hashes
     on hashes.hash = tx.hash
@@ -254,7 +260,7 @@ export const askTransactionHistory = async (
     return { hash: row.hash.toString("hex")
       , block: blockFrag
       , fee: row.fee.toString()
-      , metadata: null // TODO
+      , metadata: row.metadata
       , includedAt: row.includedAt
       , inputs: inputs
       , outputs: outputs
