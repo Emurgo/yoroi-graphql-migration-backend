@@ -473,4 +473,18 @@ describe("/txs/history", function() {
       expect(result.data[0].certificates[0].kind).to.equal("PoolRegistration");
     }
   });
+  it("Get metadata for transaction", async() => {
+    const result = await axios.post(testableUri, {
+      addresses: [
+        encode(Prefixes.PAYMENT_KEY_HASH, toWords(Buffer.from("69f6f57453031d04bd71a08cd3f31e7d61bfa939037f0e547de850e3", "hex")))
+      ]
+      , untilBlock: "d9038b728b997566b4b5fd2686ed2268505f50c8faa1292837fede6ef42cdab5"
+      , after: {
+          tx: "0e06078128b5126c77cf6ffe68eab7d0d51423cba84f24d34c433752ff0c843b"
+        , block: "7b483248865efe366af230a68952340ec2a5868433a3323abfff433699997175"
+      }
+    });
+    expect(result.data).to.have.lengthOf(1);
+    expect(result.data[0].metadata).to.equal("a100a16b436f6d62696e6174696f6e8601010101010c");
+  });
 });
