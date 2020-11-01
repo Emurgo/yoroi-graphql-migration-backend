@@ -25,7 +25,7 @@
     "@types/compression": "^1.7.0",
     "@types/cors": "^2.8.8",
     "@types/express": "^4.17.8",
-    "@types/lodash": "^4.14.162",
+    "@types/lodash": "^4.14.164",
     "@types/mocha": "^8.0.3",
     "@types/node": "^14.11.2",
     "@types/pg": "^7.14.5",
