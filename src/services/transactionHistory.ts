@@ -4,6 +4,12 @@ import {  contentTypeHeaders, errMsgs, graphqlEndpoint, UtilEither, getAddresses
 
 import { rowToCertificate, BlockEra, BlockFrag, Certificate, TransInputFrag, TransOutputFrag, TransactionFrag} from "../Transactions/types";
 
+import {
+  TransactionMetadata,
+  TransactionMetadatum,
+  BigNum,
+} from "@emurgo/cardano-serialization-lib-nodejs";
+
 import { Pool } from "pg";
 
 /**
@@ -97,9 +103,7 @@ const askTransactionSqlQuery = `
     )
   select tx.hash
        , tx.fee
-       , case when tx_metadata.bytes is null then null
-              else encode(tx_metadata.bytes,'hex') end
-          as "metadata"
+       , metadata.map as "metadata"
        , tx.block_index as "txIndex"
        , block.block_no as "blockNumber"
        , block.hash as "blockHash"
@@ -136,8 +140,13 @@ const askTransactionSqlQuery = `
                             
   from tx
 
-  LEFT OUTER JOIN tx_metadata
-    on tx_metadata.tx_id = tx.id
+  LEFT OUTER JOIN (
+    select
+      tx_id,
+      jsonb_object_agg(key, bytes) as map
+    from tx_metadata
+    group by tx_id
+  ) as metadata on metadata.tx_id = tx.id
 
   JOIN hashes
     on hashes.hash = tx.hash
@@ -210,6 +219,46 @@ const askTransactionSqlQuery = `
 
 const MAX_INT = "2147483647";
 
+function buildMetadataObj(
+  metadataMap: null | Record<string, string>
+): (null | string) {
+  if (metadataMap == null) return null;
+  const metadataWasm = TransactionMetadata.new();
+  console.log(metadataMap);
+  for (const key of Object.keys(metadataMap)) {
+    const keyWasm = BigNum.from_str(key);
+    // the cbor inserted into SQL is not the full metadata for the transaction
+    // instead, each row is a CBOR map with a single entry <transaction_metadatum_label, transaction_metadatum>
+    const singletonMap = TransactionMetadatum.from_bytes(
+      Buffer.from(
+        // need to cutoff the \\x prefix added by SQL
+        metadataMap[key].substring(2),
+        "hex"
+      )
+    );
+    const map = singletonMap.as_map();
+    const keys = map.keys();
+    for (let i = 0; i < keys.len(); i++) {
+      const cborKey = keys.get(i);
+      const datumWasm = map.get(cborKey);
+      metadataWasm.insert(
+        keyWasm,
+        datumWasm
+      );
+      datumWasm.free();
+      cborKey.free();
+    }
+    keyWasm.free();
+    singletonMap.free();
+    map.free();
+    keys.free();
+  }
+  const result = Buffer.from(metadataWasm.to_bytes()).toString("hex");
+  metadataWasm.free();
+
+  return result;
+}
+
 export const askTransactionHistory = async ( 
   pool: Pool
   , limit: number
@@ -260,7 +309,7 @@ export const askTransactionHistory = async (
     return { hash: row.hash.toString("hex")
       , block: blockFrag
       , fee: row.fee.toString()
-      , metadata: row.metadata
+      , metadata: buildMetadataObj(row.metadata)
       , includedAt: row.includedAt
       , inputs: inputs
       , outputs: outputs
