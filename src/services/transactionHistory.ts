@@ -224,7 +224,6 @@ function buildMetadataObj(
 ): (null | string) {
   if (metadataMap == null) return null;
   const metadataWasm = TransactionMetadata.new();
-  console.log(metadataMap);
   for (const key of Object.keys(metadataMap)) {
     const keyWasm = BigNum.from_str(key);
     // the cbor inserted into SQL is not the full metadata for the transaction
