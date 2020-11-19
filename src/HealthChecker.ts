@@ -47,7 +47,7 @@ export class HealthChecker {
     if(currentBlock.kind !== this.lastBlock.kind)
       this.lastBlock = currentBlock;
     if(currentBlock.kind === "ok" && this.lastBlock.kind === "ok")
-      if(currentBlock.value.currentEpoch.blocks[0].number !== this.lastBlock.value.currentEpoch.blocks[0].number){
+      if(currentBlock.value.height !== this.lastBlock.value.height){
         this.lastBlock = currentBlock;
         this.lastGoodBlockChange = currentTime;
       }
@@ -65,7 +65,7 @@ export class HealthChecker {
       return "SLOW";
     if (currentSavedTime - this.lastGoodBlockChange > REQUEST_STALE_BLOCK)
       if(this.lastBlock.kind === "ok")
-        if(this.lastBlock.value.currentEpoch.blocks[0].number === currentBlock.value.currentEpoch.blocks[0].number)
+        if(this.lastBlock.value.height === currentBlock.value.height)
           return "BLOCK_IS_STALE";
     return "OK";
 
