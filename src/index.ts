@@ -38,7 +38,7 @@ const pool = new Pool({ user: config.get("db.user")
 createCertificatesView(pool);
 
 
-const healthChecker = new HealthChecker(askBestBlock);
+const healthChecker = new HealthChecker(() => askBestBlock(pool));
 
 const router = express();
 
@@ -55,22 +55,17 @@ const port:number= config.get("server.port");
 const addressesRequestLimit:number = config.get("server.addressRequestLimit");
 const apiResponseLimit:number = config.get("server.apiResponseLimit"); 
 
-const bestBlock = async (_req: Request, res: Response) => {
-  const result = await askBestBlock();
+const bestBlock = (pool: Pool) => async (_req: Request, res: Response) => {
+  const result = await askBestBlock(pool);
   switch(result.kind) {
   case "ok": {
     const cardano = result.value;
-    res.send({
-      epoch: cardano.currentEpoch.number,
-      slot: cardano.currentEpoch.blocks[0].slotInEpoch,
-      hash: cardano.currentEpoch.blocks[0].hash,
-      height: cardano.currentEpoch.blocks[0].number,
-    });
-
+    res.send(cardano);
     return;
   }
   case "error":
     throw new Error(result.errMsg);
+
     return;
   default: return utils.assertNever(result);
   }
@@ -277,7 +272,7 @@ const routes : Route[] = [
 // regular endpoints
 , {   path: "/v2/bestblock"
   , method: "get"
-  , handler: bestBlock
+  , handler: bestBlock(pool)
 }
 , { path: "/v2/addresses/filterUsed"
   , method: "post"
