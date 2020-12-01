@@ -27,7 +27,7 @@
     "@types/express": "^4.17.8",
     "@types/lodash": "^4.14.164",
     "@types/mocha": "^8.0.3",
-    "@types/node": "^14.14.6",
+    "@types/node": "^14.14.10",
     "@types/pg": "^7.14.5",
     "axios": "^0.21.0",
     "bech32": "^1.1.4",
