@@ -20,7 +20,7 @@
     }
   },
   "dependencies": {
-    "@emurgo/cardano-serialization-lib-nodejs": "^4.2.0",
+    "@emurgo/cardano-serialization-lib-nodejs": "^4.3.0",
     "@types/chai": "^4.2.14",
     "@types/compression": "^1.7.0",
     "@types/cors": "^2.8.8",
