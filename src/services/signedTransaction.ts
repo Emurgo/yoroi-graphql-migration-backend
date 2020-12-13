@@ -15,7 +15,7 @@ export const handleSignedTx = async (req: Request, res: Response):Promise<void>=
   try {
     const endpointResponse = await axios({ method:"post"
       , url: submissionEndpoint
-      , data: buffer
+      , data: buffer.toString("hex")
       , headers: contentTypeHeaders}); 
     if(endpointResponse.status === 202){
       if(endpointResponse.data.Left){
