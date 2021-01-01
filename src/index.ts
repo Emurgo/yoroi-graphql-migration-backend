@@ -133,21 +133,18 @@ const txHistory = async (req: Request, res: Response) => {
     const limit = body.limit || apiResponseLimit;
     const [referenceTx, referenceBlock] = (body.after && [body.after.tx, body.after.block]) || [];
     const referenceBestBlock = body.untilBlock;
-    const untilBlockNum = await askBlockNumByHash(referenceBestBlock);
-    const afterBlockInfo = await askBlockNumByTxHash(referenceTx);
+    const untilBlockNum = await askBlockNumByHash(pool, referenceBestBlock);
+    const afterBlockInfo = await askBlockNumByTxHash(pool, referenceTx);
 
     if(untilBlockNum.kind === "error" && untilBlockNum.errMsg === utils.errMsgs.noValue){
       throw new Error("REFERENCE_BEST_BLOCK_MISMATCH");
-      return;
     }
     if(afterBlockInfo.kind === "error" && typeof referenceTx !== "undefined") {
       throw new Error("REFERENCE_TX_NOT_FOUND");
-      return;
     }
 
     if(afterBlockInfo.kind === "ok" && afterBlockInfo.value.block.hash !== referenceBlock) {
       throw new Error("REFERENCE_BLOCK_MISMATCH");
-      return;
     }
 
     // when things are running smoothly, we would never hit this case case
