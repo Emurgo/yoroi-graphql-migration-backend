@@ -267,8 +267,6 @@ export const askTransactionHistory = async (
   , untilNum: number
 ): Promise<UtilEither<TransactionFrag[]>> => {
     const addressTypes = getAddressesByType(addresses);
-    console.log("History query")
-    console.log(askTransactionSqlQuery)
   const ret = await pool.query(askTransactionSqlQuery, [
       [
         ...addressTypes.legacyAddr,
