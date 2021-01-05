@@ -80,7 +80,7 @@ const utxoSumForAddresses = async (req: Request, res:Response) => {
     , req.body.addresses);
   switch(verifiedAddresses.kind){
   case "ok":  {
-    const result = await askUtxoSumForAddresses(verifiedAddresses.value);
+    const result = await askUtxoSumForAddresses(pool, verifiedAddresses.value);
     switch(result.kind) {
     case "ok":
       res.send({ sum: result.value });
