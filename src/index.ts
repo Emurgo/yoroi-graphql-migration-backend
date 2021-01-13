@@ -29,6 +29,7 @@ import { handleGetRewardHistory } from "./services/rewardHistory";
 import { HealthChecker } from "./HealthChecker";
 
 import { createCertificatesView } from "./Transactions/certificates";
+import { createTransactionOutputView } from "./Transactions/output";
 
 
 const pool = new Pool({ user: config.get("db.user")
@@ -36,6 +37,7 @@ const pool = new Pool({ user: config.get("db.user")
   , database: config.get("db.database")
   , password: config.get("db.password")});
 createCertificatesView(pool);
+createTransactionOutputView(pool);
 
 
 const healthChecker = new HealthChecker(() => askBestBlock(pool));

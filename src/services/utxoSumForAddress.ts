@@ -9,7 +9,7 @@ export const askUtxoSumForAddresses = async (pool: Pool, addresses: string[]): P
     WHERE "public"."utxo_view"."address" = any(($1)::varchar array)
     GROUP BY "public"."utxo_view"."value"
     ORDER BY "public"."utxo_view"."value" ASC
-  `
+  `;
 
     if(addresses.length == 0)
         return {kind:"error", errMsg: errMsgs.noValue};
@@ -19,10 +19,10 @@ export const askUtxoSumForAddresses = async (pool: Pool, addresses: string[]): P
         const value = res.rows.length > 0 ? res.rows[0].value : "0";
         return {
             kind:"ok",
-            value
-        }
+            value,
+        };
     } catch (err) {
-        const errString = err.stack + ""
+        const errString = err.stack + "";
         return {kind:"error", errMsg: "askUtxoSumForAddresses error: " + errString};
     }
 };
