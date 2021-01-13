@@ -1,4 +1,3 @@
-import config from "config";
 import { Router, Request, Response, NextFunction } from "express";
 import {
   Address,

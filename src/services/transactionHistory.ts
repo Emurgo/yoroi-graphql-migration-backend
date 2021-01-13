@@ -343,7 +343,7 @@ const askBlockNumByTxHashQuery = `
   FROM "tx"
   LEFT JOIN "block" "Block" ON "tx"."block_id" = "Block"."id"
   WHERE "tx"."hash"=decode($1, 'hex')
-`
+`;
 
 export const askBlockNumByTxHash = async (pool: Pool, hash : string | undefined): Promise<UtilEither<BlockNumByTxHashFrag>> => {
     if(!hash)
@@ -363,7 +363,7 @@ export const askBlockNumByTxHash = async (pool: Pool, hash : string | undefined)
             }
         };
     } catch (err) {
-        const errString = err.stack + ""
+        const errString = err.stack + "";
         return {kind:"error", errMsg: "askBlockNumByTxHash error: " + errString};
     }
 };
@@ -372,7 +372,7 @@ const askBlockNumByHashQuery = `
   SELECT "block"."block_no" AS "blockNumber"
   FROM "block"
   WHERE "block"."hash"=decode($1, 'hex')
-`
+`;
 
 export const askBlockNumByHash = async (pool: Pool, hash : string) : Promise<UtilEither<number>> => {
     if(!hash)
@@ -385,7 +385,7 @@ export const askBlockNumByHash = async (pool: Pool, hash : string) : Promise<Uti
             value: res.rows[0].blockNumber
         };
     } catch (err) {
-        const errString = err.stack + ""
+        const errString = err.stack + "";
         return {kind:"error", errMsg: "askBlockNumByHash error: " + errString};
     }
 };
