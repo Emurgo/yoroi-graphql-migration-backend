@@ -29,6 +29,7 @@ import { handleGetRewardHistory } from "./services/rewardHistory";
 import { HealthChecker } from "./HealthChecker";
 
 import { createCertificatesView } from "./Transactions/certificates";
+import { createTransactionOutputView } from "./Transactions/output";
 
 
 const pool = new Pool({ user: config.get("db.user")
@@ -36,9 +37,10 @@ const pool = new Pool({ user: config.get("db.user")
   , database: config.get("db.database")
   , password: config.get("db.password")});
 createCertificatesView(pool);
+createTransactionOutputView(pool);
 
 
-const healthChecker = new HealthChecker(askBestBlock);
+const healthChecker = new HealthChecker(() => askBestBlock(pool));
 
 const router = express();
 
@@ -55,22 +57,17 @@ const port:number= config.get("server.port");
 const addressesRequestLimit:number = config.get("server.addressRequestLimit");
 const apiResponseLimit:number = config.get("server.apiResponseLimit"); 
 
-const bestBlock = async (_req: Request, res: Response) => {
-  const result = await askBestBlock();
+const bestBlock = (pool: Pool) => async (_req: Request, res: Response) => {
+  const result = await askBestBlock(pool);
   switch(result.kind) {
   case "ok": {
     const cardano = result.value;
-    res.send({
-      epoch: cardano.currentEpoch.number,
-      slot: cardano.currentEpoch.blocks[0].slotInEpoch,
-      hash: cardano.currentEpoch.blocks[0].hash,
-      height: cardano.currentEpoch.blocks[0].number,
-    });
-
+    res.send(cardano);
     return;
   }
   case "error":
     throw new Error(result.errMsg);
+
     return;
   default: return utils.assertNever(result);
   }
@@ -85,7 +82,7 @@ const utxoSumForAddresses = async (req: Request, res:Response) => {
     , req.body.addresses);
   switch(verifiedAddresses.kind){
   case "ok":  {
-    const result = await askUtxoSumForAddresses(verifiedAddresses.value);
+    const result = await askUtxoSumForAddresses(pool, verifiedAddresses.value);
     switch(result.kind) {
     case "ok":
       res.send({ sum: result.value });
@@ -138,21 +135,18 @@ const txHistory = async (req: Request, res: Response) => {
     const limit = body.limit || apiResponseLimit;
     const [referenceTx, referenceBlock] = (body.after && [body.after.tx, body.after.block]) || [];
     const referenceBestBlock = body.untilBlock;
-    const untilBlockNum = await askBlockNumByHash(referenceBestBlock);
-    const afterBlockInfo = await askBlockNumByTxHash(referenceTx);
+    const untilBlockNum = await askBlockNumByHash(pool, referenceBestBlock);
+    const afterBlockInfo = await askBlockNumByTxHash(pool, referenceTx);
 
     if(untilBlockNum.kind === "error" && untilBlockNum.errMsg === utils.errMsgs.noValue){
       throw new Error("REFERENCE_BEST_BLOCK_MISMATCH");
-      return;
     }
     if(afterBlockInfo.kind === "error" && typeof referenceTx !== "undefined") {
       throw new Error("REFERENCE_TX_NOT_FOUND");
-      return;
     }
 
     if(afterBlockInfo.kind === "ok" && afterBlockInfo.value.block.hash !== referenceBlock) {
       throw new Error("REFERENCE_BLOCK_MISMATCH");
-      return;
     }
 
     // when things are running smoothly, we would never hit this case case
@@ -277,7 +271,7 @@ const routes : Route[] = [
 // regular endpoints
 , {   path: "/v2/bestblock"
   , method: "get"
-  , handler: bestBlock
+  , handler: bestBlock(pool)
 }
 , { path: "/v2/addresses/filterUsed"
   , method: "post"

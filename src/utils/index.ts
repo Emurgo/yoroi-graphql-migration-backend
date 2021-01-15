@@ -1,4 +1,3 @@
-import config from "config";
 import { Router, Request, Response, NextFunction } from "express";
 import {
   Address,
@@ -12,7 +11,6 @@ import { decode, fromWords } from "bech32";
 import { Prefixes } from "./cip5";
 
 export const contentTypeHeaders = { headers: {"Content-Type": "application/json"}};
-export const graphqlEndpoint:string = config.get("server.graphqlEndpoint");
 
 export const errMsgs = { noValue: "no value" };
 
