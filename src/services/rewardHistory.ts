@@ -10,6 +10,7 @@ const rewardHistoryQuery = `
   select
       reward.amount
     , reward.epoch_no
+    , reward.pool_id
     , sa.hash_raw as "stakeCred"
   from reward 
   join stake_address sa on reward.addr_id = sa.id 
@@ -31,7 +32,8 @@ const askRewardHistory = async (pool: Pool, addresses: string[]): Promise<Dictio
       .filter( (r:any) => r.stakeCred.toString("hex") === addr)
       .map( (r:any) => ({
         epoch: Number.parseInt(r.epoch_no, 10),
-        reward: r.amount
+        reward: r.amount,
+        poolId: r.pool_id
       }));
 
     ret[addr] = rewardPairs;
