@@ -22,6 +22,7 @@ const rewardHistoryQuery = `
 interface RewardForEpoch {
   epoch: number;
   reward: string;
+  poolHash: string;
 }
 
 const askRewardHistory = async (pool: Pool, addresses: string[]): Promise<Dictionary<RewardForEpoch[]>> => {
