@@ -11,9 +11,11 @@ const rewardHistoryQuery = `
       reward.amount
     , reward.epoch_no
     , reward.pool_id
+    , ph.hash_raw as "poolHash"
     , sa.hash_raw as "stakeCred"
   from reward 
-  join stake_address sa on reward.addr_id = sa.id 
+  join stake_address sa on reward.addr_id = sa.id
+  join pool_hash ph on ph.id = reward.pool_id  
   where sa.hash_raw = any(($1)::bytea array) 
 `;
 
@@ -33,7 +35,7 @@ const askRewardHistory = async (pool: Pool, addresses: string[]): Promise<Dictio
       .map( (r:any) => ({
         epoch: Number.parseInt(r.epoch_no, 10),
         reward: r.amount,
-        poolId: r.pool_id
+        poolHash: r.poolHash.toString("hex")
       }));
 
     ret[addr] = rewardPairs;
