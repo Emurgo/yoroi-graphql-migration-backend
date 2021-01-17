@@ -154,7 +154,7 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
     [addresses: string]: Array<{
       epoch: number,
       reward: string,
-      hashPool: string,
+      poolHash: string,
     }>
   }
   ```
