@@ -8,8 +8,8 @@ const addrReqLimit:number = config.get("server.addressRequestLimit");
 
 const accountRewardsQuery = `
   select stake_address.hash_raw as "stakeAddress"
-       , sum(coalesce("totalReserve".amount, 0) - coalesce("totalWithdrawal".amount,0) + coalesce("totalReward".amount,0)) as "remainingAmount"
-       , sum(coalesce("totalReserve".amount, 0) + coalesce("totalReward".amount,0)) as "reward"
+       , sum(coalesce("totalTreasury".amount, 0) + coalesce("totalReserve".amount, 0) - coalesce("totalWithdrawal".amount,0) + coalesce("totalReward".amount,0)) as "remainingAmount"
+       , sum(coalesce("totalTreasury".amount, 0) + coalesce("totalReserve".amount, 0) + coalesce("totalReward".amount,0)) as "reward"
        , sum(coalesce("totalWithdrawal".amount, 0)) as "withdrawal"
 
   from stake_address
@@ -21,6 +21,14 @@ const accountRewardsQuery = `
     GROUP BY
       addr_id
   ) as "totalReserve" on stake_address.id = "totalReserve".addr_id
+
+  left outer join (
+    ${/* this comes from MIR certificates */""}
+    SELECT addr_id, sum(amount) as "amount"
+    FROM treasury
+    GROUP BY
+      addr_id
+  ) as "totalTreasury" on stake_address.id = "totalTreasury".addr_id
 
   left outer join (
     SELECT addr_id, sum(amount) as "amount"
