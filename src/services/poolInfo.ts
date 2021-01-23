@@ -11,12 +11,13 @@ const addressesRequestLimit:number = config.get("server.addressRequestLimit");
 interface Dictionary<T> {
   [keys: string]: T;
 }
-interface RemotePool {
+
+export interface RemotePool {
     info: any; // this comes from smash.  we don't edit it.
     history: PoolHistory[];
 }
 
-interface PoolHistory {
+export interface PoolHistory {
     epoch: number;
     slot: number;
     tx_ordinal: number
@@ -24,7 +25,7 @@ interface PoolHistory {
     payload: Certificate | null; 
 }
 
-const latestMetadataQuery = `
+export const latestMetadataQuery = `
   select encode(pool_meta_data.hash, 'hex') as "metadata_hash"
      from pool_hash
      join pool_update 
@@ -35,7 +36,7 @@ const latestMetadataQuery = `
     order by pool_update.id desc limit 1;
 `;
 
-const poolHistoryQuery = `
+export const poolHistoryQuery = `
   select row_to_json(combined_certificates) as "jsonCert"
        , block.epoch_no
        , block.epoch_slot_no
@@ -50,7 +51,7 @@ const poolHistoryQuery = `
     and ("jsType" = 'PoolRegistration' or "jsType" = 'PoolRetirement');
 `;
 
-export const handlePoolInfo = (p: Pool) => async (req: Request, res: Response):Promise<void>=> { 
+export const handlePoolInfo = (p: Pool) => async (req: Request, res: Response): Promise<void> => {
   if(!req.body.poolIds)
     throw new Error ("No poolIds in body");
   const hashes = req.body.poolIds;
@@ -78,7 +79,8 @@ export const handlePoolInfo = (p: Pool) => async (req: Request, res: Response):P
         info = endpointResponse.data;
       }else{
         console.log(`SMASH did not respond to user submitted hash: ${hash}`);
-      }} catch(e) {
+      }
+    } catch(e) {
       console.log(`SMASH did not respond with hash ${hash}, giving error ${e}`);
     }
 
