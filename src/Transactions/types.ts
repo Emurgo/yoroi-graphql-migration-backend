@@ -155,7 +155,7 @@ export const rowToCertificate = (row:any):Certificate|null => {
     let potType = MirCertPot.Reserves;
     if (row.mirPot === "Reserves")
       potType = MirCertPot.Reserves;
-    else if(row.mirPot === "Treasure")
+    else if(row.mirPot === "Treasury")
       potType = MirCertPot.Treasury;
     else
       throw new Error("rowtoCert: invalid pot type.  Someone must have changes certificates.ts and not let this method know about it.");
