@@ -380,6 +380,8 @@ export const askBlockNumByHash = async (pool: Pool, hash : string) : Promise<Uti
 
     try {
         const res = await pool.query(askBlockNumByHashQuery, [hash]);
+        if(res.rows.length === 0)
+          return {kind:"error", errMsg: errMsgs.noValue};
         return {
             kind:"ok",
             value: res.rows[0].blockNumber
