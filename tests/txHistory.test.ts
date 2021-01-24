@@ -516,7 +516,6 @@ describe("/txs/history", function() {
         , block: "7b483248865efe366af230a68952340ec2a5868433a3323abfff433699997175"
       }
     });
-    console.log(catalystRewardTx.data);
     expect(catalystRewardTx.data).to.have.lengthOf(2);
   });
 });
