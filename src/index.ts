@@ -30,6 +30,7 @@ import { HealthChecker } from "./HealthChecker";
 
 import { createCertificatesView } from "./Transactions/certificates";
 import { createTransactionOutputView } from "./Transactions/output";
+import {poolDelegationHistory} from "./services/poolHistory";
 
 
 const pool = new Pool({ user: config.get("db.user")
@@ -267,7 +268,12 @@ const routes : Route[] = [
 , { path: "/pool/info"
   , method: "post"
   , handler: handlePoolInfo(pool)
-}
+},
+  {
+    path: "/pool/delegationHistory",
+    method: "post",
+    handler: poolDelegationHistory(pool)
+  }
 // regular endpoints
 , {   path: "/v2/bestblock"
   , method: "get"

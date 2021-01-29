@@ -189,6 +189,38 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
       |}>
     |}
   }
+ ```
+</details>
+<details>
+  <summary>api/pool/delegationHistory</summary>
+  Input
+
+  ```js
+  {
+    poolRanges: Dictionary<string, Dictionary<string, {fromEpoch: number, toEpoch?: number}>> // operator key (pool id), fromEpoch and toEpoch are inclusive
+  }
+  ```
+
+  Output
+
+  ```js
+  [
+    {|
+        epoch: number;    
+        poolHash: string;
+        slot: number;
+        tx_ordinal: number
+        cert_ordinal: number;
+        payload: Certificate | null;
+        info: {
+            name?: string;
+            description?: string;
+            ticket?: string;
+            homepage?: string;
+        }
+    |}
+  ]
+```
 </details>
 <details>
   <summary>api/txs/utxoSumForAddresses</summary>
