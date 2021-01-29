@@ -197,7 +197,7 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
 
   ```js
   {
-    poolRanges: Dictionary<string, {fromEpoch: number, toEpoch?: number}> // operator key (pool id)
+    poolRanges: Dictionary<string, Dictionary<string, {fromEpoch: number, toEpoch?: number}>> // operator key (pool id), fromEpoch and toEpoch are inclusive
   }
   ```
 
@@ -206,8 +206,8 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   ```js
   [
     {|
-        hash: string;
-        epoch: number;
+        epoch: number;    
+        poolHash: string;
         slot: number;
         tx_ordinal: number
         cert_ordinal: number;
