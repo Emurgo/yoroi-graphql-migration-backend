@@ -110,7 +110,9 @@ const askTransactionSqlQuery = `
     )
   select tx.hash
        , tx.fee
-       , metadata.map as "metadata"
+       , (select jsonb_object_agg(key, bytes)
+        from tx_metadata
+        where tx_metadata.tx_id = tx.id) as metadata
        , tx.block_index as "txIndex"
        , block.block_no as "blockNumber"
        , block.hash as "blockHash"
@@ -158,14 +160,6 @@ const askTransactionSqlQuery = `
           where "txId" = tx.id) as certificates
                             
   from tx
-
-  LEFT OUTER JOIN (
-    select
-      tx_id,
-      jsonb_object_agg(key, bytes) as map
-    from tx_metadata
-    group by tx_id
-  ) as metadata on metadata.tx_id = tx.id
 
   JOIN hashes
     on hashes.hash = tx.hash
