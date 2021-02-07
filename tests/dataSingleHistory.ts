@@ -19,20 +19,24 @@ export const resultsForSingleHistory : any = [
 		"amount": "9963570539",
 		"id": "b61b23fbfcd0740b7771504c34cabb5aaeed6e8e16c5a0237377d1b0d2d66fef0",
 		"index": 0,
-		"txHash": "b61b23fbfcd0740b7771504c34cabb5aaeed6e8e16c5a0237377d1b0d2d66fef"
+		"txHash": "b61b23fbfcd0740b7771504c34cabb5aaeed6e8e16c5a0237377d1b0d2d66fef",
+		"assets": null
 	}, {
 		"address": "DdzFFzCqrhsmt8dY9RiUdCbKACrhafkLsUmfhSnMfv5CPVzW3CmkCCVNCAqKJXUXg5DCxYbrL1M1w3R52vEjVeLySiqWYg1CvjWdZycS",
 		"amount": "13999800000",
 		"id": "6059617c8776df0e25b1f6bcfcba9059d478ce561ccd762642a937ae032523522",
 		"index": 2,
-		"txHash": "6059617c8776df0e25b1f6bcfcba9059d478ce561ccd762642a937ae03252352"
+		"txHash": "6059617c8776df0e25b1f6bcfcba9059d478ce561ccd762642a937ae03252352",
+		"assets": null
 	}],
 	"outputs": [{
 		"address": "DdzFFzCqrht33HAPd4PyqRAhmry5gsSgvZjh8dWdZPuHYchXPbP1W3Rw5A2zwgftbeU9rMu3znnpNib3oFGkmBy3LL8i8VTZhNG9qnwN",
-		"amount": "10868962739"
+		"amount": "10868962739",
+		"assets": null
 	}, {
 		"address": "DdzFFzCqrht15bxnkbVBVGWg2Vd5aKMtCE3DhMPMJvCLBVUDpbHdVqVSTAEgFFFeRx7fQtYrfTsUwsnJDnmU2BtZjdtsHPgGz6aA6M77",
-		"amount": "13094227237"
+		"amount": "13094227237",
+		"assets": null
 	}]
 }, {
 	"hash": "d5dff06dda8659afb095482b95c1f5bf0beba6e2a93f614532769a4a5a575793",
@@ -54,11 +58,13 @@ export const resultsForSingleHistory : any = [
 		"amount": "10868962739",
 		"id": "ee01627b2bfa5bd5a7dd9d2be7f9108ea0c0585c58216cb16d07803ae769b34f0",
 		"index": 0,
-		"txHash": "ee01627b2bfa5bd5a7dd9d2be7f9108ea0c0585c58216cb16d07803ae769b34f"
+		"txHash": "ee01627b2bfa5bd5a7dd9d2be7f9108ea0c0585c58216cb16d07803ae769b34f",
+		"assets": null
 	}],
 	"outputs": [{
 		"address": "DdzFFzCqrhsgyGxb5VC2yLdo4PFCaoKrLsPBYKz4y2Z2rPuKyXBfzCCd6XtoKqbaZ6ov4bP9X8Uz4qPmkaWrdXM8wcnMWmUYLig5tq43",
-		"amount": "10868574639"
+		"amount": "10868574639",
+		"assets": null
 	}]
 }, {
 	"hash": "b77647288bf6553726c93faa94685637ac2976c85bba3f3dfd4d011de24371cb",
@@ -80,14 +86,17 @@ export const resultsForSingleHistory : any = [
 		"amount": "10868574639",
 		"id": "d5dff06dda8659afb095482b95c1f5bf0beba6e2a93f614532769a4a5a5757930",
 		"index": 0,
-		"txHash": "d5dff06dda8659afb095482b95c1f5bf0beba6e2a93f614532769a4a5a575793"
+		"txHash": "d5dff06dda8659afb095482b95c1f5bf0beba6e2a93f614532769a4a5a575793",
+		"assets": null
 	}],
 	"outputs": [{
 		"address": "DdzFFzCqrht95mSU7FT1zP1PvwNJztuh2cABJhm4eXKRe4fCirGUcHScddRuWJCQqhwfKfYVLKtVain37QqRpi9WTXYP4SB424d7ZJei",
-		"amount": "9963402382"
+		"amount": "9963402382",
+		"assets": null
 	}, {
 		"address": "DdzFFzCqrht33HAPd4PyqRAhmry5gsSgvZjh8dWdZPuHYchXPbP1W3Rw5A2zwgftbeU9rMu3znnpNib3oFGkmBy3LL8i8VTZhNG9qnwN",
-		"amount": "905000000"
+		"amount": "905000000",
+		"assets": null
 	}]
 }, {
 	"hash": "62eb7d469b75b0f15c4b9e905346f5dac13ffa97539bb17cb3867ca74aa25a20",
@@ -109,14 +118,17 @@ export const resultsForSingleHistory : any = [
 		"amount": "9963402382",
 		"id": "b77647288bf6553726c93faa94685637ac2976c85bba3f3dfd4d011de24371cb0",
 		"index": 0,
-		"txHash": "b77647288bf6553726c93faa94685637ac2976c85bba3f3dfd4d011de24371cb"
+		"txHash": "b77647288bf6553726c93faa94685637ac2976c85bba3f3dfd4d011de24371cb",
+		"assets": null
 	}],
 	"outputs": [{
 		"address": "DdzFFzCqrhsfwUjx3pwhYdNAfZheVdHk91gidAHr46PbCADtBTLR2e3G4HRTHrgX5jPR91B2bAPBn3c4BdpFprefZnrbJbjfspk89AAa",
-		"amount": "9960230125"
+		"amount": "9960230125",
+		"assets": null
 	}, {
 		"address": "DdzFFzCqrht33HAPd4PyqRAhmry5gsSgvZjh8dWdZPuHYchXPbP1W3Rw5A2zwgftbeU9rMu3znnpNib3oFGkmBy3LL8i8VTZhNG9qnwN",
-		"amount": "3000000"
+		"amount": "3000000",
+		"assets": null
 	}]
 }, {
 	"hash": "753b8b70901835b6d0104df0622ab14e0596b112c49ada022fc2f8210ac73f1b",
@@ -138,14 +150,17 @@ export const resultsForSingleHistory : any = [
 		"amount": "9960230125",
 		"id": "62eb7d469b75b0f15c4b9e905346f5dac13ffa97539bb17cb3867ca74aa25a200",
 		"index": 0,
-		"txHash": "62eb7d469b75b0f15c4b9e905346f5dac13ffa97539bb17cb3867ca74aa25a20"
+		"txHash": "62eb7d469b75b0f15c4b9e905346f5dac13ffa97539bb17cb3867ca74aa25a20",
+		"assets": null
 	}],
 	"outputs": [{
 		"address": "DdzFFzCqrht33HAPd4PyqRAhmry5gsSgvZjh8dWdZPuHYchXPbP1W3Rw5A2zwgftbeU9rMu3znnpNib3oFGkmBy3LL8i8VTZhNG9qnwN",
-		"amount": "5000000"
+		"amount": "5000000",
+		"assets": null
 	}, {
 		"address": "DdzFFzCqrht6yojFqwgbyv9kbmMpBjPeiCMMZo5cHc3UBpL7ZF4VUvqbyrM1Xjoj8yB9MuQPzAsCtezwjCDSdiMpNY8Vjq4FzuS8dAu6",
-		"amount": "9955057868"
+		"amount": "9955057868",
+		"assets": null
 	}]
 }, {
 	"hash": "58e2be124e42ee00f586a603758c5a19de4035cbafd9292e91ff2479b417b975",
@@ -167,23 +182,27 @@ export const resultsForSingleHistory : any = [
 		"amount": "5000000",
 		"id": "753b8b70901835b6d0104df0622ab14e0596b112c49ada022fc2f8210ac73f1b0",
 		"index": 0,
-		"txHash": "753b8b70901835b6d0104df0622ab14e0596b112c49ada022fc2f8210ac73f1b"
+		"txHash": "753b8b70901835b6d0104df0622ab14e0596b112c49ada022fc2f8210ac73f1b",
+		"assets": null
 	}, {
 		"address": "DdzFFzCqrht33HAPd4PyqRAhmry5gsSgvZjh8dWdZPuHYchXPbP1W3Rw5A2zwgftbeU9rMu3znnpNib3oFGkmBy3LL8i8VTZhNG9qnwN",
 		"amount": "3000000",
 		"id": "62eb7d469b75b0f15c4b9e905346f5dac13ffa97539bb17cb3867ca74aa25a201",
 		"index": 1,
-		"txHash": "62eb7d469b75b0f15c4b9e905346f5dac13ffa97539bb17cb3867ca74aa25a20"
+		"txHash": "62eb7d469b75b0f15c4b9e905346f5dac13ffa97539bb17cb3867ca74aa25a20",
+		"assets": null
 	}, {
 		"address": "DdzFFzCqrht33HAPd4PyqRAhmry5gsSgvZjh8dWdZPuHYchXPbP1W3Rw5A2zwgftbeU9rMu3znnpNib3oFGkmBy3LL8i8VTZhNG9qnwN",
 		"amount": "905000000",
 		"id": "b77647288bf6553726c93faa94685637ac2976c85bba3f3dfd4d011de24371cb1",
 		"index": 1,
-		"txHash": "b77647288bf6553726c93faa94685637ac2976c85bba3f3dfd4d011de24371cb"
+		"txHash": "b77647288bf6553726c93faa94685637ac2976c85bba3f3dfd4d011de24371cb",
+		"assets": null
 	}],
 	"outputs": [{
 		"address": "DdzFFzCqrht4uNR56JAW2FAcUA2gcmXgBnR8HYuJp3vxYiQEEv7hcvHGxgL1LoHumTghVZFxcZwQbsJdwykz1Rzh91pmRTVUSrA1RhAk",
-		"amount": "912575100"
+		"amount": "912575100",
+		"assets": null
 	}]
 }, {
 	"hash": "669055ba7da5d9d372f226219d151947cddf39a28c15339687db2bbd328ef8e0",
@@ -205,14 +224,17 @@ export const resultsForSingleHistory : any = [
 		"amount": "9955057868",
 		"id": "753b8b70901835b6d0104df0622ab14e0596b112c49ada022fc2f8210ac73f1b1",
 		"index": 1,
-		"txHash": "753b8b70901835b6d0104df0622ab14e0596b112c49ada022fc2f8210ac73f1b"
+		"txHash": "753b8b70901835b6d0104df0622ab14e0596b112c49ada022fc2f8210ac73f1b",
+		"assets": null
 	}],
 	"outputs": [{
 		"address": "DdzFFzCqrht33HAPd4PyqRAhmry5gsSgvZjh8dWdZPuHYchXPbP1W3Rw5A2zwgftbeU9rMu3znnpNib3oFGkmBy3LL8i8VTZhNG9qnwN",
-		"amount": "20000000"
+		"amount": "20000000",
+		"assets": null
 	}, {
 		"address": "DdzFFzCqrhsqHotwgHNKx4iTEdrkaQrqFX6br5Ch6goqZK3sdrEz7qXtgckRxgfshhqzFpeYGUCYTajuqwGnnLt1AVGseTx7Z4C31SBF",
-		"amount": "9934885611"
+		"amount": "9934885611",
+		"assets": null
 	}]
 }, {
 	"hash": "c47689f318522f0e3059bd95a0373a32bea49a5ce1f77342becd40dba89b9eac",
@@ -234,14 +256,17 @@ export const resultsForSingleHistory : any = [
 		"amount": "9934885611",
 		"id": "669055ba7da5d9d372f226219d151947cddf39a28c15339687db2bbd328ef8e01",
 		"index": 1,
-		"txHash": "669055ba7da5d9d372f226219d151947cddf39a28c15339687db2bbd328ef8e0"
+		"txHash": "669055ba7da5d9d372f226219d151947cddf39a28c15339687db2bbd328ef8e0",
+		"assets": null
 	}],
 	"outputs": [{
 		"address": "DdzFFzCqrhsr3rk8PtowTM92NKqtN7pB1SngzNnoRixjchAM78P2kJ9UUZUPmQMqYyZtKvmz694rwJkovEx5gUh5k86cLXGkVDxpRCDQ",
-		"amount": "9434713354"
+		"amount": "9434713354",
+		"assets": null
 	}, {
 		"address": "DdzFFzCqrht33HAPd4PyqRAhmry5gsSgvZjh8dWdZPuHYchXPbP1W3Rw5A2zwgftbeU9rMu3znnpNib3oFGkmBy3LL8i8VTZhNG9qnwN",
-		"amount": "500000000"
+		"amount": "500000000",
+		"assets": null
 	}]
 }, {
 	"hash": "ed74cca21c7a9d9704409dede6ec3f694b53690d800cd545b7322a7fc134cf73",
@@ -263,17 +288,20 @@ export const resultsForSingleHistory : any = [
 		"amount": "500000000",
 		"id": "c47689f318522f0e3059bd95a0373a32bea49a5ce1f77342becd40dba89b9eac1",
 		"index": 1,
-		"txHash": "c47689f318522f0e3059bd95a0373a32bea49a5ce1f77342becd40dba89b9eac"
+		"txHash": "c47689f318522f0e3059bd95a0373a32bea49a5ce1f77342becd40dba89b9eac",
+		"assets": null
 	}, {
 		"address": "DdzFFzCqrht33HAPd4PyqRAhmry5gsSgvZjh8dWdZPuHYchXPbP1W3Rw5A2zwgftbeU9rMu3znnpNib3oFGkmBy3LL8i8VTZhNG9qnwN",
 		"amount": "20000000",
 		"id": "669055ba7da5d9d372f226219d151947cddf39a28c15339687db2bbd328ef8e00",
 		"index": 0,
-		"txHash": "669055ba7da5d9d372f226219d151947cddf39a28c15339687db2bbd328ef8e0"
+		"txHash": "669055ba7da5d9d372f226219d151947cddf39a28c15339687db2bbd328ef8e0",
+		"assets": null
 	}],
 	"outputs": [{
 		"address": "DdzFFzCqrhskEdUSeeeSQJ3Q2TMdd6XCxfTxtXeEVMUxxyJztZWmMf1cuV81qwDDZefCyAY5HSrxKuBUR6fcFH9R6owUNKHK3Hk8yEhV",
-		"amount": "519593500"
+		"amount": "519593500",
+		"assets": null
 	}]
 }, {
 	"hash": "f4d277d925217cd7ad8f17aefd1c389d25bb16ab9f03f0756ae0dea81d29fcad",
@@ -295,14 +323,17 @@ export const resultsForSingleHistory : any = [
 		"amount": "9434713354",
 		"id": "c47689f318522f0e3059bd95a0373a32bea49a5ce1f77342becd40dba89b9eac0",
 		"index": 0,
-		"txHash": "c47689f318522f0e3059bd95a0373a32bea49a5ce1f77342becd40dba89b9eac"
+		"txHash": "c47689f318522f0e3059bd95a0373a32bea49a5ce1f77342becd40dba89b9eac",
+		"assets": null
 	}],
 	"outputs": [{
 		"address": "DdzFFzCqrht33HAPd4PyqRAhmry5gsSgvZjh8dWdZPuHYchXPbP1W3Rw5A2zwgftbeU9rMu3znnpNib3oFGkmBy3LL8i8VTZhNG9qnwN",
-		"amount": "4700000000"
+		"amount": "4700000000",
+		"assets": null
 	}, {
 		"address": "DdzFFzCqrhsksJxdqiVRGY5kZbzKJmMW9qKcZMVZ95oYaDrCHEEk1fxV4QbkoNDu24WY1ZKCUnuizc8SWaVPkEwv66eTtUdsyVRBkgD7",
-		"amount": "4734542108"
+		"amount": "4734542108",
+		"assets": null
 	}]
 }, {
 	"hash": "261a2dcabb4ea95559eae2ed6e7ec33af173c638a0ef0b96cfd177ba98ed3549",
@@ -324,11 +355,13 @@ export const resultsForSingleHistory : any = [
 		"amount": "4700000000",
 		"id": "f4d277d925217cd7ad8f17aefd1c389d25bb16ab9f03f0756ae0dea81d29fcad0",
 		"index": 0,
-		"txHash": "f4d277d925217cd7ad8f17aefd1c389d25bb16ab9f03f0756ae0dea81d29fcad"
+		"txHash": "f4d277d925217cd7ad8f17aefd1c389d25bb16ab9f03f0756ae0dea81d29fcad",
+		"assets": null
 	}],
 	"outputs": [{
 		"address": "DdzFFzCqrhsmYfanyJgLimDYBJd1QtnSUyEBckcZP6RqQbzY6zFVt16Gbrm5t17qeHrkceZ81ysZkgQKREex895e584ut3S24TR6d5fV",
-		"amount": "4699611900"
+		"amount": "4699611900",
+		"assets": null
 	}]
 }, {
 	"hash": "ccea6f32d0a6145efb07839f82fe6dc1f2adc0395b6806c84165828c3b01c416",
@@ -350,14 +383,17 @@ export const resultsForSingleHistory : any = [
 		"amount": "220360687171",
 		"id": "fd20a38d26386c335851d34569f4f71369b7c5e1cfcac004a553c1bded3f70900",
 		"index": 0,
-		"txHash": "fd20a38d26386c335851d34569f4f71369b7c5e1cfcac004a553c1bded3f7090"
+		"txHash": "fd20a38d26386c335851d34569f4f71369b7c5e1cfcac004a553c1bded3f7090",
+		"assets": null
 	}],
 	"outputs": [{
 		"address": "Ae2tdPwUPEZHZvjQkgDHfAKMHPM1tEWMBshGessSds85UNDR6Vm6QPtaMMM",
-		"amount": "99964980"
+		"amount": "99964980",
+		"assets": null
 	}, {
 		"address": "DdzFFzCqrhsnUbJho1ERJsuZxkevYTofBFMuQo5Uaxmb2dHUQX7TzK4C9gN5Yc5Hc4ok4o4wj1krZrgvQWGfd4BgpYFRQUQBgLzZxFi6",
-		"amount": "220260549934"
+		"amount": "220260549934",
+		"assets": null
 	}]
 }, {
 	"hash": "523085191ef5f10cda710cad4a5b31b9efea8679ce513a37e32d78393a9644df",
@@ -379,14 +415,17 @@ export const resultsForSingleHistory : any = [
 		"amount": "4734542108",
 		"id": "f4d277d925217cd7ad8f17aefd1c389d25bb16ab9f03f0756ae0dea81d29fcad1",
 		"index": 1,
-		"txHash": "f4d277d925217cd7ad8f17aefd1c389d25bb16ab9f03f0756ae0dea81d29fcad"
+		"txHash": "f4d277d925217cd7ad8f17aefd1c389d25bb16ab9f03f0756ae0dea81d29fcad",
+		"assets": null
 	}],
 	"outputs": [{
 		"address": "DdzFFzCqrht33HAPd4PyqRAhmry5gsSgvZjh8dWdZPuHYchXPbP1W3Rw5A2zwgftbeU9rMu3znnpNib3oFGkmBy3LL8i8VTZhNG9qnwN",
-		"amount": "4500000000"
+		"amount": "4500000000",
+		"assets": null
 	}, {
 		"address": "DdzFFzCqrhstPo9XnHZjnzjEmWC8ZNe6TdrFfmFnDaBNsnemp3gv12dW8QVb6F41j7uudhDEgqDtVkYSGNPkSE8EPGJEJ1tGL6PDnD8F",
-		"amount": "234371038"
+		"amount": "234371038",
+		"assets": null
 	}]
 }, {
 	"hash": "08a863c1862e9847c3e6925a9ecf0af1867bae86dc026f967ed58e602e051c7b",
@@ -408,11 +447,13 @@ export const resultsForSingleHistory : any = [
 		"amount": "4500000000",
 		"id": "523085191ef5f10cda710cad4a5b31b9efea8679ce513a37e32d78393a9644df0",
 		"index": 0,
-		"txHash": "523085191ef5f10cda710cad4a5b31b9efea8679ce513a37e32d78393a9644df"
+		"txHash": "523085191ef5f10cda710cad4a5b31b9efea8679ce513a37e32d78393a9644df",
+		"assets": null
 	}],
 	"outputs": [{
 		"address": "DdzFFzCqrhsxMRRT12KZVou1bWqZ4FmrUSpQNdE3iwkR8ktx4n55Qn2jrrqZekebEoMQxGybQpVit2fbWyramWnSejKnkdFpYTDatP9M",
-		"amount": "4499611900"
+		"amount": "4499611900",
+		"assets": null
 	}]
 }, {
 	"hash": "e62b55540020502cdf9033448a2f874cb1d8663fea5420b257d2b6ae4ce2a678",
@@ -434,13 +475,16 @@ export const resultsForSingleHistory : any = [
 		"amount": "220260549934",
 		"id": "ccea6f32d0a6145efb07839f82fe6dc1f2adc0395b6806c84165828c3b01c4161",
 		"index": 1,
-		"txHash": "ccea6f32d0a6145efb07839f82fe6dc1f2adc0395b6806c84165828c3b01c416"
+		"txHash": "ccea6f32d0a6145efb07839f82fe6dc1f2adc0395b6806c84165828c3b01c416",
+		"assets": null
 	}],
 	"outputs": [{
 		"address": "DdzFFzCqrhsob4yY1MwSqmMLSeL7RRkbpkoZNx3kHfSRyqUpTshcHAmrepn1fexMZg3vPc4QqT1apxmYrTUbE22pGSgLa9CTpb6V5fMy",
-		"amount": "216923377677"
+		"amount": "216923377677",
+		"assets": null
 	}, {
 		"address": "DdzFFzCqrhsgbuvsd8VvEtucKCqTjCwyXH1f4c8xjY822JryHjcRYxTHKSiR3m8gAX3dszRuYmXFviALt5H6okAhnWFaPoNzu4P7Th2L",
-		"amount": "3337000000"
+		"amount": "3337000000",
+		"assets": null
 	}]
 }];
