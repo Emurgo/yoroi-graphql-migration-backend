@@ -276,7 +276,7 @@ export const askTransactionHistory = async (
             address: obj.f1,
             amount: obj.f2.toString(),
             id: obj.f3.concat(obj.f4.toString()),
-            index: obj.f4i,
+            index: obj.f4,
             txHash: obj.f3,
             assets: extractAssets(obj.f5)
       }))
