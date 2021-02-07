@@ -23,16 +23,26 @@ export interface BlockFrag {
     epochNo: number;
     slotNo: number;
 }
+
+export interface Asset {
+    assetId: string,
+    policyId: null | string,
+    name: null | string,
+    amount: number,
+}
+
 export interface TransInputFrag {
     address: string;
     amount: string;
     id: string;
     index: number;
     txHash: string;
+    assets: null | [Asset]
 }
 export interface TransOutputFrag {
     address: string;
     amount: string;
+    assets: null | [Asset]
 }
 
 export type Certificate = StakeRegistration | StakeDeregistration | StakeDelegation | PoolRegistration | PoolRetirement | MoveInstantaneousRewardsCert;
