@@ -125,7 +125,7 @@ const askTransactionSqlQuery = `
                           , source_tx_out.value
                           , encode(source_tx.hash, 'hex')
                           , tx_in.tx_out_index
-                          , (select json_agg(ROW("policy", "name", "quantity"))
+                          , (select json_agg(ROW(encode("policy", 'hex'), encode("name", 'hex'), "quantity"))
                             from ma_tx_out
                             WHERE ma_tx_out."tx_out_id" = source_tx_out.id)
                           ) order by tx_in.id asc) as inAddrValPairs
@@ -140,7 +140,7 @@ const askTransactionSqlQuery = `
        , (select json_agg((
                     "address", 
                     "value",
-                    (select json_agg(ROW("policy", "name", "quantity"))
+                   (select json_agg(ROW(encode("policy", 'hex'), encode("name", 'hex'), "quantity"))
                         FROM ma_tx_out
                         JOIN tx_out token_tx_out
                         ON tx.id = token_tx_out.tx_id         
@@ -233,8 +233,8 @@ function buildMetadataObj(
   return result;
 }
 
-const extractAssets = (obj: null | any): (null | [Asset]) => {
-    if (obj == null) return null;
+const extractAssets = (obj: null | any): Asset[] => {
+    if (obj == null) return [] as Asset[];
     return obj.map((token: any) => {
         const policyId: string = token.f1 == null ? "" : token.f1
         const name: string = token.f2 == null ? "" : token.f2
@@ -289,7 +289,7 @@ export const askTransactionHistory = async (
         }))
       : [];
     const withdrawals : TransOutputFrag[] = row.withdrawals 
-      ? row.withdrawals.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString(), assets: null }))
+      ? row.withdrawals.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString(), assets: [] as Asset[] }))
       : [];
     const certificates = row.certificates !== null
       ? row.certificates

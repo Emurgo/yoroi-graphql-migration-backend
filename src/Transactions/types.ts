@@ -26,7 +26,7 @@ export interface BlockFrag {
 
 export interface Asset {
     assetId: string,
-    policyId: null | string,
+    policyId: string,
     name: null | string,
     amount: number,
 }
@@ -37,12 +37,12 @@ export interface TransInputFrag {
     id: string;
     index: number;
     txHash: string;
-    assets: null | [Asset]
+    assets: Asset[]
 }
 export interface TransOutputFrag {
     address: string;
     amount: string;
-    assets: null | [Asset]
+    assets: null | Asset[]
 }
 
 export type Certificate = StakeRegistration | StakeDeregistration | StakeDelegation | PoolRegistration | PoolRetirement | MoveInstantaneousRewardsCert;
