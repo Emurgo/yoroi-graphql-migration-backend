@@ -318,6 +318,7 @@ describe("/txs/history", function() {
     expect(obj.inputs[0]).to.have.property("amount");
     expect(obj.inputs[0]).to.have.property("id");
     expect(obj.inputs[0]).to.have.property("index");
+    expect(obj.inputs[0]).to.have.property("assets");
     expect(obj.inputs[0]).to.have.property("txHash");
     expect(obj.outputs[0]).to.have.property("address");
     expect(obj.outputs[0]).to.have.property("amount");

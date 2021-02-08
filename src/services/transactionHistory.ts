@@ -1,6 +1,15 @@
 import { errMsgs, UtilEither, getAddressesByType } from "../utils";
 
-import { rowToCertificate, BlockEra, BlockFrag, Certificate, TransInputFrag, TransOutputFrag, TransactionFrag} from "../Transactions/types";
+import {
+    rowToCertificate,
+    BlockEra,
+    BlockFrag,
+    Certificate,
+    TransInputFrag,
+    TransOutputFrag,
+    TransactionFrag,
+    Asset
+} from "../Transactions/types";
 
 import {
   TransactionMetadata,
@@ -115,7 +124,11 @@ const askTransactionSqlQuery = `
        , (select json_agg(( source_tx_out.address
                           , source_tx_out.value
                           , encode(source_tx.hash, 'hex')
-                          , tx_in.tx_out_index) order by tx_in.id asc) as inAddrValPairs
+                          , tx_in.tx_out_index
+                          , (select json_agg(ROW(encode("policy", 'hex'), encode("name", 'hex'), "quantity"))
+                            from ma_tx_out
+                            WHERE ma_tx_out."tx_out_id" = source_tx_out.id)
+                          ) order by tx_in.id asc) as inAddrValPairs
           FROM tx inadd_tx
           JOIN tx_in
             ON tx_in.tx_in_id = inadd_tx.id
@@ -124,7 +137,15 @@ const askTransactionSqlQuery = `
           JOIN tx source_tx 
             ON source_tx_out.tx_id = source_tx.id
           where inadd_tx.hash = tx.hash) as "inAddrValPairs"
-       , (select json_agg(("address", "value") order by "index" asc)  as outAddrValPairs
+       , (select json_agg((
+                    "address", 
+                    "value",
+                   (select json_agg(ROW(encode("policy", 'hex'), encode("name", 'hex'), "quantity"))
+                        FROM ma_tx_out
+                        JOIN tx_out token_tx_out
+                        ON tx.id = token_tx_out.tx_id         
+                        WHERE ma_tx_out."tx_out_id" = token_tx_out.id AND hasura_to."address" = token_tx_out.address AND hasura_to.index = token_tx_out.index)
+                    ) order by "index" asc) as outAddrValPairs
           from "TransactionOutput" hasura_to
           where hasura_to."txHash" = tx.hash) as "outAddrValPairs"
        , (select json_agg((encode(addr."hash_raw",'hex'), "amount") order by w."id" asc)
@@ -171,50 +192,6 @@ const askTransactionSqlQuery = `
   limit $5;
 `;
 
-
-// const graphQLQuery = `
-//   query TxsHistory(
-//     $addresses: [String]
-//     $limit: Int
-//     $afterBlockNum: Int
-//     $untilBlockNum: Int
-//   ) {
-//     transactions(
-//       where: {
-//         _and: [
-//           { block: { number: { _gte: $afterBlockNum, _lte: $untilBlockNum } } }
-//           {
-//             _or: [
-//               { inputs: { address: { _in: $addresses } } }
-//               { outputs: { address: { _in: $addresses } } }
-//             ]
-//           }
-//         ]
-//       }
-//       limit: $limit
-//       order_by: { includedAt: asc }
-//     ) {
-//       hash
-  
-//       block {
-//         number
-//         hash
-//         epochNo
-//         slotNo
-//       }
-//       includedAt
-//       inputs {
-//         address
-//         value
-//       }
-//       outputs {
-//         address
-//         value
-//       }
-//     }
-//   }
-// `;
-
 const MAX_INT = "2147483647";
 
 function buildMetadataObj(
@@ -256,6 +233,20 @@ function buildMetadataObj(
   return result;
 }
 
+const extractAssets = (obj: null | any): Asset[] => {
+    if (obj == null) return [] as Asset[];
+    return obj.map((token: any) => {
+        const policyId: string = token.f1 == null ? "" : token.f1
+        const name: string = token.f2 == null ? "" : token.f2
+        return {
+            assetId: policyId + "." + name, // policyId.nameId
+            policyId,
+            name,
+            amount: token.f3
+        }
+    })
+}
+
 export const askTransactionHistory = async ( 
   pool: Pool
   , limit: number
@@ -266,7 +257,7 @@ export const askTransactionHistory = async (
   }
   , untilNum: number
 ): Promise<UtilEither<TransactionFrag[]>> => {
-    const addressTypes = getAddressesByType(addresses);
+  const addressTypes = getAddressesByType(addresses);
   const ret = await pool.query(askTransactionSqlQuery, [
       [
         ...addressTypes.legacyAddr,
@@ -281,18 +272,24 @@ export const askTransactionHistory = async (
   ]);
   const txs = ret.rows.map( (row: any):TransactionFrag => {
     const inputs = row.inAddrValPairs 
-      ? row.inAddrValPairs.map( ( obj:any ): TransInputFrag => 
-        ({ address: obj.f1
-          , amount: obj.f2.toString() 
-          , id: obj.f3.concat(obj.f4.toString())
-          , index: obj.f4
-          , txHash: obj.f3}))
+      ? row.inAddrValPairs.map((obj: any): TransInputFrag => ({
+            address: obj.f1,
+            amount: obj.f2.toString(),
+            id: obj.f3.concat(obj.f4.toString()),
+            index: obj.f4,
+            txHash: obj.f3,
+            assets: extractAssets(obj.f5)
+      }))
       : []; 
     const outputs = row.outAddrValPairs 
-      ? row.outAddrValPairs.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString() }))
+      ? row.outAddrValPairs.map((obj: any): TransOutputFrag => ({
+            address: obj.f1,
+            amount: obj.f2.toString(),
+            assets: extractAssets(obj.f3)
+        }))
       : [];
     const withdrawals : TransOutputFrag[] = row.withdrawals 
-      ? row.withdrawals.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString() })) 
+      ? row.withdrawals.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString(), assets: [] as Asset[] }))
       : [];
     const certificates = row.certificates !== null
       ? row.certificates
@@ -374,7 +371,7 @@ const askBlockNumByHashQuery = `
   WHERE "block"."hash"=decode($1, 'hex')
 `;
 
-export const askBlockNumByHash = async (pool: Pool, hash : string) : Promise<UtilEither<number>> => {
+export const askBlockNumByHash = async (pool: Pool, hash : string): Promise<UtilEither<number>> => {
     if(!hash)
         return {kind:"error", errMsg: errMsgs.noValue};
 
