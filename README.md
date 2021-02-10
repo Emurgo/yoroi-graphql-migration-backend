@@ -84,7 +84,8 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
     tx_index: number,
     block_num: number, // NOTE: not slot_no
     receiver: string,
-    amount: string
+    amount: string,
+    assets: Asset[],
   }>
   ```
 </details>
@@ -317,11 +318,13 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
       amount: string,
       id: string, // concatenation of txHash || index
       index: number,
-      txHash: string,
+      txHash: string, 
+      assets: Asset[]
     }>,
     outputs: Array<{ //these will be ordered by transaction index asc.
       address: string,
       amount: string,
+      assets: Asset[]
     }>,
     withdrawals: Array<{| address: string, // hex
       amount: string

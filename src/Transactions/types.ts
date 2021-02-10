@@ -28,7 +28,7 @@ export interface Asset {
     assetId: string,
     policyId: string,
     name: null | string,
-    amount: number,
+    amount: string,
 }
 
 export interface TransInputFrag {
