@@ -2,7 +2,7 @@ import { Pool } from "pg";
 import { Request, Response } from "express";
 
 import config from "config";
-import { assertNever, validateAddressesReq, getAddressesByType, } from "../utils";
+import {assertNever, validateAddressesReq, getAddressesByType, extractAssets,} from "../utils";
 
 const utxoForAddressQuery = `
   select tx_out.address
@@ -10,6 +10,9 @@ const utxoForAddressQuery = `
        , tx_out.index
        , tx_out.value
        , block.block_no as "blockNumber"
+       , (select json_agg(ROW (encode("policy", 'hex'), encode("name", 'hex'), "quantity"))
+          from ma_tx_out
+          WHERE ma_tx_out."tx_out_id" = tx_out.id) as assets
   FROM tx
   JOIN tx_out
     ON tx.id = tx_out.tx_id
@@ -51,6 +54,7 @@ export const utxoForAddresses = (pool: Pool) => async (req: Request, res: Respon
         , tx_index: utxo.index
         , receiver: utxo.address
         , amount: utxo.value.toString()
+          , assets: extractAssets(utxo.assets)
         , block_num: utxo.blockNumber }));
     res.send(utxos);
     return;

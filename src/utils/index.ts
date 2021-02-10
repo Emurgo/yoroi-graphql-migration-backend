@@ -9,6 +9,7 @@ import {
 } from "@emurgo/cardano-serialization-lib-nodejs";
 import { decode, fromWords } from "bech32";
 import { Prefixes } from "./cip5";
+import {Asset} from "../Transactions/types";
 
 export const contentTypeHeaders = { headers: {"Content-Type": "application/json"}};
 
@@ -116,6 +117,20 @@ export const validateHistoryReq = (addressRequestLimit:number, apiResponseLimit:
   default: return assertNever(validatedAddresses);
   }
 };
+
+export const extractAssets = (obj: null | any): Asset[] => {
+  if (obj == null) return [] as Asset[];
+  return obj.map((token: any) => {
+    const policyId: string = token.f1 == null ? "" : token.f1
+    const name: string = token.f2 == null ? "" : token.f2
+    return {
+      assetId: policyId + "." + name, // policyId.nameId
+      policyId,
+      name,
+      amount: token.f3.toString()
+    }
+  })
+}
 
 export function getSpendingKeyHash(
   wasmAddr: Address,
