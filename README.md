@@ -319,12 +319,12 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
       id: string, // concatenation of txHash || index
       index: number,
       txHash: string, 
-        assets: Asset[]
+      assets: Asset[]
     }>,
     outputs: Array<{ //these will be ordered by transaction index asc.
       address: string,
       amount: string,
-        assets: Asset[]
+      assets: Asset[]
     }>,
     withdrawals: Array<{| address: string, // hex
       amount: string
