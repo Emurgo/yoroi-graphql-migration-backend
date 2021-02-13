@@ -130,7 +130,8 @@ export interface YoroiPriceCache {
 
 export interface YoroiGeneralCache {
     isGeneralCacheActive: Boolean,
-    lruCache: any | null,
+    isGeneralCacheValidationEnforced: Boolean,
+    accountStateLruCache: any | null,
 }
 
 export const rowToCertificate = (row: any): Certificate | null => {

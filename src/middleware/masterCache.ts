@@ -1,14 +1,14 @@
 // eslint-disable-next-line
 import config from "config";
-import {BlockCreatedTrigger} from "../Transactions/types";
+import {BlockCreatedTrigger, YoroiGeneralCache} from "../Transactions/types";
 import {PoolConfig} from "pg";
 
 // eslint-disable-next-line
 const createSubscriber = require('pg-listen');
 const cluster = require('cluster');
 
-export const runDBSubscriptionIfMaster = (databaseLogin: PoolConfig, cacheActive: Boolean): void => {
-    if (!cacheActive || !cluster.isMaster) return;
+export const runDBSubscriptionIfMaster = (databaseLogin: PoolConfig, yoroiCache: YoroiGeneralCache): void => {
+    if (!yoroiCache.isGeneralCacheActive || !cluster.isMaster) return;
 
     // Database Subscriptions
     const subscriber = createSubscriber(
@@ -24,6 +24,7 @@ export const runDBSubscriptionIfMaster = (databaseLogin: PoolConfig, cacheActive
             return;
         }
 
+        processBlockForCache(block, yoroiCache)
     });
 
     subscriber.notifications.on('epoch_created', (epoch: any) => {
@@ -32,6 +33,7 @@ export const runDBSubscriptionIfMaster = (databaseLogin: PoolConfig, cacheActive
             return;
         }
 
+        processEpochForCache(epoch, yoroiCache)
     });
 
     (async () => {
@@ -40,7 +42,14 @@ export const runDBSubscriptionIfMaster = (databaseLogin: PoolConfig, cacheActive
     })();
 }
 
-const processBlockForCache = (block: BlockCreatedTrigger): void => {
+const processEpochForCache = (epoch: any, yoroiCache: YoroiGeneralCache): void => {
+    // Invalidate AccountStateCache if exist
+    if (yoroiCache.accountStateLruCache) {
+        yoroiCache.accountStateLruCache.reset();
+    }
+}
+
+const processBlockForCache = (block: BlockCreatedTrigger, yoroiCache: YoroiGeneralCache): void => {
     // endpoints to invalidate cache
     // bestblock
     // txHistory

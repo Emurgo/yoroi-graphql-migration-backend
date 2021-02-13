@@ -48,13 +48,23 @@ let yoroiPriceCache: YoroiPriceCache = {
   lruCache: null
 }
 
+let yoroiGeneralCache: YoroiGeneralCache = {
+  isGeneralCacheActive: config.get("cache.isGeneralCacheActive"),
+  isGeneralCacheValidationEnforced: config.get("cache.isGeneralCacheValidationEnforced"),
+  accountStateLruCache: null
+}
+
 if (isCurrencyCacheActive || isGeneralCacheActive) {
   const port: number = config.get("cache.redis.port")
   const host: string = config.get("cache.redis.host")
   const redis = Redis.createClient(port, host);
 
   if (isCurrencyCacheActive) {
-    yoroiPriceCache.lruCache = lru(redis, {max: currReqLimit, namespace: 'adaPrice', maxAge: 60 * 1000});
+    yoroiPriceCache.lruCache = lru(redis, {max: currReqLimit, namespace: 'adaPrice', maxAge: config.get("cache.price.invalidateAfterMiliseconds")});
+  }
+
+  if (isGeneralCacheActive) {
+    yoroiGeneralCache.accountStateLruCache = lru(redis, {max: 1000, namespace: 'accountState', maxAge: config.get("cache.accountState.invalidateAfterMiliseconds")});
   }
 }
 
@@ -69,7 +79,7 @@ const databaseLogin: PoolConfig = {
 const pool = new Pool(databaseLogin);
 createCertificatesView(pool);
 createTransactionOutputView(pool);
-runDBSubscriptionIfMaster(databaseLogin, config.get("cache.isGeneralCacheActive"))
+runDBSubscriptionIfMaster(databaseLogin, yoroiGeneralCache)
 
 const healthChecker = new HealthChecker(() => askBestBlock(pool));
 
@@ -104,6 +114,7 @@ const utxoSumForAddresses = async (req: Request, res:Response) => {
   if(!req.body || !req.body.addresses) {
     throw new Error("error, no addresses.");
   }
+
   const verifiedAddresses = utils.validateAddressesReq(addressesRequestLimit
     , req.body.addresses);
   switch(verifiedAddresses.kind){
@@ -256,7 +267,7 @@ const routes : Route[] = [
   // deprecated endpoints
 {   path: "/getAccountState"
   , method: "post"
-  , handler: handleGetAccountState(pool)
+  , handler: handleGetAccountState(pool, yoroiGeneralCache)
 }
 , { path: "/getRegistrationHistory"
   , method: "post"
@@ -273,7 +284,7 @@ const routes : Route[] = [
 // replacement endpoints
 , { path: "/account/state"
   , method: "post"
-  , handler: handleGetAccountState(pool)
+  , handler: handleGetAccountState(pool, yoroiGeneralCache)
 }
 , { path: "/account/registrationHistory"
   , method: "post"

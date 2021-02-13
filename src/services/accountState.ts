@@ -3,6 +3,7 @@ import { assertNever, validateAddressesReq } from "../utils";
 import config from "config";
 import { Pool } from "pg";
 import { Request, Response } from "express";
+import {YoroiGeneralCache} from "../Transactions/types";
 
 const addrReqLimit:number = config.get("server.addressRequestLimit");
 
@@ -72,7 +73,7 @@ interface Dictionary<T> {
     [key: string]: T;
 }
 
-const askAccountRewards = async (pool: Pool, addresses: string[]): Promise<Dictionary<RewardInfo|null>> => {
+const askAccountRewards = async (pool: Pool, addresses: string[]): Promise<Dictionary<RewardInfo | null>> => {
   const ret : Dictionary<RewardInfo|null> = {};
   const rewards = await pool.query(accountRewardsQuery, [addresses]);
   for(const row of rewards.rows) {
@@ -89,21 +90,94 @@ const askAccountRewards = async (pool: Pool, addresses: string[]): Promise<Dicti
   return ret;
 };
 
-export const handleGetAccountState = (pool: Pool) => async (req: Request, res:Response): Promise<void> => {
+interface AccountStateCacheValue extends RewardInfo {
+  lastUpdated: Date
+}
+
+interface AccountStateCache {
+  [account: string]: AccountStateCacheValue
+}
+
+export const handleGetAccountState = (pool: Pool, yoroiCache: YoroiGeneralCache) => async (req: Request, res:Response): Promise<void> => {
   if(!req.body || !req.body.addresses) {
     throw new Error("no addresses.");
-    return;
-  } 
-  const verifiedAddrs = validateAddressesReq(addrReqLimit, req.body.addresses);
-  switch(verifiedAddrs.kind){
-  case "ok": {
-    const accountState = await askAccountRewards(pool, verifiedAddrs.value);
-    res.send(accountState); 
-    return;
   }
+
+  const verifiedAddrs = validateAddressesReq(addrReqLimit, req.body.addresses);
+  switch (verifiedAddrs.kind) {
+  case "ok": {
+    let cachedStates: AccountStateCache = {};
+
+    if (yoroiCache.isGeneralCacheActive) {
+      for (const account of verifiedAddrs.value) {
+        const accountCachedState: AccountStateCacheValue = await yoroiCache.accountStateLruCache.get(account);
+        if (accountCachedState) {
+          cachedStates[account] = accountCachedState;
+        }
+      }
+
+      if (!Object.values(cachedStates).some(e => (e == null)) && Object.values(cachedStates).length == verifiedAddrs.value.length) {
+        console.log("handleGetAccountState:: Using cached prices")
+        console.log(cachedStates)
+
+        if (!yoroiCache.isGeneralCacheValidationEnforced) {
+          res.send(cachedStates);
+          return;
+        }
+      }
+    }
+    const accountState = await askAccountRewards(pool, verifiedAddrs.value);
+    console.log("handleGetAccountState:: response")
+    console.log(accountState)
+
+    // Update Cache
+    if (yoroiCache.isGeneralCacheActive) {
+      console.log("handleGetAccountState:: Updating cached prices")
+      for (const addr of verifiedAddrs.value) {
+        const storeObj = {
+          ...accountState[addr],
+          lastUpdated: new Date()
+        }
+
+        await yoroiCache.accountStateLruCache.set(addr, storeObj);
+      }
+    }
+
+    // Check Enforcement
+    if (yoroiCache.isGeneralCacheValidationEnforced && yoroiCache.accountStateLruCache.count !== 0) {
+      let doesMatch = true;
+      for (const addr of verifiedAddrs.value) {
+        if (
+            cachedStates[addr] == null ||
+            cachedStates[addr].remainingAmount !== accountState[addr]!.remainingAmount ||
+            cachedStates[addr].poolOperator !== accountState[addr]!.poolOperator ||
+            cachedStates[addr].rewards !== accountState[addr]!.rewards ||
+            cachedStates[addr].withdrawals !== accountState[addr]!.withdrawals
+        ) {
+          doesMatch = false;
+          break;
+        }
+      }
+      if (doesMatch) {
+        console.log("handleGetAccountState:: CacheValidationEnforced OK")
+      }
+      else {
+        console.log("handleGetAccountState:: CacheValidationEnforced does not match")
+        console.log("Cache:")
+        console.log(cachedStates)
+        console.log("Response:")
+        console.log(accountState)
+      }
+    }
+
+    res.send(accountState); 
+    break;
+  }
+
   case "error":
     throw new Error(verifiedAddrs.errMsg);
-    return;
-  default: return assertNever(verifiedAddrs);
+
+  default:
+    return assertNever(verifiedAddrs);
   }
 };
