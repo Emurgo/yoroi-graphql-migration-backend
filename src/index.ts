@@ -4,7 +4,7 @@ import express from "express";
 import * as websockets from "ws";
 import { Request, Response } from "express";
 
-import { Pool } from "pg";
+import {Pool, PoolConfig} from "pg";
 
 // eslint-disable-next-line
 const semverCompare = require("semver-compare");
@@ -22,6 +22,7 @@ import { filterUsedAddresses } from "./services/filterUsedAddress";
 import { askUtxoSumForAddresses } from "./services/utxoSumForAddress";
 import { handleSignedTx } from "./services/signedTransaction";
 import { handlePoolInfo } from "./services/poolInfo";
+import { currReqLimit, handlePrice } from "./services/price";
 import { handleGetAccountState } from "./services/accountState";
 import { handleGetRegHistory } from "./services/regHistory";
 import { handleGetRewardHistory } from "./services/rewardHistory";
@@ -32,32 +33,58 @@ import { createCertificatesView } from "./Transactions/certificates";
 import { createTransactionOutputView } from "./Transactions/output";
 import {poolDelegationHistory} from "./services/poolHistory";
 import {handleGetCardanoWalletPools} from "./services/cardanoWallet";
+import {runDBSubscriptionIfMaster} from "./middleware/masterCache";
 
+import * as Redis from 'redis';
+import { YoroiPriceCache, YoroiGeneralCache } from "./Transactions/types";
+const lru = require('redis-lru');
 
-const pool = new Pool({ user: config.get("db.user")
-  , host: config.get("db.host")
-  , database: config.get("db.database")
-  , password: config.get("db.password")});
+// Redis
+const isCurrencyCacheActive = config.get("cache.isCurrencyCacheActive");
+const isGeneralCacheActive = config.get("cache.isGeneralCacheActive");
+
+let yoroiPriceCache: YoroiPriceCache = {
+  isCurrencyCacheActive: config.get("cache.isCurrencyCacheActive"),
+  lruCache: null
+}
+
+if (isCurrencyCacheActive || isGeneralCacheActive) {
+  const port: number = config.get("cache.redis.port")
+  const host: string = config.get("cache.redis.host")
+  const redis = Redis.createClient(port, host);
+
+  if (isCurrencyCacheActive) {
+    yoroiPriceCache.lruCache = lru(redis, {max: currReqLimit, namespace: 'adaPrice', maxAge: 60 * 1000});
+  }
+}
+
+// Database
+const databaseLogin: PoolConfig = {
+  user: config.get("db.user"),
+  host: config.get("db.host"),
+  database: config.get("db.database"),
+  password: config.get("db.password")
+}
+
+const pool = new Pool(databaseLogin);
 createCertificatesView(pool);
 createTransactionOutputView(pool);
-
+runDBSubscriptionIfMaster(databaseLogin, config.get("cache.isGeneralCacheActive"))
 
 const healthChecker = new HealthChecker(() => askBestBlock(pool));
 
 const router = express();
 
 const middlewares = [ middleware.handleCors
-  , middleware.handleBodyRequestParsing 
-  , middleware.handleCompression 
+  , middleware.handleBodyRequestParsing
+  , middleware.handleCompression
 ];
 
 applyMiddleware(middlewares, router);
 
-
-
 const port:number= config.get("server.port");
 const addressesRequestLimit:number = config.get("server.addressRequestLimit");
-const apiResponseLimit:number = config.get("server.apiResponseLimit"); 
+const apiResponseLimit:number = config.get("server.apiResponseLimit");
 
 const bestBlock = (pool: Pool) => async (_req: Request, res: Response) => {
   const result = await askBestBlock(pool);
@@ -285,6 +312,10 @@ const routes : Route[] = [
 , { path: "/v2/txs/history"
   , method: "post"
   , handler: txHistory 
+}
+, { path: "/price"
+    , method: "post"
+    , handler: handlePrice(yoroiPriceCache)
 }
 , { path: "/txs/signed"
   , method: "post"

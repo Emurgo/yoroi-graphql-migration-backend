@@ -71,6 +71,7 @@ export function assertNever(x: never): never {
 
 /**
  * This method validates addresses request body
+ * @param addressRequestLimit max number of addresses
  * @param {Array[String]} addresses
  */
 export const validateAddressesReq = (addressRequestLimit: number, addresses: string[]): UtilEither<string[]> => {
@@ -82,6 +83,23 @@ export const validateAddressesReq = (addressRequestLimit: number, addresses: str
   }
   return { kind: "ok", value: addresses };
 };
+
+/**
+ * This method validates currencies request body
+ * @param currenciesRequestLimit max number of currencies
+ * @param {Array[String]} currencies
+ */
+
+export const validateCurrenciesReq = (currenciesRequestLimit: number, currencies: string[]): UtilEither<string[]> => {
+  const errorMessage = `Currencies request length should be (0, ${currenciesRequestLimit}]`;
+  if (!currencies) {
+    return { kind: "error", errMsg: errorMessage };
+  } else if (currencies.length === 0 || currencies.length > currenciesRequestLimit) {
+    return { kind: "error", errMsg: errorMessage };
+  }
+  return { kind: "ok", value: currencies };
+};
+
 
 export interface TxBlockData {
     tx: string;

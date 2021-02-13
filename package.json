@@ -32,7 +32,10 @@
     "lodash": "^4.17.20",
     "mocha": "^8.2.0",
     "pg": "^8.4.2",
+    "pg-listen": "^1.7.0",
     "pm2": "^4.5.0",
+    "redis": "^3.0.2",
+    "redis-lru": "^0.6.0",
     "semver-compare": "^1.0.0",
     "ts-node": "^9.0.0",
     "tsc-watch": "^4.2.9",
@@ -40,6 +43,7 @@
     "ws": "^7.4.2"
   },
   "devDependencies": {
+    "@types/redis": "^2.8.28",
     "@types/config": "0.0.36",
     "@types/chai": "^4.2.14",
     "@types/compression": "^1.7.0",

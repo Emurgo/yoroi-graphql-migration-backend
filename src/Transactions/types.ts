@@ -111,7 +111,29 @@ export interface PoolRelay {
     dnsSrvName: string
     port: string;
 }
-export const rowToCertificate = (row:any):Certificate|null => {
+
+export interface BlockCreatedTrigger {
+    blockId: string,
+    hash: string,
+    epochNo: number,
+    blockNo: string,
+    slotNo: string,
+    txCount: number,
+    time: Date,
+}
+
+export interface YoroiPriceCache {
+    isCurrencyCacheActive: Boolean,
+    lruCache: any | null,
+}
+
+
+export interface YoroiGeneralCache {
+    isGeneralCacheActive: Boolean,
+    lruCache: any | null,
+}
+
+export const rowToCertificate = (row: any): Certificate | null => {
   switch(row.jsType){
   case "StakeRegistration":
     return { kind: row.jsType
