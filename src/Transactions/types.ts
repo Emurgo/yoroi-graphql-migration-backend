@@ -131,7 +131,17 @@ export interface YoroiPriceCache {
 export interface YoroiGeneralCache {
     isGeneralCacheActive: Boolean,
     isGeneralCacheValidationEnforced: Boolean,
+    slackUrl: string,
     accountStateLruCache: any | null,
+    transactionHistoryLruCache: any | null,
+}
+
+export interface UtxoCreatedTrigger {
+    id: string,
+    tx_id: number,
+    index: number,
+    address: string,
+    value: string,
 }
 
 export const rowToCertificate = (row: any): Certificate | null => {

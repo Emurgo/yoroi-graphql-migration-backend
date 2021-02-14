@@ -51,7 +51,9 @@ let yoroiPriceCache: YoroiPriceCache = {
 let yoroiGeneralCache: YoroiGeneralCache = {
   isGeneralCacheActive: config.get("cache.isGeneralCacheActive"),
   isGeneralCacheValidationEnforced: config.get("cache.isGeneralCacheValidationEnforced"),
-  accountStateLruCache: null
+  slackUrl: config.get("cache.slackUrl"),
+  accountStateLruCache: null,
+  transactionHistoryLruCache: null
 }
 
 if (isCurrencyCacheActive || isGeneralCacheActive) {
@@ -92,9 +94,9 @@ const middlewares = [ middleware.handleCors
 
 applyMiddleware(middlewares, router);
 
-const port:number= config.get("server.port");
-const addressesRequestLimit:number = config.get("server.addressRequestLimit");
-const apiResponseLimit:number = config.get("server.apiResponseLimit");
+const port: number= config.get("server.port");
+const addressesRequestLimit: number = config.get("server.addressRequestLimit");
+const apiResponseLimit: number = config.get("server.apiResponseLimit");
 
 const bestBlock = (pool: Pool) => async (_req: Request, res: Response) => {
   const result = await askBestBlock(pool);

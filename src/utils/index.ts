@@ -10,6 +10,7 @@ import {
 import { decode, fromWords } from "bech32";
 import { Prefixes } from "./cip5";
 import {Asset} from "../Transactions/types";
+import axios, {AxiosPromise} from "axios";
 
 export const contentTypeHeaders = { headers: {"Content-Type": "application/json"}};
 
@@ -148,6 +149,12 @@ export const extractAssets = (obj: null | any): Asset[] => {
       amount: token.f3.toString()
     }
   })
+}
+
+export const webhookToSlack = async (msg: any, slackUrl: string): Promise<any> => {
+  if (msg == null || msg === "") return Promise.resolve();
+  const msgString = JSON.stringify(msg, null, 2);
+  return axios({method: "post", url: slackUrl, data: {text: msgString}});
 }
 
 export function getSpendingKeyHash(

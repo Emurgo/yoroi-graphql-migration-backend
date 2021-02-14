@@ -1,0 +1,41 @@
+--
+CREATE OR REPLACE FUNCTION notify_epoch_rewards_updated() RETURNS TRIGGER AS $$
+BEGIN
+  REFRESH MATERIALIZED VIEW "AccountState";
+END;
+$$ LANGUAGE plpgsql;
+
+--
+DROP TRIGGER IF EXISTS epoch_rewards_updated ON epoch;
+CREATE TRIGGER epoch_rewards_updated
+AFTER INSERT ON epoch
+FOR EACH ROW
+EXECUTE PROCEDURE notify_epoch_rewards_updated();
+
+-- AccountState
+CREATE MATERIALIZED VIEW "AccountState" AS SELECT stake_address.hash_raw AS "stakeAddress",
+    sum(COALESCE("totalTreasury".amount, 0::numeric) + COALESCE("totalReserve".amount, 0::numeric) - COALESCE("totalWithdrawal".amount, 0::numeric) + COALESCE("totalReward".amount, 0::numeric)) AS "remainingAmount",
+    sum(COALESCE("totalTreasury".amount, 0::numeric) + COALESCE("totalReserve".amount, 0::numeric) + COALESCE("totalReward".amount, 0::numeric)) AS reward,
+    sum(COALESCE("totalWithdrawal".amount, 0::numeric)) AS withdrawal,
+    (SELECT block_no from block order by id desc limit 1) as "lastUpdatedOnBlock",
+    (SELECT epoch_no from block order by id desc limit 1) as "lastUpdatedOnEpoch"
+
+   FROM stake_address
+     LEFT JOIN ( SELECT reserve.addr_id,
+            sum(reserve.amount::numeric) AS amount
+           FROM reserve
+          GROUP BY reserve.addr_id) "totalReserve" ON stake_address.id = "totalReserve".addr_id
+     LEFT JOIN ( SELECT treasury.addr_id,
+            sum(treasury.amount::numeric) AS amount
+           FROM treasury
+          GROUP BY treasury.addr_id) "totalTreasury" ON stake_address.id = "totalTreasury".addr_id
+     LEFT JOIN ( SELECT withdrawal.addr_id,
+            sum(withdrawal.amount::numeric) AS amount
+           FROM withdrawal
+          GROUP BY withdrawal.addr_id) "totalWithdrawal" ON stake_address.id = "totalWithdrawal".addr_id
+     LEFT JOIN ( SELECT reward.addr_id,
+            sum(reward.amount::numeric) AS amount
+           FROM reward
+          GROUP BY reward.addr_id) "totalReward" ON stake_address.id = "totalReward".addr_id
+  GROUP BY stake_address.id;
+

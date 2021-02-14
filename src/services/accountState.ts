@@ -1,4 +1,4 @@
-import { assertNever, validateAddressesReq } from "../utils";
+import {assertNever, validateAddressesReq, webhookToSlack} from "../utils";
 
 import config from "config";
 import { Pool } from "pg";
@@ -162,11 +162,16 @@ export const handleGetAccountState = (pool: Pool, yoroiCache: YoroiGeneralCache)
         console.log("handleGetAccountState:: CacheValidationEnforced OK")
       }
       else {
+        const logObj = {
+          "request": req.body,
+          "cache": cachedStates,
+          "db": accountState,
+        }
         console.log("handleGetAccountState:: CacheValidationEnforced does not match")
-        console.log("Cache:")
-        console.log(cachedStates)
-        console.log("Response:")
-        console.log(accountState)
+        console.log(logObj)
+
+        // we don't care about waiting to get resolved
+        const _ = webhookToSlack(logObj, yoroiCache.slackUrl);
       }
     }
 

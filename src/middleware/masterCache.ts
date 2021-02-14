@@ -1,6 +1,6 @@
 // eslint-disable-next-line
 import config from "config";
-import {BlockCreatedTrigger, YoroiGeneralCache} from "../Transactions/types";
+import {BlockCreatedTrigger, UtxoCreatedTrigger, YoroiGeneralCache} from "../Transactions/types";
 import {PoolConfig} from "pg";
 
 // eslint-disable-next-line
@@ -36,9 +36,20 @@ export const runDBSubscriptionIfMaster = (databaseLogin: PoolConfig, yoroiCache:
         processEpochForCache(epoch, yoroiCache)
     });
 
+    subscriber.notifications.on('utxo_created', (utxo: UtxoCreatedTrigger) => {
+        if(Object.values(utxo).some(e => (e == null))) {
+            console.log("utxo_created::trigger has a null value ", utxo);
+            return;
+        }
+
+        processEpochForCache(utxo, yoroiCache)
+    });
+
     (async () => {
         await subscriber.connect();
         await subscriber.listenTo('block_created');
+        await subscriber.listenTo('epoch_created');
+        await subscriber.listenTo('utxo_created');
     })();
 }
 
@@ -46,6 +57,13 @@ const processEpochForCache = (epoch: any, yoroiCache: YoroiGeneralCache): void =
     // Invalidate AccountStateCache if exist
     if (yoroiCache.accountStateLruCache) {
         yoroiCache.accountStateLruCache.reset();
+    }
+}
+
+const processUtxoForCache = (utxo: UtxoCreatedTrigger, yoroiCache: YoroiGeneralCache): void => {
+    // Invalidate UTXO Caches if exist
+    if (yoroiCache.transactionHistoryLruCache) {
+        yoroiCache.transactionHistoryLruCache.del(utxo.address)
     }
 }
 
