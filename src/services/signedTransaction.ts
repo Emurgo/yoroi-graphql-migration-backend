@@ -4,22 +4,22 @@ import { Request, Response } from "express";
 
 const submissionEndpoint :string = config.get("server.txSubmissionEndpoint");
 
-const contentTypeHeaders = {"Content-Type": "application/cbor"};
-
+const contentTypeHeaders = {"Content-Type": "application/octet-stream"};
 
 export const handleSignedTx = async (req: Request, res: Response):Promise<void>=> { 
   if(!req.body.signedTx)
     throw new Error ("No signedTx in body");
 
-  const buffer = Buffer.from(req.body.signedTx, "base64");
+ const buffer = Buffer.from(req.body.signedTx, "base64");
   try {
     const endpointResponse = await axios({ method:"post"
       , url: submissionEndpoint
       , data: buffer
-      , headers: contentTypeHeaders}); 
+      , headers: contentTypeHeaders});
     if(endpointResponse.status === 202){
       if(endpointResponse.data.Left){
         const msg = `Transaction was rejected: ${endpointResponse.data.Left}`;
+        console.log("signedTransaction request body: " + req.body.signedTx);
         throw Error(msg);
       }
       res.send([]);
