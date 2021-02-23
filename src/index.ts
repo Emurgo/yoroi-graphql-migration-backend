@@ -51,7 +51,7 @@ let yoroiPriceCache: YoroiPriceCache = {
 let yoroiGeneralCache: YoroiGeneralCache = {
   isGeneralCacheActive: config.get("cache.isGeneralCacheActive"),
   isGeneralCacheValidationEnforced: config.get("cache.isGeneralCacheValidationEnforced"),
-  slackUrl: config.get("cache.slackUrl"),
+  slackUrl: config.get("cache.slack.webhookUrl"),
   accountStateLruCache: null,
   transactionHistoryLruCache: null
 }
