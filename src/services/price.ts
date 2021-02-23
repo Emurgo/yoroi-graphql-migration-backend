@@ -47,6 +47,7 @@ export const handlePrice = (yoroiPriceCache: YoroiPriceCache) => async (req: Req
             if (yoroiPriceCache.isCurrencyCacheActive) {
                 console.log("handlePrice:: Updating cached prices")
                 for (const currency of verifiedCurrs.value) {
+                    if (results[currency] == null) continue;
                     const storeObj: PriceCached = { price: results[currency], lastUpdated: results["last_updated_at"]}
                     await yoroiPriceCache.lruCache.set(currency, storeObj);
                 }

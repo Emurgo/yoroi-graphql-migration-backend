@@ -134,6 +134,7 @@ export const handleGetAccountState = (pool: Pool, yoroiCache: YoroiGeneralCache)
     if (yoroiCache.isGeneralCacheActive) {
       console.log("handleGetAccountState:: Updating cached prices")
       for (const addr of verifiedAddrs.value) {
+        if (accountState[addr] == null) continue;
         const storeObj = {
           ...accountState[addr],
           lastUpdated: new Date()
