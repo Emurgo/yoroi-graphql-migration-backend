@@ -66,7 +66,7 @@ const stakhanoviteHistorySuffix = [{
       "cost": "340000000",
       "margin": 0.019,
       "rewardAccount": "e10af10f4a5d365af01f0ca7651713a8a073263b61bbd1f69623097bd7",
-      "poolOwners": ["0a03ee791abf663e98b81661dadd72420f29bb6960ca0a676e75dd70", "7dfe98a743499f7a67ab2f9771e683d2e9fa1a53b4632aa7e1df339f", "e9aba14ed15240e855f5b62d28f0e5f913cf9c289d3cbc5d6016c1b1"],
+      "poolOwners": ["e9aba14ed15240e855f5b62d28f0e5f913cf9c289d3cbc5d6016c1b1", "7dfe98a743499f7a67ab2f9771e683d2e9fa1a53b4632aa7e1df339f", "0a03ee791abf663e98b81661dadd72420f29bb6960ca0a676e75dd70"],
       "relays": [{
         "ipv4": null,
         "ipv6": null,
@@ -95,7 +95,7 @@ const stakhanoviteHistorySuffix = [{
       "cost": "340000000",
       "margin": 0.019,
       "rewardAccount": "e10af10f4a5d365af01f0ca7651713a8a073263b61bbd1f69623097bd7",
-      "poolOwners": ["3e04ddd9d0a3b383ff5ee2e813060b337ad2228bb51bab6dc6d843fa", "e9aba14ed15240e855f5b62d28f0e5f913cf9c289d3cbc5d6016c1b1"],
+      "poolOwners": ["e9aba14ed15240e855f5b62d28f0e5f913cf9c289d3cbc5d6016c1b1", "3e04ddd9d0a3b383ff5ee2e813060b337ad2228bb51bab6dc6d843fa"],
       "relays": [{
         "ipv4": null,
         "ipv6": null,

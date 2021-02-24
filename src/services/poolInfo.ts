@@ -51,6 +51,42 @@ export const poolHistoryQuery = `
     and ("jsType" = 'PoolRegistration' or "jsType" = 'PoolRetirement');
 `;
 
+export interface SmashLookUpResponse {
+  metadataHash: string | null,
+  smashInfo: any,
+}
+
+export const smashPoolLookUp = async (p: Pool, hash: string): Promise<SmashLookUpResponse> => {
+  const metadataHashResp = await p.query(latestMetadataQuery, [hash]);
+  if (metadataHashResp.rows.length === 0) {
+    return {
+      metadataHash: null,
+      smashInfo: null,
+    };
+  }
+
+  const metadataHash = metadataHashResp.rows[0].metadata_hash;
+
+  try {
+    const endpointResponse = await axios.get(`${smashEndpoint}${hash}/${metadataHash}`);
+    if(endpointResponse.status === 200) {
+      return {
+        metadataHash: metadataHash,
+        smashInfo: endpointResponse.data,
+      };
+    } else {
+      console.log(`SMASH did not respond to user submitted hash: ${hash}`);
+    }
+  } catch(e) {
+    console.log(`SMASH did not respond with hash ${hash}, giving error ${e}`);
+  }
+
+  return {
+    metadataHash: metadataHash,
+    smashInfo: {},
+  };
+}
+
 export const handlePoolInfo = (p: Pool) => async (req: Request, res: Response): Promise<void> => {
   if(!req.body.poolIds)
     throw new Error ("No poolIds in body");
@@ -65,27 +101,15 @@ export const handlePoolInfo = (p: Pool) => async (req: Request, res: Response): 
     if(hash.length !== 56){
       throw new Error(`Received invalid pool id: ${hash}`);
     }
-    const metadataHashResp = await p.query(latestMetadataQuery, [hash]);
-    if (metadataHashResp.rows.length === 0) {
+
+    const smashPoolResponse = await smashPoolLookUp(p, hash)
+    if (smashPoolResponse.metadataHash == null) {
       ret[hash] = null;
       continue;
     }
-    const metadataHash = metadataHashResp.rows[0].metadata_hash;
-
-    let info = {};
-    try {
-      const endpointResponse = await axios.get(`${smashEndpoint}${hash}/${metadataHash}`); 
-      if(endpointResponse.status === 200){
-        info = endpointResponse.data;
-      }else{
-        console.log(`SMASH did not respond to user submitted hash: ${hash}`);
-      }
-    } catch(e) {
-      console.log(`SMASH did not respond with hash ${hash}, giving error ${e}`);
-    }
+    const info = smashPoolResponse.smashInfo;
 
     const dbHistory = await p.query(poolHistoryQuery, [hash]);
-
     const history = dbHistory.rows.map( (row: any) => ({
       epoch: row.epoch_no
       , slot: row.epoch_slot_no
