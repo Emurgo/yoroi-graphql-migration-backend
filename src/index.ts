@@ -31,6 +31,7 @@ import { HealthChecker } from "./HealthChecker";
 import { createCertificatesView } from "./Transactions/certificates";
 import { createTransactionOutputView } from "./Transactions/output";
 import {poolDelegationHistory} from "./services/poolHistory";
+import {handleGetCardanoWalletPools} from "./services/cardanoWallet";
 
 
 const pool = new Pool({ user: config.get("db.user")
@@ -68,8 +69,6 @@ const bestBlock = (pool: Pool) => async (_req: Request, res: Response) => {
   }
   case "error":
     throw new Error(result.errMsg);
-
-    return;
   default: return utils.assertNever(result);
   }
 };
@@ -77,7 +76,6 @@ const bestBlock = (pool: Pool) => async (_req: Request, res: Response) => {
 const utxoSumForAddresses = async (req: Request, res:Response) => {
   if(!req.body || !req.body.addresses) {
     throw new Error("error, no addresses.");
-    return;
   }
   const verifiedAddresses = utils.validateAddressesReq(addressesRequestLimit
     , req.body.addresses);
@@ -90,14 +88,11 @@ const utxoSumForAddresses = async (req: Request, res:Response) => {
       return;
     case "error":
       throw new Error(result.errMsg);
-      return;
-    default: return utils.assertNever(result);  
+    default: return utils.assertNever(result);
     }
-    return;
   }
   case "error":
     throw new Error(verifiedAddresses.errMsg);
-    return;
   default: return utils.assertNever(verifiedAddresses);
   }
 };
@@ -127,7 +122,6 @@ const getOrDefaultAfterParam = (
 const txHistory = async (req: Request, res: Response) => {
   if(!req.body){
     throw new Error("error, no body");
-    return;
   }
   const verifiedBody = utils.validateHistoryReq(addressesRequestLimit, apiResponseLimit, req.body);
   switch(verifiedBody.kind){
@@ -184,14 +178,11 @@ const txHistory = async (req: Request, res: Response) => {
     }
     case "error":
       throw new Error(maybeTxs.errMsg);
-      return;
     default: return utils.assertNever(maybeTxs);
     }
-    return;
   }
   case "error":
     throw new Error(verifiedBody.errMsg);
-    return;
   default: return utils.assertNever(verifiedBody);
   }
 };
@@ -298,7 +289,12 @@ const routes : Route[] = [
 , { path: "/txs/signed"
   , method: "post"
   , handler: handleSignedTx
-}
+},
+  {
+    path: "/pool/cardanoWallet",
+    method: "get",
+    handler: handleGetCardanoWalletPools(pool)
+  }
 , { path: "/v2/importerhealthcheck"
   , method: "get"
   , handler: async (_req: Request, res: Response) => {
