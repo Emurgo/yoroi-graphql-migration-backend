@@ -63,7 +63,7 @@ For addresses, refer to [CIP5](https://github.com/cardano-foundation/CIPs/tree/m
 We recommend querying using payment key hashes (`addr_vkh`) when possible (otherwise you may miss addresses for a wallet such as mangled based addresses or other address types like pointer addresses)
 
 <details>
-  <summary>api/txs/utxoForAddresses</summary>
+  <summary>txs/utxoForAddresses</summary>
   Input
 
   Up to 50 addresses in the request
@@ -90,7 +90,7 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   ```
 </details>
 <details>
-  <summary>api/account/registrationHistory</summary>
+  <summary>account/registrationHistory</summary>
   Input
 
   ```js
@@ -114,7 +114,7 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   ```
 </details>
 <details>
-  <summary>api/account/state</summary>
+  <summary>account/state</summary>
   Input
 
   ```js
@@ -138,7 +138,7 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   ```
 </details>
 <details>
-  <summary>api/account/rewardHistory</summary>
+  <summary>account/rewardHistory</summary>
   Input
 
   ```js
@@ -161,7 +161,7 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   ```
 </details>
 <details>
-  <summary>api/pool/info</summary>
+  <summary>pool/info</summary>
   Input
 
   ```js
@@ -186,14 +186,14 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
         slot: number,
         tx_ordinal: number
         cert_ordinal: number
-        payload: Certificate // see `/api/v2/txs/history`
+        payload: Certificate // see `v2/txs/history`
       |}>
     |}
   }
  ```
 </details>
 <details>
-  <summary>api/pool/delegationHistory</summary>
+  <summary>pool/delegationHistory</summary>
   Input
 
   ```js
@@ -224,7 +224,7 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
 ```
 </details>
 <details>
-  <summary>api/txs/utxoSumForAddresses</summary>
+  <summary>txs/utxoSumForAddresses</summary>
   Input
 
   Up to 50 addresses in the request
@@ -244,7 +244,7 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   ```
 </details>
 <details>
-  <summary>api/v2/addresses/filterUsed</summary>
+  <summary>v2/addresses/filterUsed</summary>
   Input
 
   Up to 50 addresses in the request
@@ -263,7 +263,7 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   ```
 </details>
 <details>
-  <summary>api/v2/txs/history</summary>
+  <summary>v2/txs/history</summary>
   Since short rollbacks are common (by design) in Cardano Shelley, your app needs to be ready for this. The pagination mechanism should help make this easy for you.
 
   To handle pagination, we use an `after` and `untilBlock` field that refers to positions inside the chain. Usually, pagination works as follows:
@@ -372,7 +372,7 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   ```
 </details>
 <details>
-  <summary>api/v2/bestblock</summary>
+  <summary>v2/bestblock</summary>
   Input
 
   None (GET request)
@@ -391,7 +391,7 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   ```
 </details>
 <details>
-  <summary>api/txs/signed</summary>
+  <summary>txs/signed</summary>
   Input
 
   ```js
@@ -408,7 +408,7 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   ```
 </details>
 <details>
-  <summary>api/status</summary>
+  <summary>status</summary>
 
   This endpoint is used to test whether or not the server can still be reached and get any manually flagged errors.
 
@@ -420,14 +420,14 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
 
   ```js
   {
-    isServerOk: boolean, // heartbeat endpoint for server. IF you want the node status, use /api/v2/importerhealthcheck instead
+    isServerOk: boolean, // heartbeat endpoint for server. IF you want the node status, use v2/importerhealthcheck instead
     isMaintenance: boolean, // manually set and indicates you should disable ADA integration in your app until it returns false. Use to avoid weird app-side behavior during server upgrades.
     serverTime: number, // in millisecond unix time
   }
   ```
 </details>
 <details>
-  <summary>api/v2/importerhealthcheck</summary>
+  <summary>v2/importerhealthcheck</summary>
   This endpoint is used to check whether or not the underlying node is properly syncing
 
   Input
