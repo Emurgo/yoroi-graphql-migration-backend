@@ -1,13 +1,9 @@
-import { UtilEither } from "../utils";
+import {assertNever, unsafe_poolBech32_to_hash, UtilEither} from "../utils";
 
 import { Pool } from "pg";
 import { Request, Response } from "express";
-import * as utils from "../utils";
-import axios from "axios";
-import config from "config";
-import {latestMetadataQuery, smashPoolLookUp} from "./poolInfo";
+import {SmashLookUpResponse, smashPoolLookUp} from "./poolInfo";
 
-const smashEndpoint: string = config.get("server.smashEndpoint");
 
 const poolByRewards = `
     select pool_id, cost, margin, pledge, saturation, non_myopic_member_rewards::int, produced_blocks::int, relative_stake
@@ -19,6 +15,7 @@ const poolByRewards = `
 
 export interface CardanoWalletPool {
     pool_id: string,
+    address_hash: string,
     pool_info: any,
     cost: string,
     margin: string,
@@ -42,7 +39,7 @@ export const getCardanoWalletPools = async (pool: Pool, limit: number, offset: n
 }
 
 export const handleGetCardanoWalletPools = (pool: Pool) => async (req: Request, res: Response): Promise<void> => {
-    let limit = 100;
+    let limit = 50;
     if (req.body.limit != null && req.body.limit < limit) {
         limit = req.body.limit;
     }
@@ -57,9 +54,17 @@ export const handleGetCardanoWalletPools = (pool: Pool) => async (req: Request, 
     switch (result.kind) {
         case "ok": {
             const promisesWithPoolInfo = result.value.map(async (walletPoolInfo) => {
-                const pool_info = await smashPoolLookUp(pool, walletPoolInfo.pool_id)
+                const addressHash = unsafe_poolBech32_to_hash(walletPoolInfo.pool_id)
+                let pool_info: SmashLookUpResponse = {
+                    metadataHash: null,
+                    smashInfo: null,
+                }
+                if (addressHash != null) {
+                    pool_info = await smashPoolLookUp(pool, addressHash)
+                }
                 return {
                     ...walletPoolInfo,
+                    pool_hash: addressHash,
                     pool_info: pool_info.smashInfo,
                 }
             })
@@ -74,6 +79,6 @@ export const handleGetCardanoWalletPools = (pool: Pool) => async (req: Request, 
         }
 
         default:
-            return utils.assertNever(result);
+            return assertNever(result);
     }
 }

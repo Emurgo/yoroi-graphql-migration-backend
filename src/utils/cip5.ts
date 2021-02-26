@@ -5,4 +5,5 @@ export const Prefixes = Object.freeze({
   STAKE: "stake",
   STAKE_TEST: "stake_test",
   PAYMENT_KEY_HASH: "addr_vkh",
+  POOL: "pool",
 });

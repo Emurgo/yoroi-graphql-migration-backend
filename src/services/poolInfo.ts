@@ -78,7 +78,9 @@ export const smashPoolLookUp = async (p: Pool, hash: string): Promise<SmashLookU
       console.log(`SMASH did not respond to user submitted hash: ${hash}`);
     }
   } catch(e) {
-    console.log(`SMASH did not respond with hash ${hash}, giving error ${e}`);
+    if (e.toString() !== 'Error: Request failed with status code 404') {
+      console.log(`SMASH did not respond with hash ${hash}, giving error ${e}`);
+    }
   }
 
   return {

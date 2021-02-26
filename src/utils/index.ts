@@ -10,9 +10,7 @@ import {
 import { decode, fromWords } from "bech32";
 import { Prefixes } from "./cip5";
 import {Asset} from "../Transactions/types";
-import axios, {AxiosPromise} from "axios";
-
-export const contentTypeHeaders = { headers: {"Content-Type": "application/json"}};
+import axios from "axios";
 
 export const errMsgs = { noValue: "no value" };
 
@@ -198,6 +196,17 @@ export function validateRewardAddress(
   return rewardAddr != null;
 }
 
+export function unsafe_poolBech32_to_hash(text: string): string | null {
+  try {
+    const bech32Info = decode(text, 1023);
+    const payload = fromWords(bech32Info.words);
+    return `${Buffer.from(payload).toString("hex")}`
+  } catch (e) {
+    // silently discard any non-valid Cardano addresses
+  }
+  return null
+}
+
 export function getAddressesByType(addresses: string[]): {
   /**
    * note: we keep track of explicit bech32 addresses
@@ -208,11 +217,13 @@ export function getAddressesByType(addresses: string[]): {
   bech32: string[],
   paymentCreds: string[],
   stakingKeys: string[],
+  pools: string[],
 } {
   const legacyAddr = [];
   const bech32 = [];
   const paymentCreds = [];
   const stakingKeys = [];
+  const pools = [];
   for (const address of addresses) {
     // 1) Check if it's a Byron-era address
     if (ByronAddress.is_valid(address)) {
@@ -237,6 +248,13 @@ export function getAddressesByType(addresses: string[]): {
             `\\x${Buffer.from(wasmBech32.to_bytes()).toString("hex")}`
           );
           wasmBech32.free();
+          break;
+        }
+        case Prefixes.POOL: {
+          const payload = fromWords(bech32Info.words);
+          pools.push(
+              `\\x${Buffer.from(payload).toString("hex")}`
+          );
           break;
         }
         case Prefixes.STAKE_TEST: {
@@ -281,5 +299,6 @@ export function getAddressesByType(addresses: string[]): {
     bech32,
     paymentCreds,
     stakingKeys,
+    pools,
   };
 }
