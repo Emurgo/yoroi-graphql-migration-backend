@@ -1,7 +1,7 @@
 import { Pool, } from "pg";
 
 export const createTransactionOutputViewSql = `
-DROP VIEW if exists TransactionOutput;
+DROP VIEW if exists "TransactionOutput";
 CREATE VIEW "TransactionOutput" AS  SELECT tx_out.address,
     tx_out.value,
     tx.hash AS "txHash",

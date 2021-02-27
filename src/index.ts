@@ -37,6 +37,7 @@ import {runDBSubscriptionIfMaster} from "./middleware/masterCache";
 
 import * as Redis from 'redis';
 import { YoroiPriceCache, YoroiGeneralCache } from "./Transactions/types";
+import {createNotificationTriggers} from "./Transactions/notification_triggers";
 const lru = require('redis-lru');
 
 // Redis
@@ -81,6 +82,7 @@ const databaseLogin: PoolConfig = {
 const pool = new Pool(databaseLogin);
 createCertificatesView(pool);
 createTransactionOutputView(pool);
+createNotificationTriggers(pool);
 runDBSubscriptionIfMaster(databaseLogin, yoroiGeneralCache)
 
 const healthChecker = new HealthChecker(() => askBestBlock(pool));
