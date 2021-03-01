@@ -24,7 +24,7 @@
     "axios": "^0.21.1",
     "bech32": "^1.1.4",
     "cardano-wallet": "^1.2.2",
-    "chai": "^4.2.0",
+    "chai": "^4.3.0",
     "compression": "^1.7.4",
     "config": "^3.3.2",
     "cors": "^2.8.5",
