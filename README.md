@@ -20,7 +20,6 @@ To run this, you will need to run the following
 
 1) cardano-node
 2) cardano-db-sync
-3) cardano-graphql
 
 ## Building
 
