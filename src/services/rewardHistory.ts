@@ -16,7 +16,8 @@ const rewardHistoryQuery = `
   from reward 
   join stake_address sa on reward.addr_id = sa.id
   join pool_hash ph on ph.id = reward.pool_id  
-  where sa.hash_raw = any(($1)::bytea array) 
+  where sa.hash_raw = any(($1)::bytea array)
+  order by reward.epoch_no
 `;
 
 interface RewardForEpoch {
