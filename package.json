@@ -40,7 +40,7 @@
     "ws": "^7.4.2"
   },
   "devDependencies": {
-    "@types/config": "0.0.36",
+    "@types/config": "0.0.38",
     "@types/chai": "^4.2.14",
     "@types/compression": "^1.7.0",
     "@types/cors": "^2.8.8",
