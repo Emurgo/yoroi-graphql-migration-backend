@@ -20,7 +20,7 @@
     }
   },
   "dependencies": {
-    "@emurgo/cardano-serialization-lib-nodejs": "^4.2.0",
+    "@emurgo/cardano-serialization-lib-nodejs": "^7.0.0",
     "axios": "^0.21.1",
     "bech32": "^1.1.4",
     "cardano-wallet": "^1.2.2",
