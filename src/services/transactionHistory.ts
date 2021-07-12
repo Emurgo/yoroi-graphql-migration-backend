@@ -167,8 +167,8 @@ const askTransactionSqlQuery = `
   JOIN block
     on block.id = tx.block_id
 
-  LEFT JOIN pool_meta_data 
-    on tx.id = pool_meta_data.registered_tx_id 
+  LEFT JOIN pool_metadata_ref 
+    on tx.id = pool_metadata_ref.registered_tx_id 
 
   where 
         ${/* is within untilBlock (inclusive) */""}
