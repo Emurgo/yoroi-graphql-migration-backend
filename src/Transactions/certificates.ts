@@ -98,8 +98,9 @@ select 'PoolRegistration' as "jsType"
      , pool.fixed_cost as "poolParamsCost"
      , pool.margin as "poolParamsMargin"
      , encode(addr.hash_raw,'hex') as "poolParamsRewardAccount"
-     , ( select json_agg(encode(hash,'hex'))
+     , ( select json_agg(encode(stake_address.hash_raw,'hex'))
          from pool_owner
+         join stake_address on pool_owner.addr_id = stake_address.id
          where
           pool_owner.pool_hash_id = pool_hash.id
           and
