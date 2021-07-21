@@ -129,9 +129,10 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   {
     [addresses: string]: null | {|
       poolOperator: null, // not implemented yet
-      remainingAmount: string, // current remaining awards
+      remainingAmount: string, // current redeemable awards
       rewards: string, //all the rewards every added (not implemented yet)
-      withdrawals: string // all the withdrawals that have ever happened (not implemented yet)
+      withdrawals: string, // all the withdrawals that have ever happened (not implemented yet)
+      unredeemable: string, // MIR amount not yet redeemable
     |}
   }
   ```
