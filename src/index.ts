@@ -34,6 +34,9 @@ import { createTransactionOutputView } from "./Transactions/output";
 import {poolDelegationHistory} from "./services/poolHistory";
 import {handleGetCardanoWalletPools} from "./services/cardanoWallet";
 
+import { handleMessageBoard } from "./services/messageBoard";
+import { handleMessageDirect } from "./services/messageDirect";
+
 const pool = new Pool({ user: config.get("db.user")
   , host: config.get("db.host")
   , database: config.get("db.database")
@@ -303,6 +306,16 @@ const routes : Route[] = [
 , { path: "/txs/signed"
   , method: "post"
   , handler: handleSignedTx
+},
+{
+  path: "/getMessageBoard",
+  method: "post",
+  handler: handleMessageBoard(pool),
+},
+{
+  path: "/getMessageDirect",
+  method: "post",
+  handler: handleMessageDirect(pool),
 },
   {
     path: "/pool/cardanoWallet",
