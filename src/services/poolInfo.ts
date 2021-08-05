@@ -1,6 +1,6 @@
 import config from "config";
 import axios from "axios";
-import { Pool } from "pg";
+import { Pool, QueryResult } from "pg";
 import { Request, Response } from "express";
 
 import { rowToCertificate, Certificate} from "../Transactions/types";
@@ -122,6 +122,52 @@ export const handlePoolInfo = (p: Pool) => async (req: Request, res: Response): 
       history: history
     };
   }
+
+  res.send(ret);
+  return; 
+
+};
+
+const QUERY_POOL_SQL = `
+  SELECT hash 
+  FROM pool
+  ORDER BY hash
+  LIMIT ${addressesRequestLimit}
+  OFFSET $2
+`;
+
+export const queryPools = async (p: Pool, offset = 0): Promise<QueryResult<Array<any>>> => {
+  return p.query(QUERY_POOL_SQL, [offset]);
+};
+
+export const handleGetPools = (p: Pool) => async (req: Request, res: Response): Promise<void> => {
+
+  const ret:Dictionary<null | RemotePool> = {};
+
+  const offset = req.query ? Number(req.query.offset) : 0;
+  const hashes = await queryPools(p, offset);
+
+  await Promise.all(hashes.rows.map(async ({ hash }: any) => {
+    const smashPoolResponse = await smashPoolLookUp(p, hash);
+    if (smashPoolResponse.metadataHash == null) {
+      ret[hash] = null;
+      return;
+    }
+    const info = smashPoolResponse.smashInfo;
+
+    const dbHistory = await p.query(poolHistoryQuery, [hash]);
+    const history = dbHistory.rows.map((row: any) => ({
+      epoch: row.epoch_no
+      , slot: row.epoch_slot_no
+      , tx_ordinal: row.tx_index
+      , cert_ordinal: row.certIndex
+      , payload: rowToCertificate(row.jsonCert)
+    }));
+    ret[hash] = {
+      info: info,
+      history: history
+    };
+  }));
 
   res.send(ret);
   return; 
