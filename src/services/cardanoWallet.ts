@@ -3,11 +3,7 @@ import { UtilEither } from "../utils";
 import { Pool } from "pg";
 import { Request, Response } from "express";
 import * as utils from "../utils";
-import axios from "axios";
-import config from "config";
-import {latestMetadataQuery, smashPoolLookUp} from "./poolInfo";
-
-const smashEndpoint: string = config.get("server.smashEndpoint");
+import {smashPoolLookUp} from "./poolInfo";
 
 const poolByRewards = `
     select pool_id, cost, margin, pledge, saturation, non_myopic_member_rewards::int, produced_blocks::int, relative_stake
@@ -34,12 +30,12 @@ export const getCardanoWalletPools = async (pool: Pool, limit: number, offset: n
         return {
             kind: "ok",
             value: res.rows
-        }
+        };
     } catch (err) {
         const errString = err.stack + "";
         return { kind:"error", errMsg: "handleGetCardanoWalletPools error: " + errString };
     }
-}
+};
 
 export const handleGetCardanoWalletPools = (pool: Pool) => async (req: Request, res: Response): Promise<void> => {
     let limit = 100;
@@ -57,12 +53,12 @@ export const handleGetCardanoWalletPools = (pool: Pool) => async (req: Request, 
     switch (result.kind) {
         case "ok": {
             const promisesWithPoolInfo = result.value.map(async (walletPoolInfo) => {
-                const pool_info = await smashPoolLookUp(pool, walletPoolInfo.pool_id)
+                const pool_info = await smashPoolLookUp(pool, walletPoolInfo.pool_id);
                 return {
                     ...walletPoolInfo,
                     pool_info: pool_info.smashInfo,
-                }
-            })
+                };
+            });
 
             const respWithPoolInfo = await Promise.all(promisesWithPoolInfo);
 
@@ -76,4 +72,4 @@ export const handleGetCardanoWalletPools = (pool: Pool) => async (req: Request, 
         default:
             return utils.assertNever(result);
     }
-}
+};
