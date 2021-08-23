@@ -986,6 +986,11 @@ diff@^4.0.1:
   resolved "https://registry.yarnpkg.com/diff/-/diff-4.0.2.tgz#60f3aecb89d5fae520c11aa19efc2bb982aade7d"
   integrity sha512-58lmxKSA4BNyLz+HHMUzlOEpg09FV+ev6ZMe3vJihgdxzgcwZ8VoEEPmALCZG9LmqfVoNMMKpttIYTVG6uDY7A==
 
+docker-secret@^1.2.3:
+  version "1.2.3"
+  resolved "https://registry.yarnpkg.com/docker-secret/-/docker-secret-1.2.3.tgz#5df86ab7183821e77c030c4435f0dc4b34275c79"
+  integrity sha512-JFUGiZEiNO0Hi9YzZAdCc5MwUpgQOjz0OeZkkcEv+lH6ZBkXNK97w2gcBQCsg5WRsT+Cj9eKFhuYyDxT8j56+A==
+
 doctrine@^2.1.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/doctrine/-/doctrine-2.1.0.tgz#5cd01fc101621b42c4cd7f5d1a66243716d3f39d"
