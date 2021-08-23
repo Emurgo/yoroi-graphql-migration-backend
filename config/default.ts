@@ -1,16 +1,16 @@
 export default { 
   db: {
-    user: process.env.dbUser,
-    host: process.env.dbHost,
-    database: process.env.db,
-    password: process.env.dbPass
+    user: process.env.DB_USER,
+    host: process.env.DB_HOST,
+    database: process.env.DB_NAME,
+    password: process.env.DB_PASS
   },
   server: {
     addressRequestLimit: 50,
     apiResponseLimit: 50,
-    txSubmissionEndpoint: process.env.txSubmissionEndpoint,
-    smashEndpoint: process.env.smashEndpoint,
-    port: process.env.port,
+    txSubmissionEndpoint: process.env.TX_SUBMISSION_ENDPOINT,
+    smashEndpoint: process.env.SMASH_ENDPOINT,
+    port: process.env.PORT,
     txsHashesRequestLimit: 150
   }
 };
