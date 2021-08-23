@@ -1,16 +1,16 @@
 export default { 
   db: {
-    user: 'hasura',
-    host: '/tmp/',
-    database: 'cexplorer',
-    password: ''
+    user: process.env.dbUser,
+    host: process.env.dbHost,
+    database: process.env.db,
+    password: process.env.dbPass
   },
   server: {
     addressRequestLimit: 50,
     apiResponseLimit: 50,
-    txSubmissionEndpoint: 'https://backend.yoroiwallet.com/api/submit/tx',
-    smashEndpoint: 'https://smash.yoroiwallet.com/api/v1/metadata/',
-    port: 8082,
+    txSubmissionEndpoint: process.env.txSubmissionEndpoint,
+    smashEndpoint: process.env.smashEndpoint,
+    port: process.env.port,
     txsHashesRequestLimit: 150
   }
-}
+};
