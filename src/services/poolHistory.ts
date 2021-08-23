@@ -30,6 +30,7 @@ interface DelegationRangeResponse {
     }
 }
 
+// eslint-disable-next-line @typescript-eslint/ban-types
 export const metadataDataFromSmash = async (p: Pool, hash: string): Promise<UtilEither<object>> => {
     if (hash.length !== 56) {
         throw new Error(`Received invalid pool id: ${hash}`);
@@ -54,7 +55,7 @@ export const metadataDataFromSmash = async (p: Pool, hash: string): Promise<Util
     }
 
     return { kind:"error", errMsg: `metadataDataFromSmash: smash server error for ${hash}` };
-}
+};
 
 // Note: the results are NOT sorted on purpose
 export const poolDelegationHistory = (p: Pool) => async (req: Request, res: Response): Promise<void>=> {
@@ -70,7 +71,7 @@ export const poolDelegationHistory = (p: Pool) => async (req: Request, res: Resp
 
     for (const delegationRange of delegationRanges)
         if (!delegationRange.fromEpoch)
-            throw new Error (`Missing fromEpoch in one of the requested objects`);
+            throw new Error ("Missing fromEpoch in one of the requested objects");
 
     const ret: Array<DelegationRangeResponse> = [];
     for (const hash of hashes) {
@@ -104,7 +105,7 @@ export const poolDelegationHistory = (p: Pool) => async (req: Request, res: Resp
             return result;
         }, []);
 
-        ret.push(...history.reverse())
+        ret.push(...history.reverse());
     }
     res.send(ret);
     return;
