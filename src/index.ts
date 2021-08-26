@@ -308,12 +308,12 @@ const routes : Route[] = [
   , handler: handleSignedTx
 },
 {
-  path: "/getMessageBoard",
+  path: "/messages/getMessageBoard",
   method: "post",
   handler: handleMessageBoard(pool),
 },
 {
-  path: "/getMessageDirect",
+  path: "/messages/getMessageDirect",
   method: "post",
   handler: handleMessageDirect(pool),
 },

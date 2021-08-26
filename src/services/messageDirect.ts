@@ -3,14 +3,22 @@ import { Pool } from "pg";
 import { Request, Response } from "express";
 
 export interface Message {
-  block_no: number;
-  title: string;
-  content: string;
-  valid: number | null;
-  expire: number | null;
+  [key: string]: {
+    block_no: number;
+    title: string;
+    content: string;
+    valid: number | null;
+    expire: number | null;
+  };
 }
-export interface CardanoMessage {
-  messages: Message[];
+
+export interface MessageJson {
+  [key: string]: {
+    title: string;
+    content: string[];
+    valid: number | null;
+    expire: number | null;
+  };
 }
 
 interface Dictionary<T> {
@@ -24,13 +32,11 @@ export const handleMessageDirect =
     if (!req.body.address) throw new Error("No address in body");
 
     const hash = req.body.poolId;
-    const address = req.body.address;
+    const address = req.body.address; // stake_address !!!
     const fromBlock = req.body.fromBlock;
     const untilBlock = req.body.untilBlock;
 
-    const validMessages: Message[] = [];
-
-    const ret: Dictionary<null | CardanoMessage> = {};
+    const ret: Dictionary<null | Message[]> = {};
 
     const queryMessageDirect = `
     SELECT
@@ -86,38 +92,45 @@ export const handleMessageDirect =
       untilBlock,
     ]);
 
+    const finalMessages: Message[] = [];
+
     messagesDirect.rows.map(async (message) => {
       try {
         const messageJson = message.message_json;
+        console.log(message);
+        messageJson.map((perLanguageMessage: MessageJson) => {
+          const lang = Object.keys(perLanguageMessage)[0];
 
-        if (
-          typeof messageJson.title === "undefined" ||
-          typeof messageJson.content === "undefined"
-        ) {
-          // if the data is malformed (missing title or content), do not return anything
-          return;
-        }
+          if (
+            typeof perLanguageMessage[lang].title === "undefined" ||
+            typeof perLanguageMessage[lang].content === "undefined"
+          ) {
+            // if the data is malformed (missing title or content), do not return anything
+            return;
+          }
 
-        // if optional parameters are missing, fill them with nulls
-        const finalMessage = {
-          block_no: message.block_no,
-          title: messageJson.title,
-          content: messageJson.content.join(""),
-          valid:
-            typeof messageJson.valid !== "undefined" ? messageJson.valid : null,
-          expire:
-            typeof messageJson.expire !== "undefined"
-              ? messageJson.expire
-              : null,
-        };
-
-        validMessages.push(finalMessage);
+          // if optional parameters are missing, fill them with nulls
+          const finalMessage = {
+            block_no: message.block_no,
+            title: perLanguageMessage[lang].title,
+            content: perLanguageMessage[lang].content.join(""),
+            valid:
+              typeof perLanguageMessage[lang].valid !== "undefined"
+                ? perLanguageMessage[lang].valid
+                : null,
+            expire:
+              typeof perLanguageMessage[lang].expire !== "undefined"
+                ? perLanguageMessage[lang].expire
+                : null,
+          };
+          finalMessages.push({ [lang]: finalMessage });
+        });
       } catch (err) {
-        console.log("Error when processing metadata message:", err);
+        console.log("Error when processing metadata. Message:", err);
       }
     });
 
-    ret[hash] = { messages: validMessages };
+    ret[hash] = finalMessages;
 
     res.send(ret);
   };

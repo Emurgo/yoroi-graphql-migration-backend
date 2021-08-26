@@ -4,14 +4,22 @@ import config from "config";
 
 const addressesRequestLimit: number = config.get("server.addressRequestLimit");
 export interface Message {
-  block_no: number;
-  title: string;
-  content: string;
-  valid: number | null;
-  expire: number | null;
+  [key: string]: {
+    block_no: number;
+    title: string;
+    content: string;
+    valid: number | null;
+    expire: number | null;
+  };
 }
-export interface CardanoMessage {
-  messages: Message[];
+
+export interface MessageJson {
+  [key: string]: {
+    title: string;
+    content: string[];
+    valid: number | null;
+    expire: number | null;
+  };
 }
 
 interface Dictionary<T> {
@@ -32,7 +40,7 @@ export const handleMessageBoard =
     const fromBlock = req.body.fromBlock;
     const untilBlock = req.body.untilBlock;
 
-    const ret: Dictionary<null | CardanoMessage> = {};
+    const ret: Dictionary<null | Message[]> = {};
 
     for (const hash of hashes) {
       if (hash.length !== 56) {
@@ -86,38 +94,42 @@ export const handleMessageBoard =
       ]);
 
       const finalMessages: Message[] = [];
-
       messagesBoard.rows.map(async (message) => {
         try {
           const messageJson = message.message_json;
-          if (
-            typeof messageJson.title === "undefined" ||
-            typeof messageJson.content === "undefined"
-          ) {
-            // if the data is malformed (missing title or content), do not return anything
-            return;
-          }
 
-          // if optional parameters are missing, fill them with nulls
-          const finalMessage = {
-            block_no: message.block_no,
-            title: messageJson.title,
-            content: messageJson.content.join(""),
-            valid:
-              typeof messageJson.valid !== "undefined"
-                ? messageJson.valid
-                : null,
-            expire:
-              typeof messageJson.expire !== "undefined"
-                ? messageJson.expire
-                : null,
-          };
-          finalMessages.push(finalMessage);
+          messageJson.map((perLanguageMessage: MessageJson) => {
+            const lang = Object.keys(perLanguageMessage)[0];
+
+            if (
+              typeof perLanguageMessage[lang].title === "undefined" ||
+              typeof perLanguageMessage[lang].content === "undefined"
+            ) {
+              // if the data is malformed (missing title or content), do not return anything
+              return;
+            }
+
+            // if optional parameters are missing, fill them with nulls
+            const finalMessage = {
+              block_no: message.block_no,
+              title: perLanguageMessage[lang].title,
+              content: perLanguageMessage[lang].content.join(""),
+              valid:
+                typeof perLanguageMessage[lang].valid !== "undefined"
+                  ? perLanguageMessage[lang].valid
+                  : null,
+              expire:
+                typeof perLanguageMessage[lang].expire !== "undefined"
+                  ? perLanguageMessage[lang].expire
+                  : null,
+            };
+            finalMessages.push({ [lang]: finalMessage });
+          });
         } catch (err) {
           console.log("Error when processing metadata. Message:", err);
         }
       });
-      ret[hash] = { messages: finalMessages };
+      ret[hash] = finalMessages;
     }
 
     res.send(ret);
