@@ -30,8 +30,7 @@ interface DelegationRangeResponse {
     }
 }
 
-// eslint-disable-next-line @typescript-eslint/ban-types
-export const metadataDataFromSmash = async (p: Pool, hash: string): Promise<UtilEither<object>> => {
+export const metadataDataFromSmash = async (p: Pool, hash: string): Promise<UtilEither<Record<string, unknown>>> => {
     if (hash.length !== 56) {
         throw new Error(`Received invalid pool id: ${hash}`);
     }
