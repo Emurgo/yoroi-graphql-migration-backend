@@ -85,7 +85,7 @@ export const smashPoolLookUp = async (p: Pool, hash: string): Promise<SmashLookU
     metadataHash: metadataHash,
     smashInfo: {},
   };
-}
+};
 
 export const handlePoolInfo = (p: Pool) => async (req: Request, res: Response): Promise<void> => {
   if(!req.body.poolIds)
@@ -102,7 +102,7 @@ export const handlePoolInfo = (p: Pool) => async (req: Request, res: Response): 
       throw new Error(`Received invalid pool id: ${hash}`);
     }
 
-    const smashPoolResponse = await smashPoolLookUp(p, hash)
+    const smashPoolResponse = await smashPoolLookUp(p, hash);
     if (smashPoolResponse.metadataHash == null) {
       ret[hash] = null;
       continue;

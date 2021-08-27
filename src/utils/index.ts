@@ -121,16 +121,16 @@ export const validateHistoryReq = (addressRequestLimit:number, apiResponseLimit:
 export const extractAssets = (obj: null | any): Asset[] => {
   if (obj == null) return [] as Asset[];
   return obj.map((token: any) => {
-    const policyId: string = token.f1 == null ? "" : token.f1
-    const name: string = token.f2 == null ? "" : token.f2
+    const policyId: string = token.f1 == null ? "" : token.f1;
+    const name: string = token.f2 == null ? "" : token.f2;
     return {
       assetId: policyId + "." + name, // policyId.nameId
       policyId,
       name,
       amount: token.f3.toString()
-    }
-  })
-}
+    };
+  });
+};
 
 export function getSpendingKeyHash(
   wasmAddr: Address,
