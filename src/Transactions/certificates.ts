@@ -23,11 +23,11 @@ select 'StakeRegistration' as "jsType"
      , null as "mirPot"
      , null::json as "rewards"
 from stake_registration as reg
-join stake_address as addr 
+join stake_address as addr
   on reg.addr_id = addr.id
 
 UNION ALL
-  
+
 select 'StakeDeregistration' as "jsType"
      , 'CertDeregKey' as "formalType"
      , dereg.tx_id as "txId"
@@ -52,7 +52,7 @@ join stake_address as addr
   on dereg.addr_id = addr.id
 
 UNION ALL
-  
+
 select 'StakeDelegation' as "jsType"
      , 'CertDelegate' as "formalType"
      , del.tx_id as "txId"
@@ -79,16 +79,16 @@ join pool_hash
   on del.pool_hash_id = pool_hash.id
 
 UNION ALL
-  
+
 select 'PoolRegistration' as "jsType"
      , 'CertRegPool' as "formalType"
-     , pool.registered_tx_id as "txId" 
+     , pool.registered_tx_id as "txId"
      , pool.cert_index as "certIndex"
      , null as "stakeCred"
      , encode(pool_hash.hash_raw,'hex') as "poolHashKey"
-     , encode(pool_hash.hash_raw,'hex') as "poolParamsOperator" 
-           -- this is weird.  a hash of pool operator (see pg 30 of A Formal 
-           -- Spec of the Cardano Ledger) can be acquired by the cwitness 
+     , encode(pool_hash.hash_raw,'hex') as "poolParamsOperator"
+           -- this is weird.  a hash of pool operator (see pg 30 of A Formal
+           -- Spec of the Cardano Ledger) can be acquired by the cwitness
            -- accessor.  it also says (pg 37) that the stake pool is identified
            -- with the hashkey of the pool operator. looking through Insert.hs,
            -- it is clear that there is a hash that's identified with the stake
@@ -98,8 +98,8 @@ select 'PoolRegistration' as "jsType"
      , pool.fixed_cost as "poolParamsCost"
      , pool.margin as "poolParamsMargin"
      , encode(addr.hash_raw,'hex') as "poolParamsRewardAccount"
-     , ( select json_agg(encode(hash,'hex'))
-         from pool_owner
+     , ( select json_agg(encode(stake_address.hash_raw,'hex'))
+         from pool_owner inner join stake_address on pool_owner.addr_id = stake_address.id
          where
           pool_owner.pool_hash_id = pool_hash.id
           and
@@ -110,7 +110,7 @@ select 'PoolRegistration' as "jsType"
      					  , 'ipv6',       ipv6
      					  , 'dnsName',    dns_name
      					  , 'dnsSrvName', dns_srv_name
-     					  , 'port',       port)) 
+     					  , 'port',       port))
          from pool_relay
          where pool_relay.update_id = pool.id) as "poolParamsRelays"
      , pool_meta.url as "poolParamsMetaDataUrl"
@@ -123,11 +123,24 @@ join pool_hash
   on pool.hash_id = pool_hash.id
 join stake_address as addr
   on addr.hash_raw = pool.reward_addr
-left join pool_meta_data as pool_meta
+left join pool_metadata_ref as pool_meta
   on pool_meta.id = pool.meta_id
+group by pool.registered_tx_id
+     , pool.cert_index
+     , pool_hash.hash_raw
+     , pool.vrf_key_hash
+     , pool.pledge
+     , pool.fixed_cost
+     , pool.margin
+     , addr.hash_raw
+     , pool.hash_id
+     , pool_hash.id
+     , pool.id
+     , pool_meta.url
+     , pool_meta.hash
 
 UNION ALL
-  
+
 select 'PoolRetirement' as "jsType"
      , 'CertRetirePool' as "formalType"
      , pool.announced_tx_id as "txId"
@@ -148,15 +161,15 @@ select 'PoolRetirement' as "jsType"
      , null as "mirPot"
      , null::json as "rewards"
 from pool_retire as pool
-join pool_hash 
+join pool_hash
   on pool_hash.id = pool.hash_id
 
 UNION ALL
-  
+
 select 'MoveInstantaneousRewardsCert' as "jsType"
      , 'CertMir' as "formalType"
-     , reserve.tx_id as "txId"
-     , max(reserve.cert_index) as "certIndex"  
+     , addr.registered_tx_id as "txId"
+     , max(reg.cert_index) as "certIndex"
      , null as "stakeCred"
      , null::text as "poolHashKey"
      , null::text as "poolParamsOperator"
@@ -172,17 +185,20 @@ select 'MoveInstantaneousRewardsCert' as "jsType"
      , null::integer as "epoch"
      , 'Reserves' as "mirPot"
      , json_agg((encode(addr.hash_raw,'hex'), reserve.amount)) as "rewards"
-from reserve
+from reward reserve
 join stake_address as addr
   on addr.id = reserve.addr_id
-group by reserve.tx_id      
+join stake_registration reg
+  on addr.id = reg.addr_id
+where reserve.type = 'reserves'
+group by addr.registered_tx_id
 
 UNION ALL
 
 select 'MoveInstantaneousRewardsCert' as "jsType"
      , 'CertMir' as "formalType"
-     , treasury.tx_id as "txId"
-     , max(treasury.cert_index) as "certIndex"  
+     , addr.registered_tx_id as "txId"
+     , max(reg.cert_index) as "certIndex"
      , null as "stakeCred"
      , null::text as "poolHashKey"
      , null::text as "poolParamsOperator"
@@ -198,11 +214,13 @@ select 'MoveInstantaneousRewardsCert' as "jsType"
      , null::integer as "epoch"
      , 'Treasury' as "mirPot"
      , json_agg((encode(addr.hash_raw,'hex'), treasury.amount)) as "rewards"
-from treasury
+from reward treasury
 join stake_address as addr
   on addr.id = treasury.addr_id
-group by treasury.tx_id;
-;`;
+join stake_registration reg
+  on addr.id = reg.addr_id
+where treasury.type = 'treasury'
+group by addr.registered_tx_id;`;
 
 export const createCertificatesView = (pool: Pool): void => {
   pool.query(createViewSql);

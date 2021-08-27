@@ -17,10 +17,11 @@ const accountRewardsQuery = `
   left outer join (
     ${/* this comes from MIR certificates */""}
     SELECT addr_id, sum(amount) as "amount"
-    FROM reserve
+    FROM reward
     JOIN stake_address reserve_stake_address
-    ON reserve_stake_address.id = reserve.addr_id
+    ON reserve_stake_address.id = reward.addr_id
     WHERE encode(reserve_stake_address.hash_raw, 'hex') = any(($1)::varchar array) 
+      AND reward.type = 'reserves'
     GROUP BY
       addr_id
   ) as "totalReserve" on stake_address.id = "totalReserve".addr_id
@@ -28,10 +29,11 @@ const accountRewardsQuery = `
   left outer join (
     ${/* this comes from MIR certificates */""}
     SELECT addr_id, sum(amount) as "amount"
-    FROM treasury
+    FROM reward
     join stake_address treasury_stake_address
-    on treasury_stake_address.id = treasury.addr_id
+    on treasury_stake_address.id = reward.addr_id
     where encode(treasury_stake_address.hash_raw, 'hex') = any(($1)::varchar array) 
+      and reward.type = 'treasury'
     GROUP BY
       addr_id
   ) as "totalTreasury" on stake_address.id = "totalTreasury".addr_id
@@ -51,7 +53,7 @@ const accountRewardsQuery = `
     FROM reward
     join stake_address reward_stake_address
     on reward_stake_address.id = reward.addr_id
-    where encode(reward_stake_address.hash_raw, 'hex') = any(($1)::varchar array) 
+    where encode(reward_stake_address.hash_raw, 'hex') = any(($1)::varchar array)
     GROUP BY
 	    addr_id
   ) as "totalReward" on stake_address.id = "totalReward".addr_id
