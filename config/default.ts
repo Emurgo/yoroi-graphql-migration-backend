@@ -1,11 +1,11 @@
-import { getSecret } from "docker-secret";
+import { secrets } from "docker-secret";
 
 export default { 
   db: {
-    user: getSecret("POSTGRES_USER") || process.env.POSTGRES_USER,
-    host: getSecret("POSTGRES_HOST") || process.env.POSTGRES_HOST,
-    database: getSecret("POSTGRES_DB") || process.env.POSTGRES_DB,
-    password: getSecret("POSTGRES_PASSWORD") || process.env.POSTGRES_PASSWORD
+    user: secrets.postgres_user || process.env.POSTGRES_USER,
+    host: secrets.postgres_host || process.env.POSTGRES_HOST,
+    database: secrets.postgres_db || process.env.POSTGRES_DB,
+    password: secrets.postgres_password || process.env.POSTGRES_PASSWORD
   },
   server: {
     addressRequestLimit: 50,

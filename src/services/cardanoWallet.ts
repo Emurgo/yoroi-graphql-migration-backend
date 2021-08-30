@@ -3,7 +3,7 @@ import { UtilEither } from "../utils";
 import { Pool } from "pg";
 import { Request, Response } from "express";
 import * as utils from "../utils";
-import {smashPoolLookUp} from "./poolInfo";
+import { smashPoolLookUp } from "./poolInfo";
 
 const poolByRewards = `
     select pool_id, cost, margin, pledge, saturation, non_myopic_member_rewards::int, produced_blocks::int, relative_stake
