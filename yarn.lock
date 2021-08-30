@@ -30,6 +30,11 @@
     chalk "^2.0.0"
     js-tokens "^4.0.0"
 
+"@cloudreach/docker-secrets@^1.0.3":
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/@cloudreach/docker-secrets/-/docker-secrets-1.0.3.tgz#54a66172b2514d7fee1eee3c8aff2dd4bc4e9573"
+  integrity sha512-WHRWG3TUIHol3M7W+Ysuxysf2L56HB3M+xmpEucul+7QNXna2cfz2hoC9C1JGFir+NWAaZnx4wghSzRHlzAFmA==
+
 "@emurgo/cardano-serialization-lib-nodejs@^4.2.0":
   version "4.3.0"
   resolved "https://registry.yarnpkg.com/@emurgo/cardano-serialization-lib-nodejs/-/cardano-serialization-lib-nodejs-4.3.0.tgz#38134fa547af7211bb4988dca3f4da307159f758"
@@ -990,6 +995,11 @@ docker-secret@^1.2.3:
   version "1.2.3"
   resolved "https://registry.yarnpkg.com/docker-secret/-/docker-secret-1.2.3.tgz#5df86ab7183821e77c030c4435f0dc4b34275c79"
   integrity sha512-JFUGiZEiNO0Hi9YzZAdCc5MwUpgQOjz0OeZkkcEv+lH6ZBkXNK97w2gcBQCsg5WRsT+Cj9eKFhuYyDxT8j56+A==
+
+docker-secrets@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/docker-secrets/-/docker-secrets-1.0.2.tgz#bfe0d4b331c33c5a985b245d604df2c3f061e958"
+  integrity sha1-v+DUszHDPFqYWyRdYE3yw/Bh6Vg=
 
 doctrine@^2.1.0:
   version "2.1.0"

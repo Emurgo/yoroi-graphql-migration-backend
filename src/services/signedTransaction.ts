@@ -4,12 +4,11 @@ import { Request, Response } from "express";
 
 const submissionEndpoint :string = config.get("server.txSubmissionEndpoint");
 
-const contentTypeHeaders = {"Content-Type": "application/octet-stream"};
+const contentTypeHeaders = {"Content-Type": "application/cbor"};
 
 export const handleSignedTx = async (req: Request, res: Response):Promise<void>=> { 
   if(!req.body.signedTx)
     throw new Error ("No signedTx in body");
-
  const buffer = Buffer.from(req.body.signedTx, "base64");
   try {
     const endpointResponse = await axios({ method:"post"
