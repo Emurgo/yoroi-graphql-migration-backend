@@ -8,63 +8,43 @@ const addrReqLimit:number = config.get("server.addressRequestLimit");
 
 const accountRewardsQuery = `
   select stake_address.hash_raw as "stakeAddress"
-       , sum(coalesce("totalTreasury".amount, 0) + coalesce("totalReserve".amount, 0) - coalesce("totalWithdrawal".amount,0) + coalesce("totalReward".amount,0)) as "remainingAmount"
-       , sum(coalesce("totalTreasury".amount, 0) + coalesce("totalReserve".amount, 0) + coalesce("totalReward".amount,0)) as "reward"
-       , sum(coalesce("totalWithdrawal".amount, 0)) as "withdrawal"
+      , sum(coalesce("totalReward".spendable_amount,0) - coalesce("totalWithdrawal".amount,0)) as "remainingAmount"
+      , sum(coalesce("totalReward".non_spendable_amount,0)) as "remainingNonSpendableAmount"
+      , sum(coalesce("totalReward".spendable_amount,0) + coalesce("totalReward".non_spendable_amount,0)) as "reward"
+      , sum(coalesce("totalWithdrawal".amount, 0)) as "withdrawal"
 
   from stake_address
-
-  left outer join (
-    ${/* this comes from MIR certificates */""}
-    SELECT addr_id, sum(amount) as "amount"
-    FROM reward
-    JOIN stake_address reserve_stake_address
-    ON reserve_stake_address.id = reward.addr_id
-    WHERE encode(reserve_stake_address.hash_raw, 'hex') = any(($1)::varchar array) 
-      AND reward.type = 'reserves'
-    GROUP BY
-      addr_id
-  ) as "totalReserve" on stake_address.id = "totalReserve".addr_id
-
-  left outer join (
-    ${/* this comes from MIR certificates */""}
-    SELECT addr_id, sum(amount) as "amount"
-    FROM reward
-    join stake_address treasury_stake_address
-    on treasury_stake_address.id = reward.addr_id
-    where encode(treasury_stake_address.hash_raw, 'hex') = any(($1)::varchar array) 
-      and reward.type = 'treasury'
-    GROUP BY
-      addr_id
-  ) as "totalTreasury" on stake_address.id = "totalTreasury".addr_id
 
   left outer join (
     SELECT addr_id, sum(amount) as "amount"
     FROM withdrawal
     join stake_address withdrawal_stake_address
     on withdrawal_stake_address.id = withdrawal.addr_id
-    where encode(withdrawal_stake_address.hash_raw, 'hex') = any(($1)::varchar array)    
+    where encode(withdrawal_stake_address.hash_raw, 'hex') = any(($1)::varchar array)
     GROUP BY
-	    addr_id
+      addr_id
   ) as "totalWithdrawal" on stake_address.id = "totalWithdrawal".addr_id
 
   left outer join (
-    SELECT addr_id, sum(amount) as "amount"
+    SELECT addr_id,
+      sum(case when "current_epoch".value >= spendable_epoch then amount else 0 end) as "spendable_amount",
+      sum(case when "current_epoch".value < spendable_epoch then amount else 0 end) as "non_spendable_amount"
     FROM reward
     join stake_address reward_stake_address
     on reward_stake_address.id = reward.addr_id
+    cross join (select max (epoch_no) as value from block) as "current_epoch"
     where encode(reward_stake_address.hash_raw, 'hex') = any(($1)::varchar array)
     GROUP BY
-	    addr_id
+      addr_id
   ) as "totalReward" on stake_address.id = "totalReward".addr_id
 
   where encode(stake_address.hash_raw, 'hex') = any(($1)::varchar array)
 
-  group by stake_address.id
-`;
+  group by stake_address.id`;
 
 interface RewardInfo {
   remainingAmount: string;
+  remainingNonSpendableAmount: string;
   rewards: string;
   withdrawals: string;
   poolOperator: null;
@@ -80,6 +60,7 @@ const askAccountRewards = async (pool: Pool, addresses: string[]): Promise<Dicti
   for(const row of rewards.rows) {
     ret[row.stakeAddress.toString("hex")] = {
         remainingAmount: row.remainingAmount
+      , remainingNonSpendableAmount: row.remainingNonSpendableAmount
       , rewards: row.reward
       , withdrawals: row.withdrawal
       , poolOperator: null //not implemented
