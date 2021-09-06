@@ -21,7 +21,7 @@ export const askUtxoSumForAddresses = async (pool: Pool, addresses: string[]): P
             kind:"ok",
             value,
         };
-    } catch (err) {
+    } catch (err: any) {
         const errString = err.stack + "";
         return {kind:"error", errMsg: "askUtxoSumForAddresses error: " + errString};
     }

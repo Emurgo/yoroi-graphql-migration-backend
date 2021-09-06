@@ -3,12 +3,14 @@ import axios from "axios";
 import { Request, Response } from "express";
 
 const submissionEndpoint :string = config.get("server.txSubmissionEndpoint");
+
 // const contentTypeHeaders = {"Content-Type": "application/octet-stream"}; - THIS IS FOR CARDANO-WALLET, CBOR IS FOR CARDANO-SUBMIT-API (1.27.0).
 const contentTypeHeaders = {"Content-Type": "application/cbor"};
 
 export const handleSignedTx = async (req: Request, res: Response):Promise<void>=> { 
   if(!req.body.signedTx)
     throw new Error ("No signedTx in body");
+
  const buffer = Buffer.from(req.body.signedTx, "base64");
   try {
     const endpointResponse = await axios({ method:"post"
@@ -26,7 +28,7 @@ export const handleSignedTx = async (req: Request, res: Response):Promise<void>=
     }else{
       throw Error(`I did not understand the response from the submission endpoint: ${endpointResponse.data}`);
     }
-  } catch(error) {
+  } catch(error: any) {
     const msg = `Error trying to send transaction: ${error} - ${error.response.data}`;
     throw Error(msg);
   }

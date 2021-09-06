@@ -1,18 +1,16 @@
-import { secrets } from "docker-secret";
-
 export default { 
   db: {
-    user: secrets.postgres_user || process.env.POSTGRES_USER,
-    host: secrets.postgres_host || process.env.POSTGRES_HOST,
-    database: secrets.postgres_db || process.env.POSTGRES_DB,
-    password: secrets.postgres_password || process.env.POSTGRES_PASSWORD
+    user: process.env.POSTGRES_USER || "hasura",
+    host: process.env.POSTGRES_HOST || "/tmp/",
+    database: process.env.POSTGRES_DB || "cexplorer",
+    password: process.env.POSTGRES_PASSWORD || ""
   },
   server: {
     addressRequestLimit: 50,
     apiResponseLimit: 50,
-    txSubmissionEndpoint: process.env.TX_SUBMISSION_ENDPOINT,
-    smashEndpoint: process.env.SMASH_ENDPOINT,
-    port: process.env.PORT,
+    txSubmissionEndpoint: process.env.TX_SUBMISSION_ENDPOINT || "https://backend.yoroiwallet.com/api/submit/tx",
+    smashEndpoint: process.env.SMASH_ENDPOINT || "https://smash.yoroiwallet.com/api/v1/metadata/",
+    port: process.env.PORT || 8082,
     txsHashesRequestLimit: 150
   }
 };
