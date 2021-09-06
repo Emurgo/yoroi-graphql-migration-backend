@@ -8,34 +8,32 @@ const addrReqLimit:number = config.get("server.addressRequestLimit");
 
 const accountRewardsQuery = `
   select stake_address.hash_raw as "stakeAddress"
-       , sum(coalesce("totalTreasury".amount, 0) + coalesce("totalReserve".amount, 0) - coalesce("totalWithdrawal".amount,0) + coalesce("totalReward".amount,0)) as "remainingAmount"
-       , sum(coalesce("totalTreasury".amount, 0) + coalesce("totalReserve".amount, 0) + coalesce("totalReward".amount,0)) as "reward"
+       , sum(coalesce("totalMir".amount, 0) - coalesce("totalWithdrawal".amount,0) + coalesce("totalReward".amount,0)) as "remainingAmount"
+       , sum(coalesce("totalMir".amount, 0) + coalesce("totalReward".amount,0)) as "reward"
        , sum(coalesce("totalWithdrawal".amount, 0)) as "withdrawal"
 
   from stake_address
 
   left outer join (
-    ${/* this comes from MIR certificates */""}
-    SELECT addr_id, sum(amount) as "amount"
-    FROM reserve
-    JOIN stake_address reserve_stake_address
-    ON reserve_stake_address.id = reserve.addr_id
-    WHERE encode(reserve_stake_address.hash_raw, 'hex') = any(($1)::varchar array) 
-    GROUP BY
-      addr_id
-  ) as "totalReserve" on stake_address.id = "totalReserve".addr_id
-
-  left outer join (
-    ${/* this comes from MIR certificates */""}
-    SELECT addr_id, sum(amount) as "amount"
-    FROM treasury
-    join stake_address treasury_stake_address
-    on treasury_stake_address.id = treasury.addr_id
-    where encode(treasury_stake_address.hash_raw, 'hex') = any(($1)::varchar array) 
-    GROUP BY
-      addr_id
-  ) as "totalTreasury" on stake_address.id = "totalTreasury".addr_id
-
+    select addr_id, sum(amount) as "amount"
+    from (
+        SELECT distinct on (mirs.addr_id, block.epoch_no) mirs.addr_id, block.epoch_no, block.slot_no, mirs.amount
+        from (
+            select * from (
+                select * from treasury
+                union all 
+                select * from reserve
+            ) all_mirs
+            JOIN stake_address a ON all_mirs.addr_id = a.id
+            WHERE encode(a.hash_raw, 'hex') = any(($1)::varchar array)
+        ) as mirs
+        join tx on mirs.tx_id = tx.id
+        join block on tx.block_id = block.id
+        order by mirs.addr_id, block.epoch_no desc, block.slot_no desc 
+    ) epoched_mirs
+    group by addr_id
+  ) as "totalMir" on stake_address.id = "totalMir".addr_id
+      
   left outer join (
     SELECT addr_id, sum(amount) as "amount"
     FROM withdrawal
