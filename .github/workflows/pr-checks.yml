@@ -25,9 +25,6 @@ jobs:
       - name: install
         run: |
           npm install
-      - name: tsc
-        run: |
-          tsc
       - name: run eslint
         run: |
           npm run eslint
