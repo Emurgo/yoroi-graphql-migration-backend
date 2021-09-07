@@ -223,5 +223,7 @@ where treasury.type = 'treasury'
 group by addr.registered_tx_id;`;
 
 export const createCertificatesView = (pool: Pool): void => {
-  pool.query(createViewSql);
+  if(process.env.NODE_TYPE !== "slave"){
+    pool.query(createViewSql);
+  }
 };
