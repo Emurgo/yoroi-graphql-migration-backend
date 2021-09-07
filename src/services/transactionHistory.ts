@@ -339,7 +339,7 @@ export const askBlockNumByTxHash = async (pool: Pool, hash : string | undefined)
                 blockIndex: res.rows[0].blockIndex
             }
         };
-    } catch (err) {
+    } catch (err: any) {
         const errString = err.stack + "";
         return {kind:"error", errMsg: "askBlockNumByTxHash error: " + errString};
     }
@@ -363,7 +363,7 @@ export const askBlockNumByHash = async (pool: Pool, hash : string): Promise<Util
             kind:"ok",
             value: res.rows[0].blockNumber
         };
-    } catch (err) {
+    } catch (err: any) {
         const errString = err.stack + "";
         return {kind:"error", errMsg: "askBlockNumByHash error: " + errString};
     }
