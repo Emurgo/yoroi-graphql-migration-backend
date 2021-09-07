@@ -11,5 +11,7 @@ CREATE VIEW "TransactionOutput" AS  SELECT tx_out.address,
 `;
 
 export const createTransactionOutputView = (pool: Pool): void => {
-  pool.query(createTransactionOutputViewSql);
+  if(process.env.NODE_TYPE !== "slave"){
+    pool.query(createTransactionOutputViewSql);
+  }
 };

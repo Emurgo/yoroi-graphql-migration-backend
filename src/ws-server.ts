@@ -33,7 +33,7 @@ export const connectionHandler = (pool: Pool) => {
             })
             .catch( (error) => {console.log(error);}); }
         }
-      } catch (e) {
+      } catch (e: any) {
         const errorStr = e.stack == null ? e : e.stack;
         console.log(`Failed when processing websocket request\n${errorStr}`);
       }

@@ -205,5 +205,7 @@ group by treasury.tx_id;
 ;`;
 
 export const createCertificatesView = (pool: Pool): void => {
-  pool.query(createViewSql);
+  if(process.env.NODE_TYPE !== "slave"){
+    pool.query(createViewSql);
+  }
 };
