@@ -25,6 +25,7 @@ import { handlePoolInfo } from "./services/poolInfo";
 import { handleGetAccountState } from "./services/accountState";
 import { handleGetRegHistory } from "./services/regHistory";
 import { handleGetRewardHistory } from "./services/rewardHistory";
+import { handleGetMultiAssetTxMintMetadata } from "./services/multiAssetTxMint";
 
 import { HealthChecker } from "./HealthChecker";
 
@@ -307,6 +308,11 @@ const routes : Route[] = [
     path: "/pool/cardanoWallet",
     method: "get",
     handler: handleGetCardanoWalletPools(pool)
+  },
+  {
+    path: "/multiAsset/metadata",
+    method: "post",
+    handler: handleGetMultiAssetTxMintMetadata(pool)
   }
 , { path: "/v2/importerhealthcheck"
   , method: "get"
