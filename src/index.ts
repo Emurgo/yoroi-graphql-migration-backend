@@ -229,10 +229,10 @@ const getFundInfo = async (req: Request, res:  Response) => {
       {
           "currentFund": {
             "id": 6,
-            "registrationStart": "12 Aug 2021 11:00:00 GMT",
-            "registrationEnd": "15 Sep 2021 11:00:00 GMT",
-            "votingStart": "22 Jul 2021 11:00:00 GMT",
-            "votingEnd": "02 Aug 2021 11:00:00 GMT",
+            "registrationStart": "2021-08-12T11:00:00Z",
+            "registrationEnd": "2021-09-30T11:00:00Z",
+            "votingStart": "2021-10-01T11:00:00Z",
+            "votingEnd": "2021-10-10T11:00:00Z",
             "votingPowerThreshold": "450"
           }
         });
