@@ -1,16 +1,16 @@
 export default { 
   db: {
-    user: 'hasura',
-    host: '/tmp/',
-    database: 'cexplorer',
-    password: ''
+    user: process.env.POSTGRES_USER || "hasura",
+    host: process.env.POSTGRES_HOST || "/tmp/",
+    database: process.env.POSTGRES_DB || "cexplorer",
+    password: process.env.POSTGRES_PASSWORD || ""
   },
   server: {
     addressRequestLimit: 50,
     apiResponseLimit: 50,
-    txSubmissionEndpoint: 'https://backend.yoroiwallet.com/api/submit/tx',
-    smashEndpoint: 'https://smash.yoroiwallet.com/api/v1/metadata/',
-    port: 8082,
+    txSubmissionEndpoint: process.env.TX_SUBMISSION_ENDPOINT || "https://backend.yoroiwallet.com/api/submit/tx",
+    smashEndpoint: process.env.SMASH_ENDPOINT || "https://smash.yoroiwallet.com/api/v1/metadata/",
+    port: process.env.PORT || 8082,
     txsHashesRequestLimit: 150
   }
-}
+};

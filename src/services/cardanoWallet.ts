@@ -31,7 +31,7 @@ export const getCardanoWalletPools = async (pool: Pool, limit: number, offset: n
             kind: "ok",
             value: res.rows
         };
-    } catch (err) {
+    } catch (err: any) {
         const errString = err.stack + "";
         return { kind:"error", errMsg: "handleGetCardanoWalletPools error: " + errString };
     }

@@ -34,7 +34,6 @@ import { createTransactionOutputView } from "./Transactions/output";
 import {poolDelegationHistory} from "./services/poolHistory";
 import {handleGetCardanoWalletPools} from "./services/cardanoWallet";
 
-
 const pool = new Pool({ user: config.get("db.user")
   , host: config.get("db.host")
   , database: config.get("db.database")
@@ -226,6 +225,20 @@ const getStatus = async (req: Request, res:  Response) => {
   res.send({ isServerOk: true, isMaintenance: false, serverTime: Date.now() });
 };
 
+const getFundInfo = async (req: Request, res:  Response) => {
+  res.send(
+      {
+          "currentFund": {
+            "id": 6,
+            "registrationStart": "12 Aug 2021 11:00:00 GMT",
+            "registrationEnd": "15 Sep 2021 11:00:00 GMT",
+            "votingStart": "22 Jul 2021 11:00:00 GMT",
+            "votingEnd": "02 Aug 2021 11:00:00 GMT",
+            "votingPowerThreshold": "450"
+          }
+        });
+};
+
 const routes : Route[] = [
   // deprecated endpoints
 {   path: "/getAccountState"
@@ -316,6 +329,11 @@ const routes : Route[] = [
 , { path: "/status"
   , method: "get"
   , handler: getStatus
+},
+{
+  path: "/v0/catalyst/fundInfo"
+  , method: "get",
+  handler: getFundInfo
 }
 ];
 
