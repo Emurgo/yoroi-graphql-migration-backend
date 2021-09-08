@@ -123,7 +123,7 @@ join pool_hash
   on pool.hash_id = pool_hash.id
 join stake_address as addr
   on addr.hash_raw = pool.reward_addr
-left join pool_meta_data as pool_meta
+left join pool_metadata_ref as pool_meta
   on pool_meta.id = pool.meta_id
 
 UNION ALL
