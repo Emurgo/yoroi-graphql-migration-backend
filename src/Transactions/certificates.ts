@@ -98,8 +98,8 @@ select 'PoolRegistration' as "jsType"
      , pool.fixed_cost as "poolParamsCost"
      , pool.margin as "poolParamsMargin"
      , encode(addr.hash_raw,'hex') as "poolParamsRewardAccount"
-     , ( select json_agg(encode(hash,'hex'))
-         from pool_owner
+     , ( select json_agg(encode(stake_address.hash_raw,'hex'))
+         from pool_owner inner join stake_address on pool_owner.addr_id = stake_address.id
          where
           pool_owner.pool_hash_id = pool_hash.id
           and
@@ -123,8 +123,21 @@ join pool_hash
   on pool.hash_id = pool_hash.id
 join stake_address as addr
   on addr.hash_raw = pool.reward_addr
-left join pool_meta_data as pool_meta
+left join pool_metadata_ref as pool_meta
   on pool_meta.id = pool.meta_id
+group by pool.registered_tx_id
+  , pool.cert_index
+  , pool_hash.hash_raw
+  , pool.vrf_key_hash
+  , pool.pledge
+  , pool.fixed_cost
+  , pool.margin
+  , addr.hash_raw
+  , pool.hash_id
+  , pool_hash.id
+  , pool.id
+  , pool_meta.url
+  , pool_meta.hash
 
 UNION ALL
   

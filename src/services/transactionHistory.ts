@@ -110,6 +110,8 @@ const askTransactionSqlQuery = `
     )
   select tx.hash
        , tx.fee
+       , tx.valid_contract
+       , tx.script_size
        , (select jsonb_object_agg(key, bytes)
         from tx_metadata
         where tx_metadata.tx_id = tx.id) as metadata
@@ -167,8 +169,8 @@ const askTransactionSqlQuery = `
   JOIN block
     on block.id = tx.block_id
 
-  LEFT JOIN pool_meta_data 
-    on tx.id = pool_meta_data.registered_tx_id 
+  LEFT JOIN pool_metadata_ref
+    on tx.id = pool_metadata_ref.registered_tx_id 
 
   where 
         ${/* is within untilBlock (inclusive) */""}
@@ -282,6 +284,8 @@ export const askTransactionHistory = async (
       , slotNo: row.blockSlotInEpoch };
     return { hash: row.hash.toString("hex")
       , block: blockFrag
+      , validContract: row.valid_contract
+      , scriptSize: row.script_size
       , fee: row.fee.toString()
       , metadata: buildMetadataObj(row.metadata)
       , includedAt: row.includedAt
