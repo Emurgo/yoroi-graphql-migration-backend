@@ -22,6 +22,7 @@ const utxoForAddressQuery = `
   JOIN block
     on block.id = tx.block_id
   WHERE tx_in.tx_in_id IS NULL
+    and tx.valid_contract
     and (   tx_out.address = any(($1)::varchar array) 
          or tx_out.payment_cred = any(($2)::bytea array));
 `;

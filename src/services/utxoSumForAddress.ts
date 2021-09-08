@@ -6,7 +6,9 @@ export const askUtxoSumForAddresses = async (pool: Pool, addresses: string[]): P
     const sqlQuery = `
     SELECT "public"."utxo_view"."value" AS "value"
     FROM "public"."utxo_view"
+    LEFT JOIN "tx" ON "utxo_view"."tx_id" = "tx"."id"
     WHERE "public"."utxo_view"."address" = any(($1)::varchar array)
+    AND ("tx"."valid_contract" OR "tx"."id" IS NULL)
     GROUP BY "public"."utxo_view"."value"
     ORDER BY "public"."utxo_view"."value" ASC
   `;
