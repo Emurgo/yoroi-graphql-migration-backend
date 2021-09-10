@@ -6,6 +6,8 @@ export enum BlockEra { Byron = "byron"
 export interface TransactionFrag {
     hash: string;
     fee: string;
+    validContract: boolean;
+    scriptSize: number;
     ttl: string;
     blockEra: BlockEra;
     metadata: null | string;
