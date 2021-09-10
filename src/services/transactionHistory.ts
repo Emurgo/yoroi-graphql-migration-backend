@@ -135,6 +135,8 @@ const askTransactionSqlQuery = `
     )
   select tx.hash
        , tx.fee
+       , tx.valid_contract
+       , tx.script_size
        , (select jsonb_object_agg(key, bytes)
         from tx_metadata
         where tx_metadata.tx_id = tx.id) as metadata
@@ -334,6 +336,8 @@ export const askTransactionHistory = async (
       , slotNo: row.blockSlotInEpoch };
     return { hash: row.hash.toString("hex")
       , block: blockFrag
+      , validContract: row.valid_contract
+      , scriptSize: row.script_size
       , fee: row.fee.toString()
       , metadata: buildMetadataObj(row.metadata)
       , includedAt: row.includedAt

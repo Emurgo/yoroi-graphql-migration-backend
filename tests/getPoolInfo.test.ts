@@ -43,11 +43,17 @@ describe("/pool/info", function() {
     expect(result.data[poolId]).to.have.property("history");
 
     const { history } = result.data[poolId];
-    // since the parameters can be changed in the time after we right this test
-    // we just make sure that the suffix of the pool history matches what existed at the time this test was written
-    const suffix = history.slice(history.length - stakhanoviteHistorySuffix.length, history.length);
 
-    expect(suffix).to.deep.equal(stakhanoviteHistorySuffix);
+    for (const item of stakhanoviteHistorySuffix) {
+      const itemFromDb = history
+        .find((x: any) => x.epoch === item.epoch
+          && x.slot === item.slot
+          && x.tx_ordinal === item.tx_ordinal
+          && x.cert_ordinal === item.cert_ordinal);
+
+      expect(itemFromDb).to.be.ok;
+      expect(itemFromDb).to.deep.equal(item);
+    }
   });
 });
 
@@ -66,7 +72,7 @@ const stakhanoviteHistorySuffix = [{
       "cost": "340000000",
       "margin": 0.019,
       "rewardAccount": "e10af10f4a5d365af01f0ca7651713a8a073263b61bbd1f69623097bd7",
-      "poolOwners": ["e9aba14ed15240e855f5b62d28f0e5f913cf9c289d3cbc5d6016c1b1", "7dfe98a743499f7a67ab2f9771e683d2e9fa1a53b4632aa7e1df339f", "0a03ee791abf663e98b81661dadd72420f29bb6960ca0a676e75dd70"],
+      "poolOwners": ["e1e9aba14ed15240e855f5b62d28f0e5f913cf9c289d3cbc5d6016c1b1", "e17dfe98a743499f7a67ab2f9771e683d2e9fa1a53b4632aa7e1df339f", "e10a03ee791abf663e98b81661dadd72420f29bb6960ca0a676e75dd70"],
       "relays": [{
         "ipv4": null,
         "ipv6": null,
@@ -95,7 +101,7 @@ const stakhanoviteHistorySuffix = [{
       "cost": "340000000",
       "margin": 0.019,
       "rewardAccount": "e10af10f4a5d365af01f0ca7651713a8a073263b61bbd1f69623097bd7",
-      "poolOwners": ["e9aba14ed15240e855f5b62d28f0e5f913cf9c289d3cbc5d6016c1b1", "3e04ddd9d0a3b383ff5ee2e813060b337ad2228bb51bab6dc6d843fa"],
+      "poolOwners": ["e1e9aba14ed15240e855f5b62d28f0e5f913cf9c289d3cbc5d6016c1b1", "e13e04ddd9d0a3b383ff5ee2e813060b337ad2228bb51bab6dc6d843fa"],
       "relays": [{
         "ipv4": null,
         "ipv6": null,
@@ -124,7 +130,7 @@ const stakhanoviteHistorySuffix = [{
       "cost": "340000000",
       "margin": 0.019,
       "rewardAccount": "e1854139fc8987990fd89699beb1b59b09c047ace356870dcaadc93b22",
-      "poolOwners": ["3e04ddd9d0a3b383ff5ee2e813060b337ad2228bb51bab6dc6d843fa"],
+      "poolOwners": ["e13e04ddd9d0a3b383ff5ee2e813060b337ad2228bb51bab6dc6d843fa"],
       "relays": [{
         "ipv4": null,
         "ipv6": null,
@@ -153,7 +159,7 @@ const stakhanoviteHistorySuffix = [{
       "cost": "340000000",
       "margin": 0.019,
       "rewardAccount": "e1854139fc8987990fd89699beb1b59b09c047ace356870dcaadc93b22",
-      "poolOwners": ["3e04ddd9d0a3b383ff5ee2e813060b337ad2228bb51bab6dc6d843fa"],
+      "poolOwners": ["e13e04ddd9d0a3b383ff5ee2e813060b337ad2228bb51bab6dc6d843fa"],
       "relays": [{
         "ipv4": null,
         "ipv6": null,
@@ -182,7 +188,7 @@ const stakhanoviteHistorySuffix = [{
       "cost": "340000000",
       "margin": 0.019,
       "rewardAccount": "e1854139fc8987990fd89699beb1b59b09c047ace356870dcaadc93b22",
-      "poolOwners": ["3e04ddd9d0a3b383ff5ee2e813060b337ad2228bb51bab6dc6d843fa"],
+      "poolOwners": ["e13e04ddd9d0a3b383ff5ee2e813060b337ad2228bb51bab6dc6d843fa"],
       "relays": [{
         "ipv4": null,
         "ipv6": null,
@@ -211,7 +217,7 @@ const stakhanoviteHistorySuffix = [{
       "cost": "340000000",
       "margin": 0.01935,
       "rewardAccount": "e1854139fc8987990fd89699beb1b59b09c047ace356870dcaadc93b22",
-      "poolOwners": ["3e04ddd9d0a3b383ff5ee2e813060b337ad2228bb51bab6dc6d843fa"],
+      "poolOwners": ["e13e04ddd9d0a3b383ff5ee2e813060b337ad2228bb51bab6dc6d843fa"],
       "relays": [{
         "ipv4": null,
         "ipv6": null,
@@ -240,7 +246,7 @@ const stakhanoviteHistorySuffix = [{
       "cost": "340000000",
       "margin": 0.01935,
       "rewardAccount": "e1aaba5c420ee082c1ed96e838dc21b1b3ba700bfc74425f816c0ceaca",
-      "poolOwners": ["1f6aa9c55c35acd337ddd469b7e98dbea4f4a4c1d141ae2baf87a75c"],
+      "poolOwners": ["e11f6aa9c55c35acd337ddd469b7e98dbea4f4a4c1d141ae2baf87a75c"],
       "relays": [{
         "ipv4": null,
         "ipv6": null,
