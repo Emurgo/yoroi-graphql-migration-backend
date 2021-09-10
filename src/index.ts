@@ -172,6 +172,7 @@ const txHistory = async (req: Request, res: Response) => {
         epoch: tx.block.epochNo,
         slot: tx.block.slotNo,
         inputs: tx.inputs,
+        collateralInputs: tx.collateralInputs,
         outputs: tx.outputs
       }));
 

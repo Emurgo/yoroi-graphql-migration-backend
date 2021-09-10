@@ -36,7 +36,7 @@ const askTransactionSqlQuery = `
     hashes as (
       select distinct hash
       from (
-            ${/* 1) Get all inputs for the transaction */""}
+            ${/* 1.1) Get all inputs for the transaction */""}
 
             select tx.hash as hash
             FROM tx
@@ -58,6 +58,31 @@ const askTransactionSqlQuery = `
 
             WHERE source_tx_out.address = ANY(($1)::varchar array)
                OR source_tx_out.payment_cred = ANY(($6)::bytea array)
+
+          UNION
+
+          ${/* 1.2) Get all collateral inputs for the transaction */""}
+
+          select tx.hash as hash
+            FROM tx
+
+            JOIN collateral_tx_in 
+              ON collateral_tx_in.tx_in_id = tx.id
+
+            ${/**
+              note: input table doesn't contain addresses directly
+              so to check for all inputs that use address X
+              we have to check the address for all outputs that occur in the input table
+            **/""}
+            JOIN tx_out source_tx_out 
+              ON collateral_tx_in.tx_out_id = source_tx_out.tx_id 
+            AND collateral_tx_in.tx_out_index::smallint = source_tx_out.index::smallint
+
+            JOIN tx source_tx 
+              ON source_tx_out.tx_id = source_tx.id
+
+            WHERE source_tx_out.address = ANY(($1)::varchar array)
+              OR source_tx_out.payment_cred = ANY(($6)::bytea array)
 
           UNION
             ${/* 2) Get all outputs for the transaction */""}
@@ -141,6 +166,22 @@ const askTransactionSqlQuery = `
           JOIN tx source_tx 
             ON source_tx_out.tx_id = source_tx.id
           where inadd_tx.hash = tx.hash) as "inAddrValPairs"
+        , (select json_agg(( source_tx_out.address
+            , source_tx_out.value
+            , encode(source_tx.hash, 'hex')
+            , collateral_tx_in.tx_out_index
+            , (select json_agg(ROW(encode("policy", 'hex'), encode("name", 'hex'), "quantity"))
+              from ma_tx_out
+              WHERE ma_tx_out."tx_out_id" = source_tx_out.id)
+            ) order by collateral_tx_in.id asc) as collateralInAddrValPairs
+          FROM tx inadd_tx
+          JOIN collateral_tx_in
+          ON collateral_tx_in.tx_in_id = inadd_tx.id
+          JOIN tx_out source_tx_out 
+          ON collateral_tx_in.tx_out_id = source_tx_out.tx_id AND collateral_tx_in.tx_out_index::smallint = source_tx_out.index::smallint
+          JOIN tx source_tx 
+          ON source_tx_out.tx_id = source_tx.id
+          where inadd_tx.hash = tx.hash) as "collateralInAddrValPairs"
        , (select json_agg((
                     "address", 
                     "value",
@@ -263,6 +304,16 @@ export const askTransactionHistory = async (
             assets: extractAssets(obj.f5)
       }))
       : []; 
+    const collateralInputs = row.collateralInAddrValPairs 
+      ? row.collateralInAddrValPairs.map((obj: any): TransInputFrag => ({
+            address: obj.f1,
+            amount: obj.f2.toString(),
+            id: obj.f3.concat(obj.f4.toString()),
+            index: obj.f4,
+            txHash: obj.f3,
+            assets: extractAssets(obj.f5)
+      }))
+      : [];
     const outputs = row.outAddrValPairs 
       ? row.outAddrValPairs.map((obj: any): TransOutputFrag => ({
             address: obj.f1,
@@ -290,6 +341,7 @@ export const askTransactionHistory = async (
       , metadata: buildMetadataObj(row.metadata)
       , includedAt: row.includedAt
       , inputs: inputs
+      , collateralInputs: collateralInputs
       , outputs: outputs
       , ttl: MAX_INT // https://github.com/input-output-hk/cardano-db-sync/issues/212
       , blockEra: row.blockEra === "byron" ? BlockEra.Byron : BlockEra.Shelley
