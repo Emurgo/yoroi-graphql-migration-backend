@@ -292,7 +292,7 @@ export const askTransactionHistory = async (
     , addressTypes.stakingKeys
   ]);
   const txs = ret.rows.map( (row: any):TransactionFrag => {
-    let inputs = row.inAddrValPairs 
+    const inputs = row.inAddrValPairs 
       ? row.inAddrValPairs.map((obj: any): TransInputFrag => ({
             address: obj.f1,
             amount: obj.f2.toString(),
@@ -302,7 +302,7 @@ export const askTransactionHistory = async (
             assets: extractAssets(obj.f5)
       }))
       : []; 
-    const collaterals = row.collateralInAddrValPairs 
+    const collateralInputs = row.collateralInAddrValPairs 
       ? row.collateralInAddrValPairs.map((obj: any): TransInputFrag => ({
             address: obj.f1,
             amount: obj.f2.toString(),
@@ -311,8 +311,7 @@ export const askTransactionHistory = async (
             txHash: obj.f3,
             assets: extractAssets(obj.f5)
       }))
-      : []; 
-    inputs = inputs.concat(collaterals);
+      : [];
     const outputs = row.outAddrValPairs 
       ? row.outAddrValPairs.map((obj: any): TransOutputFrag => ({
             address: obj.f1,
@@ -338,6 +337,7 @@ export const askTransactionHistory = async (
       , metadata: buildMetadataObj(row.metadata)
       , includedAt: row.includedAt
       , inputs: inputs
+      , collateralInputs: collateralInputs
       , outputs: outputs
       , ttl: MAX_INT // https://github.com/input-output-hk/cardano-db-sync/issues/212
       , blockEra: row.blockEra === "byron" ? BlockEra.Byron : BlockEra.Shelley

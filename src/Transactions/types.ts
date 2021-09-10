@@ -12,6 +12,7 @@ export interface TransactionFrag {
     block: BlockFrag;
     includedAt: Date;
     inputs: TransInputFrag[];
+    collateralInputs: TransInputFrag[];
     outputs: TransOutputFrag[]; // technically a TransactionOutput fragment
     txIndex: number;
     withdrawals: TransOutputFrag[];
