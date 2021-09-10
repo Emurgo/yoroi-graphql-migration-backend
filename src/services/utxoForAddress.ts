@@ -16,13 +16,27 @@ const utxoForAddressQuery = `
   FROM tx
   JOIN tx_out
     ON tx.id = tx_out.tx_id
-  LEFT JOIN tx_in
-    ON tx_out.tx_id = tx_in.tx_out_id
-   AND tx_out.index::smallint = tx_in.tx_out_index::smallint
+  LEFT JOIN tx_in spent_utxo -- gets when / if the output was used as a input
+    ON tx_out.tx_id = spent_utxo.tx_out_id
+   AND tx_out.index::smallint = spent_utxo.tx_out_index::smallint
+  LEFT JOIN tx as spent_utxo_tx
+    ON spent_utxo.tx_in_id = spent_utxo_tx.id
+  LEFT JOIN collateral_tx_in spent_utxo_coll -- gets when / if the output was used as a collateral input
+    ON tx_out.tx_id = spent_utxo_coll.tx_out_id
+   AND tx_out.index::smallint = spent_utxo_coll.tx_out_index::smallint
+  LEFT JOIN tx as spent_utxo_coll_tx
+    ON spent_utxo_coll.tx_in_id = spent_utxo_coll_tx.id
   JOIN block
-    on block.id = tx.block_id
-  WHERE tx_in.tx_in_id IS NULL
-    and tx.valid_contract
+    ON block.id = tx.block_id
+  WHERE tx.valid_contract -- excludes outputs from all invalid txs
+    and (
+      spent_utxo.tx_in_id IS NULL -- excludes outputs which have been used as inputs...
+      or not spent_utxo_tx.valid_contract -- ... but not if this input was used in a invalid tx
+    )
+    and (
+      spent_utxo_coll.tx_in_id IS NULL -- excludes outputs which have been used as collateral inputs...
+      or spent_utxo_coll_tx.valid_contract -- ... but not if this collateral input was used in a valid tx
+    )
     and (   tx_out.address = any(($1)::varchar array) 
          or tx_out.payment_cred = any(($2)::bytea array));
 `;
