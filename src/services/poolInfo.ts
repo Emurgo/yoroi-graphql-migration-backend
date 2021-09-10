@@ -30,7 +30,7 @@ export const latestMetadataQuery = `
      from pool_hash
      join pool_update 
           on pool_hash.id = pool_update.hash_id 
-     join pool_metadata_ref 
+     join pool_metadata_ref
           on pool_update.meta_id = pool_metadata_ref.id
      where encode(pool_hash.hash_raw, 'hex') = $1
     order by pool_update.id desc limit 1;
