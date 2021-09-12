@@ -4,8 +4,8 @@ import { Request, Response } from "express";
 
 const submissionEndpoint :string = config.get("server.txSubmissionEndpoint");
 
-// const contentTypeHeaders = {"Content-Type": "application/octet-stream"}; - THIS IS FOR CARDANO-WALLET, CBOR IS FOR CARDANO-SUBMIT-API (1.27.0).
-const contentTypeHeaders = {"Content-Type": "application/cbor"};
+const contentTypeHeaders = {"Content-Type": "application/octet-stream"}; // THIS IS FOR CARDANO-WALLET, CBOR IS FOR CARDANO-SUBMIT-API (1.27.0).
+// const contentTypeHeaders = {"Content-Type": "application/cbor"};
 
 export const handleSignedTx = async (req: Request, res: Response): Promise<void> => {
   if (!req.body.signedTx)
