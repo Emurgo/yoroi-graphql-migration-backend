@@ -64,6 +64,7 @@ interface RewardInfo {
   rewards: string;
   withdrawals: string;
   poolOperator: null;
+  isRewardsOff?: boolean;
 }
 
 interface Dictionary<T> {
@@ -79,6 +80,7 @@ const askAccountRewards = async (pool: Pool, addresses: string[]): Promise<Dicti
       , rewards: row.reward
       , withdrawals: row.withdrawal
       , poolOperator: null //not implemented
+      , isRewardsOff: true
     };
   }
   for( const addr of addresses)
