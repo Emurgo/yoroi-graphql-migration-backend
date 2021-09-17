@@ -157,6 +157,8 @@ const txHistory = async (req: Request, res: Response) => {
         hash: tx.hash,
         fee: tx.fee,
         metadata: tx.metadata,
+        validContract: tx.validContract,
+        scriptSize: tx.scriptSize,
         //ttl: tx.ttl,
         type: tx.blockEra,
         withdrawals: tx.withdrawals,
@@ -170,6 +172,7 @@ const txHistory = async (req: Request, res: Response) => {
         epoch: tx.block.epochNo,
         slot: tx.block.slotNo,
         inputs: tx.inputs,
+        collateralInputs: tx.collateralInputs,
         outputs: tx.outputs
       }));
 
