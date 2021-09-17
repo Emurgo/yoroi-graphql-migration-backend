@@ -1,10 +1,12 @@
 import { assertNever, validateAddressesReq } from "../utils";
-
+import { createStateQueryClient, createInteractionContext } from "@cardano-ogmios/client";
 import config from "config";
 import { Pool } from "pg";
 import { Request, Response } from "express";
 
 const addrReqLimit:number = config.get("server.addressRequestLimit");
+const ogmiosAddress:string = config.get("server.ogmiosAddress");
+const ogmiosPort:number = config.get("server.ogmiosPort");
 
 const accountRewardsQuery = `
   select stake_address.hash_raw as "stakeAddress"
@@ -56,6 +58,22 @@ interface Dictionary<T> {
 
 const askAccountRewards = async (pool: Pool, addresses: string[]): Promise<Dictionary<RewardInfo|null>> => {
   const ret : Dictionary<RewardInfo|null> = {};
+
+  //Hooking into Ogmios to get the rewards
+  const ogmiosAddressFixArr: string[] = [];
+  addresses.map(x => {
+    ogmiosAddressFixArr.push(x.substring(2));
+  });
+  const context = await createInteractionContext(
+    console.error,
+    () => console.log("closed."),
+    { connection: { host: ogmiosAddress, port: ogmiosPort } }
+  );
+  const client = await createStateQueryClient(context);
+  const getTotalRewardsFromOgmios = await client.delegationsAndRewards(ogmiosAddressFixArr);
+  await client.shutdown(); 
+
+  console.log(getTotalRewardsFromOgmios);
   const rewards = await pool.query(accountRewardsQuery, [addresses]);
   for(const row of rewards.rows) {
     ret[row.stakeAddress.toString("hex")] = {

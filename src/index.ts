@@ -37,7 +37,9 @@ import {handleGetCardanoWalletPools} from "./services/cardanoWallet";
 const pool = new Pool({ user: config.get("db.user")
   , host: config.get("db.host")
   , database: config.get("db.database")
-  , password: config.get("db.password")});
+  , password: config.get("db.password")
+  , port: config.get("db.port")
+  });
 createCertificatesView(pool);
 createTransactionOutputView(pool);
 
