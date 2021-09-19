@@ -32,9 +32,13 @@ export const handleMessageBoard =
     if (!req.body.poolIds) throw new Error("No poolIds in body");
     const hashes = req.body.poolIds;
 
-    if (!(hashes instanceof Array) || hashes.length > addressesRequestLimit)
+    if (
+      !(hashes instanceof Array) ||
+      hashes.length > addressesRequestLimit ||
+      hashes.length === 0
+    )
       throw new Error(
-        ` poolIds must have between 0 and ${addressesRequestLimit} items`
+        `poolIds must have between 1 and ${addressesRequestLimit} items`
       );
 
     const fromBlock = req.body.fromBlock;
@@ -42,11 +46,11 @@ export const handleMessageBoard =
 
     const ret: Dictionary<null | Message[]> = {};
 
-    for (const hash of hashes) {
-      if (hash.length !== 56) {
-        throw new Error(`Received invalid pool id: ${hash}`);
-      }
+    if (hashes.some((h) => h.length !== 56)) {
+      throw new Error("There was an invalid pool id in the poolIds");
+    }
 
+    for (const hash of hashes) {
       const queryMessageBoard = `
       SELECT
         b.block_no AS "block_no",
