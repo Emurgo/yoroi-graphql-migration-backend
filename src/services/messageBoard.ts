@@ -100,6 +100,12 @@ export const handleMessageBoard =
             ) AS "txs"
           WHERE (
               (
+                -- Handles cases when a tx also includes pool's change address
+                -- SELECT only those transactions that have a single stake address
+                -- In other words, this removes all txs that include more than one
+                -- stake address as this is surely not a board message
+                -- (sent from own address to own address)
+
                 SELECT COUNT(DISTINCT txo.stake_address_id)
                 FROM tx
                   JOIN tx_out txo ON (
