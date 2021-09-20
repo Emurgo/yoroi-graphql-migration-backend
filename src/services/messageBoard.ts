@@ -52,43 +52,78 @@ export const handleMessageBoard =
 
     for (const hash of hashes) {
       const queryMessageBoard = `
-      SELECT
-        b.block_no AS "block_no",
-        txm.json AS "message_json"
-      FROM tx_metadata txm
-        JOIN tx ON (txm.tx_id = tx.id)
-        JOIN block b ON (tx.block_id = b.id)
-        JOIN tx_out txo ON (txm.tx_id = txo.tx_id)
-      WHERE txo.stake_address_id IN (
-          SELECT id
-          FROM stake_address sa
-          WHERE (
-              RIGHT(
-                sa.hash_raw::VARCHAR,
-                LENGTH(sa.hash_raw::VARCHAR) -4
-              )
-            ) IN (
-              SELECT encode(po.hash, 'hex')
-              FROM pool_owner po
-                JOIN pool_hash ph ON (po.pool_hash_id = ph.id)
-              WHERE registered_tx_id = (
-                  SELECT MAX(registered_tx_id)
-                  FROM pool_owner po
-                    JOIN pool_hash ph ON (po.pool_hash_id = ph.id)
-                  WHERE encode(ph.hash_raw, 'hex') = $1
+      WITH queried_pool_address AS (
+        SELECT sa.id
+        FROM pool_owner po
+          JOIN pool_hash ph ON (po.pool_hash_id = ph.id)
+          JOIN stake_address sa ON (sa.id = po.addr_id)
+        WHERE po.registered_tx_id = (
+            SELECT MAX(registered_tx_id)
+            FROM pool_owner po
+              JOIN pool_hash ph ON (po.pool_hash_id = ph.id)
+            WHERE encode(ph.hash_raw, 'hex') = $1
+          )
+      )
+      SELECT block_no, message_json
+      FROM (
+          SELECT *
+          FROM (
+              SELECT b.block_no AS "block_no",
+                txm.json AS "message_json",
+                tx.id AS "id"
+              FROM tx_metadata txm
+                JOIN tx ON (txm.tx_id = tx.id)
+                JOIN block b ON (tx.block_id = b.id)
+                JOIN tx_out txo ON (txm.tx_id = txo.tx_id)
+                JOIN tx_in txi ON (txi.tx_in_id = tx.id)
+                JOIN tx_out txo2 ON (
+                  txo2.tx_id = txi.tx_out_id
+                  AND txo2.index = txi.tx_out_index
                 )
+              WHERE txo.stake_address_id IN (
+                  SELECT *
+                  FROM queried_pool_address
+                )
+                AND txo2.stake_address_id IN (
+                  SELECT *
+                  FROM queried_pool_address
+                )
+                AND (
+                  $2::INTEGER IS NULL
+                  OR b.block_no >= $2
+                )
+                AND (
+                  $3::INTEGER IS NULL
+                  OR b.block_no <= $3
+                )
+                AND txm.key = 1990
+            ) AS "txs"
+          WHERE (
+              (
+                SELECT COUNT(DISTINCT txo.stake_address_id)
+                FROM tx
+                  JOIN tx_out txo ON (
+                    tx.id = txo.tx_id
+                    AND tx.id = txs.id
+                  )
+              ) = 1
             )
+        ) AS "txs_unique"
+      WHERE (
+          SELECT CASE
+              WHEN txs_unique IS NULL THEN null
+              ELSE txo.stake_address_id
+            END
+          FROM tx
+            JOIN tx_out txo ON (
+              tx.id = txo.tx_id
+              AND tx.id = txs_unique.id
+            )
+        ) = (
+          SELECT *
+          FROM queried_pool_address
         )
-        AND txm.key = 1990
-        AND (
-          $2::INTEGER IS NULL
-          OR b.block_no >= $2
-        )
-        AND (
-          $3::INTEGER IS NULL
-          OR b.block_no <= $3
-        )
-      ORDER BY tx.id DESC;
+      ORDER BY id DESC;
     `;
 
       const messagesBoard = await p.query(queryMessageBoard, [
