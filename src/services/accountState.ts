@@ -3,6 +3,8 @@ import { createStateQueryClient, createInteractionContext } from "@cardano-ogmio
 import config from "config";
 import { Pool } from "pg";
 import { Request, Response } from "express";
+import {delegationsAndRewards} from "@cardano-ogmios/client/dist/StateQuery";
+import {StateQueryClient} from "@cardano-ogmios/client/dist/StateQuery/StateQueryClient";
 
 const addrReqLimit:number = config.get("server.addressRequestLimit");
 const ogmiosAddress:string = config.get("server.ogmiosAddress");
@@ -57,28 +59,27 @@ interface Dictionary<T> {
     [key: string]: T;
 }
 
-const askAccountRewards = async (pool: Pool, addresses: string[]): Promise<Dictionary<RewardInfo|null>> => {
+const OGMIOS_CLIENT: StateQueryClient[] = [];
+
+const getRewardStateFromOgmios = async (addresses: string[]): Promise<ReturnType<typeof delegationsAndRewards>> => {
+  const ogmiosAddressFixArr = addresses.map(x => x.substring(2));
+  if (!OGMIOS_CLIENT[0]) {
+    const context = await createInteractionContext(
+      console.error,
+      () => console.log("closed."),
+      { connection: { host: ogmiosAddress, port: ogmiosPort } }
+    );
+    OGMIOS_CLIENT[0] = await createStateQueryClient(context);
+  }
+  return await OGMIOS_CLIENT[0].delegationsAndRewards(ogmiosAddressFixArr);
+};
+
+const getAccountStateFromDB = async (pool: Pool, addresses: string[]): Dictionary<RewardInfo|null> => {
   const ret : Dictionary<RewardInfo|null> = {};
-
-  //Hooking into Ogmios to get the rewards
-  const ogmiosAddressFixArr: string[] = [];
-  addresses.map(x => {
-    ogmiosAddressFixArr.push(x.substring(2));
-  });
-  const context = await createInteractionContext(
-    console.error,
-    () => console.log("closed."),
-    { connection: { host: ogmiosAddress, port: ogmiosPort } }
-  );
-  const client = await createStateQueryClient(context);
-  const getTotalRewardsFromOgmios = await client.delegationsAndRewards(ogmiosAddressFixArr);
-  await client.shutdown(); 
-
-  console.log(getTotalRewardsFromOgmios);
   const rewards = await pool.query(accountRewardsQuery, [addresses]);
   for(const row of rewards.rows) {
     ret[row.stakeAddress.toString("hex")] = {
-        remainingAmount: row.remainingAmount
+      remainingAmount: row.remainingAmount
       , remainingNonSpendableAmount: row.remainingNonSpendableAmount
       , rewards: row.reward
       , withdrawals: row.withdrawal
@@ -90,6 +91,18 @@ const askAccountRewards = async (pool: Pool, addresses: string[]): Promise<Dicti
     if (!(addr in ret))
       ret[addr] = null;
   return ret;
+};
+
+const askAccountRewards = async (pool: Pool, addresses: string[]): Promise<Dictionary<RewardInfo|null>> => {
+  const ogmiosPromise = getRewardStateFromOgmios(addresses);
+  const dbPromise = getAccountStateFromDB(pool, addresses);
+
+  const [ogmiosResult, dbResult] =
+    await Promise.all([ogmiosPromise, dbPromise]);
+
+  console.log("ogmiosResult:", ogmiosResult);
+
+  return dbResult;
 };
 
 export const handleGetAccountState = (pool: Pool) => async (req: Request, res:Response): Promise<void> => {

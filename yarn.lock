@@ -1972,7 +1972,7 @@ js-yaml@^3.13.1:
     argparse "^1.0.7"
     esprima "^4.0.0"
 
-"json-bigint@github:CardanoSolutions/json-bigint#d277387d":
+json-bigint@CardanoSolutions/json-bigint#d277387d:
   version "1.0.0"
   resolved "https://codeload.github.com/CardanoSolutions/json-bigint/tar.gz/d277387d7750ff4e698677d0aa0db97ebb60c581"
   dependencies:
