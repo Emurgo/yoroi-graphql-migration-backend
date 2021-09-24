@@ -86,6 +86,7 @@ const getRewardStateFromOgmios = async (addresses: string[]): Promise<OgmiosRetu
     }, {
       handler: (response, resolve, reject) => {
         const result = response.result;
+        console.log(`[getRewardStateFromOgmios][Query] Result: ${JSON.stringify(result)}`);
         if (typeof result === "object" && result.eraMismatch == null) {
           resolve(result as DelegationsAndRewardsByAccounts);
         }
