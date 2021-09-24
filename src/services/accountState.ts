@@ -139,8 +139,7 @@ const getAccountStateFromDB = async (pool: Pool, addresses: string[]): Promise<D
 };
 
 const askAccountRewards = async (pool: Pool, addresses: string[]): Promise<Dictionary<RewardInfo|null>> => {
-  const ogmiosPromise = getRewardStateFromOgmios(addresses)
-    .catch(e => ({ err: String(e) }));
+  const ogmiosPromise = {};
   const ogmiosPromise2 = getRewardStateFromOgmios2(addresses)
     .catch(e => ({ err: String(e) }));
   const dbPromise = getAccountStateFromDB(pool, addresses);
