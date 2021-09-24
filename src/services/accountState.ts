@@ -1,9 +1,8 @@
 import { assertNever, validateAddressesReq } from "../utils";
-import { createStateQueryClient, createInteractionContext } from "@cardano-ogmios/client";
+import {createInteractionContext, InteractionContext} from "@cardano-ogmios/client";
 import config from "config";
 import { Pool } from "pg";
 import { Request, Response } from "express";
-import {StateQueryClient} from "@cardano-ogmios/client/dist/StateQuery/StateQueryClient";
 import {DelegationsAndRewardsByAccounts} from "@cardano-ogmios/schema";
 import { Query } from "@cardano-ogmios/client/dist/StateQuery";
 import { Ogmios } from "@cardano-ogmios/schema";
@@ -65,54 +64,38 @@ type OgmiosRes = { [k: string]: number };
 type OgmiosErr = { err: string };
 type OgmiosReturn = OgmiosRes | OgmiosErr;
 
-const OGMIOS_CLIENT: StateQueryClient[] = [];
+const OGMIOS_CONTEXT: InteractionContext[] = [];
 
 const getRewardStateFromOgmios = async (addresses: string[]): Promise<OgmiosReturn> => {
   try {
-    const ogmiosAddressFixArr = addresses.map(x => x.substring(2));
-    if (!OGMIOS_CLIENT[0]) {
-      const context = await createInteractionContext(
+    const delegationsAndRewards = addresses.map(x => x.substring(2));
+    if (OGMIOS_CONTEXT[0] == null) {
+      OGMIOS_CONTEXT[0] = await createInteractionContext(
         console.error,
         () => console.log("closed."),
         {connection: {host: ogmiosAddress, port: ogmiosPort}}
       );
-      OGMIOS_CLIENT[0] = await createStateQueryClient(context);
     }
-    const result = await OGMIOS_CLIENT[0].delegationsAndRewards(ogmiosAddressFixArr);
-    return Object.entries(result).reduce((res: { [k: string]: number }, [hash, rew]) => {
-      if (rew.rewards != null) {
-        res["e1" + hash] = rew.rewards;
-      }
-      return res;
-    }, {});
-  } catch (e) {
-    console.error("Failed to getRewardStateFromOgmios!", e);
-    return { err: String(e) };
-  }
-};
-
-const getRewardStateFromOgmios2 = async (addresses: string[]): Promise<any> => {
-  try {
-    const ogmiosAddressFixArr = addresses.map(x => x.substring(2));
-    const context = await createInteractionContext(
-      console.error,
-      () => console.log("closed."),
-      {connection: {host: ogmiosAddress, port: ogmiosPort}}
-    );
-    return await Query<
+    const res = await Query<
       Ogmios["Query"],
       Ogmios["QueryResponse[delegationsAndRewards]"],
-      any
+      DelegationsAndRewardsByAccounts
       >({
       methodName: "Query",
-      args: {
-        query: { delegationsAndRewards: ogmiosAddressFixArr }
-      }
+      args: { query: { delegationsAndRewards } }
     }, {
-      handler: (response, resolve) => {
-        resolve(response.result);
+      handler: (response, resolve, reject) => {
+        const result = response.result;
+        if (typeof result === "object" && result.eraMismatch == null) {
+          resolve(result as DelegationsAndRewardsByAccounts);
+        }
+        reject(`Unexpected Ogmios result: ${String(result)}`);
       }
-    }, context);
+    }, OGMIOS_CONTEXT[0]);
+    return Object.entries(res).reduce((res: OgmiosRes, [key, rew]) => {
+      res["e1" + key] = rew.rewards || 0;
+      return res;
+    }, {});
   } catch (e) {
     console.error("Failed to getRewardStateFromOgmios2!", e);
     return { err: String(e) };
@@ -139,29 +122,23 @@ const getAccountStateFromDB = async (pool: Pool, addresses: string[]): Promise<D
 };
 
 const askAccountRewards = async (pool: Pool, addresses: string[]): Promise<Dictionary<RewardInfo|null>> => {
-  const ogmiosPromise = {};
-  const ogmiosPromise2 = getRewardStateFromOgmios2(addresses)
+  const ogmiosPromise = getRewardStateFromOgmios(addresses)
     .catch(e => ({ err: String(e) }));
   const dbPromise = getAccountStateFromDB(pool, addresses);
 
-  const [ogmiosResult, ogmiosResult2, dbResult]: [OgmiosReturn, any, Dictionary<RewardInfo|null>]
-    = await Promise.all([ogmiosPromise, ogmiosPromise2, dbPromise]);
+  const [ogmiosResult, dbResult]: [OgmiosReturn, Dictionary<RewardInfo|null>]
+    = await Promise.all([ogmiosPromise, dbPromise]);
 
+  console.log("dbResult:", dbResult);
   console.log("ogmiosResult:", ogmiosResult);
-  console.log("ogmiosResult2:", ogmiosResult2);
-
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  dbResult["ogmios"] = ogmiosResult;
-  dbResult["ogmios2"] = ogmiosResult2;
 
   if (ogmiosResult.err == null) {
     for (const a of addresses) {
       const dbResultElement = dbResult[a];
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
-      const ogResultNumber = ogmiosResult[a];
-      if (dbResultElement != null && ogResultNumber != null) {
+      const ogResultNumber = ogmiosResult[a] || 0;
+      if (dbResultElement != null) {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         dbResultElement.remainingAmountDB = dbResultElement.remainingAmount;
