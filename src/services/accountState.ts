@@ -3,8 +3,8 @@ import { createStateQueryClient, createInteractionContext } from "@cardano-ogmio
 import config from "config";
 import { Pool } from "pg";
 import { Request, Response } from "express";
-import {delegationsAndRewards} from "@cardano-ogmios/client/dist/StateQuery";
 import {StateQueryClient} from "@cardano-ogmios/client/dist/StateQuery/StateQueryClient";
+import {DelegationsAndRewardsByAccounts} from "@cardano-ogmios/schema";
 
 const addrReqLimit:number = config.get("server.addressRequestLimit");
 const ogmiosAddress:string = config.get("server.ogmiosAddress");
@@ -61,7 +61,7 @@ interface Dictionary<T> {
 
 const OGMIOS_CLIENT: StateQueryClient[] = [];
 
-const getRewardStateFromOgmios = async (addresses: string[]): Promise<ReturnType<typeof delegationsAndRewards>> => {
+const getRewardStateFromOgmios = async (addresses: string[]): Promise<DelegationsAndRewardsByAccounts> => {
   const ogmiosAddressFixArr = addresses.map(x => x.substring(2));
   if (!OGMIOS_CLIENT[0]) {
     const context = await createInteractionContext(
@@ -74,7 +74,7 @@ const getRewardStateFromOgmios = async (addresses: string[]): Promise<ReturnType
   return await OGMIOS_CLIENT[0].delegationsAndRewards(ogmiosAddressFixArr);
 };
 
-const getAccountStateFromDB = async (pool: Pool, addresses: string[]): Dictionary<RewardInfo|null> => {
+const getAccountStateFromDB = async (pool: Pool, addresses: string[]): Promise<Dictionary<RewardInfo|null>> => {
   const ret : Dictionary<RewardInfo|null> = {};
   const rewards = await pool.query(accountRewardsQuery, [addresses]);
   for(const row of rewards.rows) {
@@ -94,13 +94,18 @@ const getAccountStateFromDB = async (pool: Pool, addresses: string[]): Dictionar
 };
 
 const askAccountRewards = async (pool: Pool, addresses: string[]): Promise<Dictionary<RewardInfo|null>> => {
-  const ogmiosPromise = getRewardStateFromOgmios(addresses);
+  const ogmiosPromise = getRewardStateFromOgmios(addresses)
+    .catch(e => ({ err: String(e) }));
   const dbPromise = getAccountStateFromDB(pool, addresses);
 
   const [ogmiosResult, dbResult] =
     await Promise.all([ogmiosPromise, dbPromise]);
 
   console.log("ogmiosResult:", ogmiosResult);
+
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  dbResult["ogmios"] = ogmiosResult;
 
   return dbResult;
 };
