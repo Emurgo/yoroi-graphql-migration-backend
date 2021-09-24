@@ -90,7 +90,7 @@ const getRewardStateFromOgmios = async (addresses: string[]): Promise<OgmiosRetu
         if (typeof result === "object" && result.eraMismatch == null) {
           resolve(result as DelegationsAndRewardsByAccounts);
         }
-        reject(`Unexpected Ogmios result: ${String(result)}`);
+        reject(`Unexpected Ogmios result: ${JSON.stringify(result)}`);
       }
     }, OGMIOS_CONTEXT[0]);
     return Object.entries(res).reduce((res: OgmiosRes, [key, rew]) => {
