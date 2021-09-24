@@ -115,12 +115,18 @@ const askAccountRewards = async (pool: Pool, addresses: string[]): Promise<Dicti
   // @ts-ignore
   dbResult["ogmios"] = ogmiosResult;
 
-  for (const a of addresses) {
-    const dbResultElement = dbResult[a];
-    if (dbResultElement != null) {
+  if (ogmiosResult.err == null) {
+    for (const a of addresses) {
+      const dbResultElement = dbResult[a];
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
-      dbResultElement.remainingAmountOgmios = ogmiosResult[a];
+      const ogResultNumber = ogmiosResult[a];
+      if (dbResultElement != null && ogResultNumber != null) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        dbResultElement.remainingAmountDB = dbResultElement.remainingAmount;
+        dbResultElement.remainingAmount = String(ogResultNumber);
+      }
     }
   }
 
