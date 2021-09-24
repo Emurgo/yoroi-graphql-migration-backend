@@ -61,7 +61,7 @@ interface Dictionary<T> {
 
 const OGMIOS_CLIENT: StateQueryClient[] = [];
 
-const getRewardStateFromOgmios = async (addresses: string[]): Promise<DelegationsAndRewardsByAccounts> => {
+const getRewardStateFromOgmios = async (addresses: string[]): Promise<{ [k: string]: number }> => {
   const ogmiosAddressFixArr = addresses.map(x => x.substring(2));
   if (!OGMIOS_CLIENT[0]) {
     const context = await createInteractionContext(
@@ -71,7 +71,13 @@ const getRewardStateFromOgmios = async (addresses: string[]): Promise<Delegation
     );
     OGMIOS_CLIENT[0] = await createStateQueryClient(context);
   }
-  return await OGMIOS_CLIENT[0].delegationsAndRewards(ogmiosAddressFixArr);
+  const result = await OGMIOS_CLIENT[0].delegationsAndRewards(ogmiosAddressFixArr);
+  return Object.entries(result).reduce((res: { [k: string]: number }, [hash, rew]) => {
+    if (rew.rewards != null) {
+      res["e1" + hash] = rew.rewards;
+    }
+    return res;
+  }, {});
 };
 
 const getAccountStateFromDB = async (pool: Pool, addresses: string[]): Promise<Dictionary<RewardInfo|null>> => {
@@ -98,14 +104,25 @@ const askAccountRewards = async (pool: Pool, addresses: string[]): Promise<Dicti
     .catch(e => ({ err: String(e) }));
   const dbPromise = getAccountStateFromDB(pool, addresses);
 
-  const [ogmiosResult, dbResult] =
-    await Promise.all([ogmiosPromise, dbPromise]);
+  const [ogmiosResult, dbResult]: [
+    { [k: string]: number } | { err: string },
+    Dictionary<RewardInfo|null>,
+  ] = await Promise.all([ogmiosPromise, dbPromise]);
 
   console.log("ogmiosResult:", ogmiosResult);
 
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
   dbResult["ogmios"] = ogmiosResult;
+
+  for (const a of addresses) {
+    const dbResultElement = dbResult[a];
+    if (dbResultElement != null) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      dbResultElement.remainingAmountOgmios = ogmiosResult[a];
+    }
+  }
 
   return dbResult;
 };
