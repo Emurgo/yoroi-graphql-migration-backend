@@ -45,7 +45,7 @@
     ts-custom-error "^3.2.0"
     ws "^7.4.6"
 
-"@cardano-ogmios/schema@4.0.0":
+"@cardano-ogmios/schema@4.0.0", "@cardano-ogmios/schema@^4.0.0":
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/@cardano-ogmios/schema/-/schema-4.0.0.tgz#47d35aa17ce1e63295962c0624f562fda3244e03"
   integrity sha512-fZnkNjQlolTx6FiGyz/D7YFsmugxKjIyx4Wr5ZPKJOHqAt5td/eU733atL9Dn2j0eb+ChM7Q5aTe1s7O6I9BrQ==
