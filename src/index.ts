@@ -75,26 +75,26 @@ const bestBlock = (pool: Pool) => async (_req: Request, res: Response) => {
 };
 
 const price = async (req: Request, res: Response) => {
-  const apiURL: string = config.get("server.priceFeed")
+  const apiURL: string = config.get("server.priceFeed");
   
   axios.get(apiURL)
   .then(resp => {
     if (resp.status === 500) {
-      res.status(500).send("Problem with the pricing API server. Server error.")
+      res.status(500).send("Problem with the pricing API server. Server error.");
     }
     else if (resp.status === 400) {
-      res.status(400).send("Problem with the pricing API server. Request issue.")
+      res.status(400).send("Problem with the pricing API server. Request issue.");
     }
     else if (resp.data["ADA"] == null) {
-      res.status(404).send("Problem with the pricing API server. ADA response missing." )
-      console.log("resp.data: ", resp.data)
+      res.status(404).send("Problem with the pricing API server. ADA response missing." );
+      console.log("resp.data: ", resp.data);
     }
     else {
-      res.send(resp.data)
+      res.send(resp.data);
       return;
     }
-  })
-}
+  });
+};
 
 const utxoSumForAddresses = async (req: Request, res:Response) => {
   if(!req.body || !req.body.addresses) {
