@@ -19,7 +19,7 @@ in rec {
     pname = "yoroi-graphql-migration-backend";
     version = packageJSON.version;
     src = ./.;
-    buildInputs = [ nodejs-12_x nodePackages.typescript ];
+    buildInputs = [ nodejs-14_x nodePackages.typescript ];
 
     preConfigure = ''
       cp -r ${npmToNix { inherit src; }} node_modules
@@ -40,7 +40,7 @@ in rec {
       mkdir -p $out/bin
       cat <<EOF > $out/bin/yoroi-graphql-migration-backend
       #!${runtimeShell}
-      exec ${nodejs-12_x}/bin/node $out/dist/index.js
+      exec ${nodejs-14444_x}/bin/node $out/dist/index.js
       EOF
       chmod +x $out/bin/yoroi-graphql-migration-backend
     '';
