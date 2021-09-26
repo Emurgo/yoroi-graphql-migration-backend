@@ -28,6 +28,8 @@ in rec {
     '';
 
     buildPhase = ''
+      node --version
+      tsc --version
       tsc
     '';
 
