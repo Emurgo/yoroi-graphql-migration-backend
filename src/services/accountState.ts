@@ -67,6 +67,10 @@ type OgmiosReturn = OgmiosRes | OgmiosErr;
 const OGMIOS_CONTEXT: InteractionContext[] = [];
 
 const getRewardStateFromOgmios = async (addresses: string[]): Promise<OgmiosReturn> => {
+  if (!(addresses?.length > 0)) {
+    return {};
+  }
+  const prefix = addresses[0].substr(0, 2);
   try {
     const delegationsAndRewards = addresses.map(x => x.substring(2));
     if (OGMIOS_CONTEXT[0] == null) {
@@ -94,7 +98,7 @@ const getRewardStateFromOgmios = async (addresses: string[]): Promise<OgmiosRetu
       }
     }, OGMIOS_CONTEXT[0]);
     return Object.entries(res).reduce((res: OgmiosRes, [key, rew]) => {
-      res["e1" + key] = rew.rewards || 0;
+      res[prefix + key] = rew.rewards || 0;
       return res;
     }, {});
   } catch (e) {
@@ -152,7 +156,7 @@ const askAccountRewards = async (pool: Pool, addresses: string[]): Promise<Dicti
 };
 
 export const handleGetAccountState = (pool: Pool) => async (req: Request, res:Response): Promise<void> => {
-  if(!req.body || !req.body.addresses) {
+  if(!req.body || !(req.body.addresses?.length > 0)) {
     throw new Error("no addresses.");
     return;
   } 
