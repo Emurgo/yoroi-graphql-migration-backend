@@ -2,6 +2,7 @@ import config from "config";
 import http from "http";
 import express from "express";
 import * as websockets from "ws";
+import axios from "axios";
 import { Request, Response } from "express";
 
 import { Pool } from "pg";
@@ -31,8 +32,8 @@ import { HealthChecker } from "./HealthChecker";
 
 import { createCertificatesView } from "./Transactions/certificates";
 import { createTransactionOutputView } from "./Transactions/output";
-import {poolDelegationHistory} from "./services/poolHistory";
-import {handleGetCardanoWalletPools} from "./services/cardanoWallet";
+import { poolDelegationHistory } from "./services/poolHistory";
+import { handleGetCardanoWalletPools } from "./services/cardanoWallet";
 
 const pool = new Pool({ user: config.get("db.user")
   , host: config.get("db.host")
@@ -55,9 +56,9 @@ applyMiddleware(middlewares, router);
 
 
 
-const port:number= config.get("server.port");
-const addressesRequestLimit:number = config.get("server.addressRequestLimit");
-const apiResponseLimit:number = config.get("server.apiResponseLimit"); 
+const port: number= config.get("server.port");
+const addressesRequestLimit: number = config.get("server.addressRequestLimit");
+const apiResponseLimit: number = config.get("server.apiResponseLimit"); 
 
 const bestBlock = (pool: Pool) => async (_req: Request, res: Response) => {
   const result = await askBestBlock(pool);
@@ -71,6 +72,28 @@ const bestBlock = (pool: Pool) => async (_req: Request, res: Response) => {
     throw new Error(result.errMsg);
   default: return utils.assertNever(result);
   }
+};
+
+const price = async (req: Request, res: Response) => {
+  const apiURL: string = config.get("server.priceFeed");
+  
+  axios.get(apiURL)
+  .then(resp => {
+    if (resp.status === 500) {
+      res.status(500).send("Problem with the pricing API server. Server error.");
+    }
+    else if (resp.status === 400) {
+      res.status(400).send("Problem with the pricing API server. Request issue.");
+    }
+    else if (resp.data["ADA"] == null) {
+      res.status(404).send("Problem with the pricing API server. ADA response missing." );
+      console.log("resp.data: ", resp.data);
+    }
+    else {
+      res.send(resp.data);
+      return;
+    }
+  });
 };
 
 const utxoSumForAddresses = async (req: Request, res:Response) => {
@@ -276,6 +299,10 @@ const routes : Route[] = [
 , { path: "/pool/info"
   , method: "post"
   , handler: handlePoolInfo(pool)
+}
+, { path: "/getPrice"
+  , method: "get"
+  , handler: price
 },
   {
     path: "/pool/delegationHistory",
