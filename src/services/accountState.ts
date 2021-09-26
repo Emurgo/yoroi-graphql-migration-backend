@@ -67,10 +67,6 @@ type OgmiosReturn = OgmiosRes | OgmiosErr;
 const OGMIOS_CONTEXT: InteractionContext[] = [];
 
 const getRewardStateFromOgmios = async (addresses: string[]): Promise<OgmiosReturn> => {
-  if (!(addresses?.length > 0)) {
-    return {};
-  }
-  const prefix = addresses[0].substr(0, 2);
   try {
     const delegationsAndRewards = addresses.map(x => x.substring(2));
     if (OGMIOS_CONTEXT[0] == null) {
@@ -80,7 +76,7 @@ const getRewardStateFromOgmios = async (addresses: string[]): Promise<OgmiosRetu
         {connection: {host: ogmiosAddress, port: ogmiosPort}}
       );
     }
-    const res = await Query<
+    const ogmiosResult = await Query<
       Ogmios["Query"],
       Ogmios["QueryResponse[delegationsAndRewards]"],
       DelegationsAndRewardsByAccounts
@@ -97,8 +93,8 @@ const getRewardStateFromOgmios = async (addresses: string[]): Promise<OgmiosRetu
         reject(`Unexpected Ogmios result: ${JSON.stringify(result)}`);
       }
     }, OGMIOS_CONTEXT[0]);
-    return Object.entries(res).reduce((res: OgmiosRes, [key, rew]) => {
-      res[prefix + key] = rew.rewards || 0;
+    return addresses.reduce((res: OgmiosRes, addr) => {
+      res[addr] = ogmiosResult[addr.substring(2)]?.rewards ?? 0;
       return res;
     }, {});
   } catch (e) {
@@ -142,7 +138,7 @@ const askAccountRewards = async (pool: Pool, addresses: string[]): Promise<Dicti
       const dbResultElement = dbResult[a];
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
-      const ogResultNumber = ogmiosResult[a] || 0;
+      const ogResultNumber = ogmiosResult[a] ?? 0;
       if (dbResultElement != null) {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
