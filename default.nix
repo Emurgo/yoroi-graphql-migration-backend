@@ -19,7 +19,7 @@ in rec {
     pname = "yoroi-graphql-migration-backend";
     version = packageJSON.version;
     src = ./.;
-    buildInputs = [ nodejs nodePackages.typescript ];
+    buildInputs = [ nodejs-12_x nodePackages.typescript ];
 
     preConfigure = ''
       cp -r ${npmToNix { inherit src; }} node_modules
