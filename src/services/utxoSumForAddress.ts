@@ -13,7 +13,7 @@ export const askUtxoSumForAddresses = async (pool: Pool, addresses: string[]): P
     `;
 
     const tokensQuery = `
-      SELECT SUM(quantity) amount,
+      SELECT SUM(ma_utxo.quantity) amount,
         encode(ma_utxo.policy, 'hex') as policy,
         convert_from(ma_utxo.name, 'UTF8') as name
       FROM utxo_view utxo
