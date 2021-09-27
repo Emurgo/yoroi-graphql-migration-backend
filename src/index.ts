@@ -86,7 +86,7 @@ const utxoSumForAddresses = async (req: Request, res:Response) => {
     const result = await askUtxoSumForAddresses(pool, verifiedAddresses.value);
     switch(result.kind) {
     case "ok":
-      res.send({ sum: result.value });
+      res.send(result.value);
       return;
     case "error":
       throw new Error(result.errMsg);
