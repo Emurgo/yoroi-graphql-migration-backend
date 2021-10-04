@@ -15,7 +15,7 @@ export const askUtxoSumForAddresses = async (pool: Pool, addresses: string[]): P
     const tokensQuery = `
       SELECT SUM(ma_utxo.quantity) amount,
         encode(ma_utxo.policy, 'hex') as policy,
-        convert_from(ma_utxo.name, 'UTF8') as name
+        encode(ma_utxo.name, 'hex') as name
       FROM utxo_view utxo
         INNER JOIN ma_tx_out ma_utxo ON utxo.id = ma_utxo.tx_out_id
       WHERE address = any(($1)::varchar array)
