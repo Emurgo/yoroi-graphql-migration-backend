@@ -8,8 +8,6 @@ export const askUtxoSumForAddresses = async (pool: Pool, addresses: string[]): P
       SELECT "public"."utxo_view"."value" AS "value"
       FROM "public"."utxo_view"
       WHERE "public"."utxo_view"."address" = any(($1)::varchar array)
-      GROUP BY "public"."utxo_view"."value"
-      ORDER BY "public"."utxo_view"."value" ASC
     `;
 
     const tokensQuery = `
