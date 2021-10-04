@@ -234,11 +234,17 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   }
   ```
 
-  Output
+  Output (note that `sum` and `totalAda` returns the **same value**. `sum` is a legacy property included in this response for backwards compatibility, but any new systems using this API should be using `totalAda` instead of `sum`)
 
   ```js
   {
-    sum: ?string
+    sum: ?string,
+    totalAda: ?string,
+    tokensBalance: [
+      amount: string,
+      name: string,
+      policy: string
+    ]
   }
   ```
 </details>
