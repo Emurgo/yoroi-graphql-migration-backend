@@ -5,7 +5,7 @@ import { UtxoSumResponse } from "../Transactions/types";
 export const askUtxoSumForAddresses = async (pool: Pool, addresses: string[]): Promise<UtilEither<UtxoSumResponse>> => {
   // TODO: support for payment keys
     const adaQuery = `
-      SELECT "public"."utxo_view"."value" AS "value"
+      SELECT SUM("public"."utxo_view"."value") AS "value"
       FROM "public"."utxo_view"
       WHERE "public"."utxo_view"."address" = any(($1)::varchar array)
     `;
