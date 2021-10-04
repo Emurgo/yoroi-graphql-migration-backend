@@ -5,40 +5,39 @@ import config from "config";
 import {assertNever, validateAddressesReq, getAddressesByType, extractAssets,} from "../utils";
 
 const utxoForAddressQuery = `
-  select tx_out.address
-       , encode(tx.hash,'hex') as hash
-       , tx_out.index
-       , tx_out.value
-       , block.block_no as "blockNumber"
-       , (select json_agg(ROW (encode("policy", 'hex'), encode("name", 'hex'), "quantity"))
-          from ma_tx_out
-          WHERE ma_tx_out."tx_out_id" = tx_out.id) as assets
-  FROM tx
-  JOIN tx_out
-    ON tx.id = tx_out.tx_id
-  LEFT JOIN tx_in spent_utxo -- gets when / if the output was used as a input
-    ON tx_out.tx_id = spent_utxo.tx_out_id
-   AND tx_out.index::smallint = spent_utxo.tx_out_index::smallint
-  LEFT JOIN tx as spent_utxo_tx
-    ON spent_utxo.tx_in_id = spent_utxo_tx.id
-  LEFT JOIN collateral_tx_in spent_utxo_coll -- gets when / if the output was used as a collateral input
-    ON tx_out.tx_id = spent_utxo_coll.tx_out_id
-   AND tx_out.index::smallint = spent_utxo_coll.tx_out_index::smallint
-  LEFT JOIN tx as spent_utxo_coll_tx
-    ON spent_utxo_coll.tx_in_id = spent_utxo_coll_tx.id
-  JOIN block
-    ON block.id = tx.block_id
-  WHERE tx.valid_contract -- excludes outputs from all invalid txs
-    and (
-      spent_utxo.tx_in_id IS NULL -- excludes outputs which have been used as inputs...
-      or not spent_utxo_tx.valid_contract -- ... but not if this input was used in a invalid tx
-    )
-    and (
-      spent_utxo_coll.tx_in_id IS NULL -- excludes outputs which have been used as collateral inputs...
-      or spent_utxo_coll_tx.valid_contract -- ... but not if this collateral input was used in a valid tx
-    )
-    and (   tx_out.address = any(($1)::varchar array) 
-         or tx_out.payment_cred = any(($2)::bytea array));
+    SELECT
+      tx_out.address
+    , encode(tx.hash,'hex') as hash
+    , tx_out.index
+    , tx_out.value
+    , block.block_no as "blockNumber"
+    , (select json_agg(ROW (encode("policy", 'hex'), encode("name", 'hex'), "quantity"))
+      from ma_tx_out
+      WHERE ma_tx_out."tx_out_id" = tx_out.id) as assets
+    FROM tx
+      INNER JOIN tx_out ON tx.id = tx_out.tx_id
+      INNER JOIN block ON block.id = tx.block_id
+    WHERE tx.valid_contract -- utxos only from valid txs
+      -- exclude collateral inputs spent in invalid txs
+      AND NOT EXISTS (
+        SELECT true
+        FROM collateral_tx_in
+          LEFT JOIN tx as collateral_tx ON collateral_tx_in.tx_in_id = collateral_tx.id
+        WHERE collateral_tx.valid_contract = 'false' -- collateral was burned
+          AND tx_out.tx_id = collateral_tx_in.tx_out_id
+          AND tx_out.index = collateral_tx_in.tx_out_index
+      )
+      -- exclude tx outputs used as tx input in valid tx
+      AND NOT EXISTS (
+        SELECT true
+        FROM tx_in -- utxos attempted to be used as input in valid txs
+          LEFT JOIN tx as input_tx ON tx_in.tx_in_id = input_tx.id
+        WHERE input_tx.valid_contract -- input comes from a valid tx
+          AND tx_out.tx_id = tx_in.tx_out_id
+          AND tx_out.index = tx_in.tx_out_index
+      )
+      AND (tx_out.address = any(($1)::varchar array) 
+         OR tx_out.payment_cred = any(($2)::bytea array));
 `;
 
 const addressesRequestLimit:number = config.get("server.addressRequestLimit");
