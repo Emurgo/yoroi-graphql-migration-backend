@@ -189,13 +189,11 @@ export const rowToCertificate = (row:any):Certificate|null => {
 };
 
 export interface UtxoSumResponse {
-  sum: string; // old name for backward compatibility
-  totalAda: string;
+  sum: string;
   tokensBalance: TokenBalace[];
 }
 
 export interface TokenBalace {
-  name: string;
-  policy: string;
+  assetId: string;
   amount: string;
 }

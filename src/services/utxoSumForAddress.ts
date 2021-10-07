@@ -35,13 +35,11 @@ export const askUtxoSumForAddresses = async (pool: Pool, addresses: string[]): P
             kind:"ok",
             value: {
               sum: totalAda,
-              totalAda: totalAda,
               tokensBalance: tokensRes.rows
                 .map(r => {
                   return {
                     amount: r.amount,
-                    name: r.name,
-                    policy: r.policy
+                    assetId: `${r.policy}.${r.name}`
                   };
                 })
             },
