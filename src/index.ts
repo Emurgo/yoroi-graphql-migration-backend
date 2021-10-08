@@ -31,6 +31,7 @@ import { HealthChecker } from "./HealthChecker";
 
 import { createCertificatesView } from "./Transactions/certificates";
 import { createTransactionOutputView } from "./Transactions/output";
+import { createValidUtxosView } from "./Transactions/valid_utxos_view";
 import {poolDelegationHistory} from "./services/poolHistory";
 import {handleGetCardanoWalletPools} from "./services/cardanoWallet";
 
@@ -41,6 +42,7 @@ const pool = new Pool({ user: config.get("db.user")
   , port: config.get("db.port")
   });
 createCertificatesView(pool);
+createValidUtxosView(pool);
 createTransactionOutputView(pool);
 
 

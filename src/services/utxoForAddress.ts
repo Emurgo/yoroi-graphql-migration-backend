@@ -5,39 +5,10 @@ import config from "config";
 import {assertNever, validateAddressesReq, getAddressesByType, extractAssets,} from "../utils";
 
 const utxoForAddressQuery = `
-    SELECT
-      tx_out.address
-    , encode(tx.hash,'hex') as hash
-    , tx_out.index
-    , tx_out.value
-    , block.block_no as "blockNumber"
-    , (select json_agg(ROW (encode("policy", 'hex'), encode("name", 'hex'), "quantity"))
-      from ma_tx_out
-      WHERE ma_tx_out."tx_out_id" = tx_out.id) as assets
-    FROM tx
-      INNER JOIN tx_out ON tx.id = tx_out.tx_id
-      INNER JOIN block ON block.id = tx.block_id
-    WHERE tx.valid_contract -- utxos only from valid txs
-      -- exclude collateral inputs spent in invalid txs
-      AND NOT EXISTS (
-        SELECT true
-        FROM collateral_tx_in
-          LEFT JOIN tx as collateral_tx ON collateral_tx_in.tx_in_id = collateral_tx.id
-        WHERE collateral_tx.valid_contract = 'false' -- collateral was burned
-          AND tx_out.tx_id = collateral_tx_in.tx_out_id
-          AND tx_out.index = collateral_tx_in.tx_out_index
-      )
-      -- exclude tx outputs used as tx input in valid tx
-      AND NOT EXISTS (
-        SELECT true
-        FROM tx_in -- utxos attempted to be used as input in valid txs
-          LEFT JOIN tx as input_tx ON tx_in.tx_in_id = input_tx.id
-        WHERE input_tx.valid_contract -- input comes from a valid tx
-          AND tx_out.tx_id = tx_in.tx_out_id
-          AND tx_out.index = tx_in.tx_out_index
-      )
-      AND (tx_out.address = any(($1)::varchar array) 
-         OR tx_out.payment_cred = any(($2)::bytea array));
+    SELECT *
+    FROM valid_utxos_view
+    WHERE address = any(($1)::varchar array) 
+         OR payment_cred = any(($2)::bytea array);
 `;
 
 const addressesRequestLimit:number = config.get("server.addressRequestLimit");
