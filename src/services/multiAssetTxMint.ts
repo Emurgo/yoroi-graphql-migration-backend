@@ -40,7 +40,7 @@ export const handleGetMultiAssetTxMintMetadata = (pool: Pool) => async (req: Req
   if (!req.body || !req.body.assets) throw new Error("missing assets on request body");
   if (!Array.isArray(req.body.assets)) throw new Error("assets should be an array");
   if (req.body.assets.length === 0) throw new Error("assets should not be empty");
-  if (req.body.assets.find((a: any) => !a.name || !a.policy)) throw new Error("all assets on body should have a name and a policy");
+  if (req.body.assets.find((a: any) => !a.policy)) throw new Error("all assets on body should have a name and a policy");
 
   const assets: Asset[] = req.body.assets;
 
