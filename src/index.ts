@@ -37,7 +37,9 @@ import {handleGetCardanoWalletPools} from "./services/cardanoWallet";
 const pool = new Pool({ user: config.get("db.user")
   , host: config.get("db.host")
   , database: config.get("db.database")
-  , password: config.get("db.password")});
+  , password: config.get("db.password")
+  , port: config.get("db.port")
+  });
 createCertificatesView(pool);
 createTransactionOutputView(pool);
 
@@ -157,6 +159,8 @@ const txHistory = async (req: Request, res: Response) => {
         hash: tx.hash,
         fee: tx.fee,
         metadata: tx.metadata,
+        valid_contract: tx.validContract,
+        script_size: tx.scriptSize,
         //ttl: tx.ttl,
         type: tx.blockEra,
         withdrawals: tx.withdrawals,
@@ -170,6 +174,7 @@ const txHistory = async (req: Request, res: Response) => {
         epoch: tx.block.epochNo,
         slot: tx.block.slotNo,
         inputs: tx.inputs,
+        collateral_inputs: tx.collateralInputs,
         outputs: tx.outputs
       }));
 
@@ -231,9 +236,9 @@ const getFundInfo = async (req: Request, res:  Response) => {
           "currentFund": {
             "id": 6,
             "registrationStart": "2021-08-12T11:00:00Z",
-            "registrationEnd": "2021-09-30T11:00:00Z",
-            "votingStart": "2021-10-01T11:00:00Z",
-            "votingEnd": "2021-10-10T11:00:00Z",
+            "registrationEnd": "2021-10-04T11:00:00Z",
+            "votingStart": "2021-10-07T11:00:00Z",
+            "votingEnd": "2021-10-21T11:00:00Z",
             "votingPowerThreshold": "450"
           }
         });
