@@ -6,12 +6,15 @@ export enum BlockEra { Byron = "byron"
 export interface TransactionFrag {
     hash: string;
     fee: string;
+    validContract: boolean;
+    scriptSize: number;
     ttl: string;
     blockEra: BlockEra;
     metadata: null | string;
     block: BlockFrag;
     includedAt: Date;
     inputs: TransInputFrag[];
+    collateralInputs: TransInputFrag[];
     outputs: TransOutputFrag[]; // technically a TransactionOutput fragment
     txIndex: number;
     withdrawals: TransOutputFrag[];
