@@ -54,7 +54,8 @@ export const handleSignedTx = async (req: Request, res: Response): Promise<void>
       throw Error(`I did not understand the response from the submission endpoint: ${JSON.stringify({
         status,
         statusText,
-        data
+        data,
+        err: LOGGING_MSG_HOLDER[1],
       })}`);
     }
   } catch (error: any) {
