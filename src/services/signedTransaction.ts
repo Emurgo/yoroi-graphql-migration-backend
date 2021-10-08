@@ -41,7 +41,7 @@ export const handleSignedTx = async (req: Request, res: Response): Promise<void>
         LOGGING_MSG_HOLDER[1] = `ERR_ERR: ${err}`;
       }
     });
-    if (endpointResponse.status === 202) {
+    if (endpointResponse?.status === 202) {
       if (endpointResponse.data.Left) {
         const msg = `Transaction was rejected: ${endpointResponse.data.Left}`;
         console.log("signedTransaction request body: " + req.body.signedTx);
