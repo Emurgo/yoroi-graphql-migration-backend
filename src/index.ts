@@ -363,27 +363,27 @@ const routes : Route[] = [
 , handler: async (_req: Request, res: Response) => {
   const response = await askBehindBy(pool);
   if (response.kind === "ok") {
-    const maxSeconds: number = config.get("maxTimeHealthCheck.seconds")
-    const maxMinutes: number = config.get("maxTimeHealthCheck.minutes")
-    const behindBy = response.value.behindby 
+    const maxSeconds: number = config.get("maxTimeHealthCheck.seconds");
+    const maxMinutes: number = config.get("maxTimeHealthCheck.minutes");
+    const behindBy = response.value.behindby;
 
     // This assumes that values are null rather than 0
     if (behindBy.years != null || 
       behindBy.months != null ||
       behindBy.days != null || 
       behindBy.hours != null) {
-        throw new Error("Server behind by " + JSON.stringify(behindBy)) 
+        throw new Error("Server behind by " + JSON.stringify(behindBy)); 
     }
     else if (behindBy.minutes == null && maxMinutes == 0
       && (behindBy.seconds == null || behindBy.seconds < maxSeconds)) {
-      res.send({behindBy, isOK: "OK"})
+      res.send({behindBy, isOK: "OK"});
     }
     else if ((behindBy.minutes == null || behindBy.minutes <= maxMinutes) 
       && (behindBy.seconds == null || behindBy.seconds < maxSeconds)) {
-      res.send({behindBy, isOK: "OK"})
+      res.send({behindBy, isOK: "OK"});
     }
     else {
-      throw new Error("Server behind by " + JSON.stringify(behindBy))
+      throw new Error("Server behind by " + JSON.stringify(behindBy));
     }
   }
   else {
