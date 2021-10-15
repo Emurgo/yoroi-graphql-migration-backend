@@ -5,6 +5,10 @@ export default {
     database: process.env.POSTGRES_DB || "cexplorer",
     password: process.env.POSTGRES_PASSWORD || ""
   },
+  maxTimeHealthCheck: {
+    minutes: 2,
+    seconds: 30
+  },
   server: {
     addressRequestLimit: 50,
     apiResponseLimit: 50,
