@@ -35,6 +35,9 @@ import { createValidUtxosView } from "./Transactions/valid_utxos_view";
 import {poolDelegationHistory} from "./services/poolHistory";
 import {handleGetCardanoWalletPools} from "./services/cardanoWallet";
 
+import { handleMessageBoard } from "./services/messageBoard";
+import { handleMessageDirect } from "./services/messageDirect";
+
 const pool = new Pool({ user: config.get("db.user")
   , host: config.get("db.host")
   , database: config.get("db.database")
@@ -310,6 +313,16 @@ const routes : Route[] = [
 , { path: "/txs/signed"
   , method: "post"
   , handler: handleSignedTx
+},
+{
+  path: "/messages/getMessageBoard",
+  method: "post",
+  handler: handleMessageBoard(pool),
+},
+{
+  path: "/messages/getMessageDirect",
+  method: "post",
+  handler: handleMessageDirect(pool),
 },
   {
     path: "/pool/cardanoWallet",
