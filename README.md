@@ -380,6 +380,113 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   }>
   ```
 </details>
+
+<details>
+  <summary>v2/txs/get</summary>
+  This endpoint returns the transactions' information given their IDs (TX hash).
+
+  Since short rollbacks are common (by design) in Cardano Shelley, your app needs to be ready for this.
+
+  Input
+
+  Up to 100 tx ids in the request
+
+  ```js
+  {
+   ids: string[],
+  }
+  ```
+
+  Output
+
+  Up to `100` transactions are returned. Transactions which are not yet on-chain will be ignored and won't be included in the response. The `ids` sent in the request are transformed into keys under the `txs` object, and the value corresponding to this key is the transaction information
+
+  ```js
+  txs: {
+    "<id>": {
+      // information that is only present if block is included in the blockchain
+      block_num: null | number,
+      block_hash: null | string,
+      tx_ordinal: null | number,
+      time: null | string, // timestamp with timezone
+      epoch: null | number,
+      slot: null | number,
+
+      // information that is always present
+      type: 'byron' | 'shelley',
+      hash: string,
+      last_update: string, // timestamp with timezone
+      tx_state: 'Successful' | 'Failed' | 'Pending',
+      inputs: Array<{ // these will be ordered by the input transaction id asc
+        address: string,
+        amount: string,
+        id: string, // concatenation of txHash || index
+        index: number,
+        txHash: string, 
+        assets: Asset[]
+      }>,
+      collateral_inputs: Array<{
+        address: string,
+        amount: string,
+        id: string, // concatenation of txHash || index
+        index: number,
+        txHash: string,
+        assets: Asset[]
+      }>,
+      outputs: Array<{ //these will be ordered by transaction index asc.
+        address: string,
+        amount: string,
+        assets: Asset[]
+      }>,
+      withdrawals: Array<{| address: string, // hex
+        amount: string
+      |}>,
+      certificates: Array<{|
+        kind: 'StakeRegistration',
+        rewardAddress:string, //hex
+      |} | {|
+        kind: 'StakeDeregistration',
+        rewardAddress:string, // hex
+      |} | {|
+        kind: 'StakeDelegation',
+        rewardAddress:string, // hex
+        poolKeyHash: string, // hex
+      |} | {|
+        kind: 'PoolRegistration',
+        poolParams: {|
+          operator: string, // hex
+          vrfKeyHash: string, // hex
+          pledge: string,
+          cost: string,
+          margin: number,
+          rewardAccount: string, // hex
+          poolOwners: Array<string>,  // hex
+          relays: Array<{| ipv4: string|null,
+            ipv6: string|null,
+            dnsName: string|null,
+            dnsSrvName: string|null,
+            port: string|null |}>,
+          poolMetadata: null | {|
+            url: string,
+            metadataHash: string, //hex
+          |},
+        |},
+      |} | {|
+        type: 'PoolRetirement',
+        poolKeyHash: string, // hex
+        epoch: number,
+      |} {|
+        type: 'MoveInstantaneousRewardsCert',
+        rewards: { [addresses: string]: string } // dictionary of stake addresses to their reward amounts in lovelace
+        pot: 0 | 1 // 0 = Reserves, 1 = Treasury
+      |}>,
+      valid_contract: boolean, // False if the contract is invalid. True if the contract is valid or there is no contract.
+      script_size: number, // The sum of the script sizes (in bytes) of scripts in the transaction.
+    }
+  }
+  ```
+</details>
+
 <details>
   <summary>v2/bestblock</summary>
   Input

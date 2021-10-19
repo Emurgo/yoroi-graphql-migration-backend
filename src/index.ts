@@ -26,6 +26,7 @@ import { handleGetAccountState } from "./services/accountState";
 import { handleGetRegHistory } from "./services/regHistory";
 import { handleGetRewardHistory } from "./services/rewardHistory";
 import { handleGetMultiAssetTxMintMetadata } from "./services/multiAssetTxMint";
+import { handleGetTransactions } from "./services/transactions";
 
 import { HealthChecker } from "./HealthChecker";
 
@@ -290,6 +291,10 @@ const routes : Route[] = [
 , { path: "/v2/txs/history"
   , method: "post"
   , handler: txHistory 
+}
+, { path: "/v2/txs/get"
+  , method: "post"
+  , handler: handleGetTransactions(pool)
 }
 , { path: "/txs/signed"
   , method: "post"
