@@ -31,11 +31,14 @@ import { HealthChecker } from "./HealthChecker";
 
 import { createCertificatesView } from "./Transactions/certificates";
 import { createTransactionOutputView } from "./Transactions/output";
+import { createTransactionUtilityFunctions } from "./Transactions/userDefinedFunctions";
 import {poolDelegationHistory} from "./services/poolHistory";
 import {handleGetCardanoWalletPools} from "./services/cardanoWallet";
 
 import { handleMessageBoard } from "./services/messageBoard";
 import { handleMessageDirect } from "./services/messageDirect";
+
+import { mapTransactionFragsToResponse } from "./utils/mappers";
 
 const pool = new Pool({ user: config.get("db.user")
   , host: config.get("db.host")
@@ -45,6 +48,7 @@ const pool = new Pool({ user: config.get("db.user")
   });
 createCertificatesView(pool);
 createTransactionOutputView(pool);
+createTransactionUtilityFunctions(pool);
 
 
 const healthChecker = new HealthChecker(() => askBestBlock(pool));
@@ -158,28 +162,7 @@ const txHistory = async (req: Request, res: Response) => {
     const maybeTxs = await askTransactionHistory(pool, limit, body.addresses, afterInfo, untilBlockNum.value);
     switch(maybeTxs.kind) {
     case "ok":{
-      const txs = maybeTxs.value.map( tx => ({
-        hash: tx.hash,
-        fee: tx.fee,
-        metadata: tx.metadata,
-        valid_contract: tx.validContract,
-        script_size: tx.scriptSize,
-        //ttl: tx.ttl,
-        type: tx.blockEra,
-        withdrawals: tx.withdrawals,
-        certificates: tx.certificates,
-        tx_ordinal: tx.txIndex,
-        tx_state: "Successful", // graphql doesn't handle pending/failed txs
-        last_update: tx.includedAt,
-        block_num: tx.block.number,
-        block_hash: tx.block.hash,
-        time: tx.includedAt,
-        epoch: tx.block.epochNo,
-        slot: tx.block.slotNo,
-        inputs: tx.inputs,
-        collateral_inputs: tx.collateralInputs,
-        outputs: tx.outputs
-      }));
+      const txs = mapTransactionFragsToResponse(maybeTxs.value);
 
       res.send(txs);
       return;
