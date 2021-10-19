@@ -29,6 +29,7 @@ import { handleGetMultiAssetSupply } from "./services/multiAssetSupply";
 import { handleGetMultiAssetTxMintMetadata } from "./services/multiAssetTxMint";
 import { handleTxStatus } from "./services/txStatus";
 import { handleTipStatusGet, handleTipStatusPost } from "./services/tipStatus";
+import { handleGetTransactions } from "./services/transactions";
 
 import { HealthChecker } from "./HealthChecker";
 
@@ -303,6 +304,10 @@ const routes : Route[] = [
 , { path: "/v2/txs/history"
   , method: "post"
   , handler: txHistory 
+}
+, { path: "/v2/txs/get"
+  , method: "post"
+  , handler: handleGetTransactions(pool)
 }
 , { path: "/txs/signed"
   , method: "post"
