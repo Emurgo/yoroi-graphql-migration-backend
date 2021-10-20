@@ -424,17 +424,17 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
 
   ```
   {
-    "ids": string[]
+    "txHashes": string[]
   }
   ```
 
-  Output: the `ids` sent in the request are transformed into keys under the `depth` field, and the value corresponding to this key will be the number of blocks on top of the transaction
+  Output: the `txHashes` sent in the request are transformed into keys under the `depth` field, and the value corresponding to this key will be the number of blocks on top of the transaction
 
   ```
   {
     {
       "depth": {
-        "<id>": number
+        "<txHash>": number
       }
     }
   }
