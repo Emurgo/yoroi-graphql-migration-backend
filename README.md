@@ -387,27 +387,27 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
 
 <details>
   <summary>v2/txs/get</summary>
-  This endpoint returns the transactions' information given their IDs (TX hash).
+  This endpoint returns the transactions' information given their hashes (or ids).
 
   Since short rollbacks are common (by design) in Cardano Shelley, your app needs to be ready for this.
 
   Input
 
-  Up to 100 tx ids in the request
+  Up to 100 tx hashes in the request
 
   ```js
   {
-   ids: string[],
+   txHashes: string[],
   }
   ```
 
   Output
 
-  Up to `100` transactions are returned. Transactions which are not yet on-chain will be ignored and won't be included in the response. The `ids` sent in the request are transformed into keys under the `txs` object, and the value corresponding to this key is the transaction information
+  Up to `100` transactions are returned. Transactions which are not yet on-chain will be ignored and won't be included in the response. The `txHashes` sent in the request are transformed into keys under the `txs` object, and the value corresponding to this key is the transaction information
 
   ```js
   txs: {
-    "<id>": {
+    "<txHash>": {
       // information that is only present if block is included in the blockchain
       block_num: null | number,
       block_hash: null | string,
