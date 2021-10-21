@@ -372,22 +372,29 @@ const routes : Route[] = [
       behindBy.months != null ||
       behindBy.days != null || 
       behindBy.hours != null) {
-        throw new Error("Server behind by " + JSON.stringify(behindBy)); 
+        res.status(503).send({behindBy, isOK: "False"});
+        //throw new Error("Server behind by " + JSON.stringify(behindBy)); 
     }
     else if (behindBy.minutes == null && maxMinutes == 0
       && (behindBy.seconds == null || behindBy.seconds < maxSeconds)) {
-      res.send({behindBy, isOK: "OK"});
+      res.send({behindBy, isOK: "True"});
     }
     else if ((behindBy.minutes == null || behindBy.minutes <= maxMinutes) 
       && (behindBy.seconds == null || behindBy.seconds < maxSeconds)) {
-      res.send({behindBy, isOK: "OK"});
+      res.send({behindBy, isOK: "True"});
+    }
+    else if ((maxMinutes > 0 && (behindBy.minutes == null || behindBy.minutes < maxMinutes)) 
+      && (behindBy.seconds == null || behindBy.seconds >= maxSeconds)) {
+      res.send({behindBy, isOK: "True"});
     }
     else {
-      throw new Error("Server behind by " + JSON.stringify(behindBy));
+      res.status(503).send({behindBy, isOK: "False"});
+      //throw new Error("Server behind by " + JSON.stringify(behindBy));
     }
   }
   else {
-    throw new Error(response.errMsg);
+    res.status(503).send({errMsg: response.errMsg, isOK: "False"});
+    //throw new Error(response.errMsg);
   }
 }}, 
 { path: "/status"

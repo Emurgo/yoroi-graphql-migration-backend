@@ -1,7 +1,7 @@
 export default { 
   db: {
-    user: process.env.POSTGRES_USER || "hasura",
-    host: process.env.POSTGRES_HOST || "/tmp/",
+    user: process.env.POSTGRES_USER || "",
+    host: process.env.POSTGRES_HOST || "/var/run/postgresql",
     database: process.env.POSTGRES_DB || "cexplorer",
     password: process.env.POSTGRES_PASSWORD || ""
   },
