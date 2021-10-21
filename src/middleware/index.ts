@@ -1,4 +1,4 @@
-import {  NextFunction, Request, Response, Router,  } from "express";
+import { NextFunction, Request, Response, Router } from "express";
 import cors from "cors";
 import parser from "body-parser";
 import compression from "compression";
@@ -11,7 +11,7 @@ export const handleBodyRequestParsing = (router: Router):void => {
   router.use(parser.json());
 };
 
-export const handleCompression = (router: Router):void => {
+export const handleCompression = (router: Router): void => {
   router.use(compression());
 };
 
