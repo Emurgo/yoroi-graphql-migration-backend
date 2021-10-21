@@ -372,7 +372,7 @@ const routes : Route[] = [
       behindBy.months != null ||
       behindBy.days != null || 
       behindBy.hours != null) {
-        res.status(503).send({behindBy, isOK: "False"})
+        res.status(503).send({behindBy, isOK: "False"});
         //throw new Error("Server behind by " + JSON.stringify(behindBy)); 
     }
     else if (behindBy.minutes == null && maxMinutes == 0
@@ -388,12 +388,12 @@ const routes : Route[] = [
       res.send({behindBy, isOK: "True"});
     }
     else {
-      res.status(503).send({behindBy, isOK: "False"})
+      res.status(503).send({behindBy, isOK: "False"});
       //throw new Error("Server behind by " + JSON.stringify(behindBy));
     }
   }
   else {
-    res.status(503).send({errMsg: response.errMsg, isOK: "False"})
+    res.status(503).send({errMsg: response.errMsg, isOK: "False"});
     //throw new Error(response.errMsg);
   }
 }}, 
