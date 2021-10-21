@@ -68,8 +68,7 @@ const utxoForAddressesV2Query = `SELECT tx_out.address,
                ) AS json_agg
             FROM ma_tx_out
             WHERE ma_tx_out.tx_out_id = tx_out.id
-        ) AS assets,
-       COUNT(*) OVER (RANGE UNBOUNDED PRECEDING)
+        ) AS assets
 FROM tx
     JOIN tx_out ON tx.id = tx_out.tx_id
     JOIN block ON block.id = tx.block_id
