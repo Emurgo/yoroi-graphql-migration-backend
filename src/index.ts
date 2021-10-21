@@ -15,7 +15,7 @@ import * as utils from "./utils";
 import * as middleware from "./middleware";
 
 import { askBestBlock } from "./services/bestblock";
-import { utxoForAddresses } from "./services/utxoForAddress";
+import { utxoForAddresses, utxoForAddressesV2 } from "./services/utxoForAddress";
 import { askBlockNumByHash, askBlockNumByTxHash, askTransactionHistory } from "./services/transactionHistory";
 import type { BlockNumByTxHashFrag } from "./services/transactionHistory";
 import { filterUsedAddresses } from "./services/filterUsedAddress";
@@ -32,6 +32,7 @@ import { HealthChecker } from "./HealthChecker";
 import { createCertificatesView } from "./Transactions/certificates";
 import { createTransactionOutputView } from "./Transactions/output";
 import { createValidUtxosView } from "./Transactions/valid_utxos_view";
+import { createUtxoFunctions } from "./Transactions/utxoFunctions";
 import {poolDelegationHistory} from "./services/poolHistory";
 import {handleGetCardanoWalletPools} from "./services/cardanoWallet";
 
@@ -44,6 +45,7 @@ const pool = new Pool({ user: config.get("db.user")
 createCertificatesView(pool);
 createValidUtxosView(pool);
 createTransactionOutputView(pool);
+createUtxoFunctions(pool);
 
 
 const healthChecker = new HealthChecker(() => askBestBlock(pool));
@@ -298,6 +300,10 @@ const routes : Route[] = [
 , { path: "/txs/utxoForAddresses"
   , method: "post"
   , handler: utxoForAddresses(pool)
+}
+, { path: "/v2/txs/utxoForAddresses"
+  , method: "post"
+  , handler: utxoForAddressesV2(pool)
 }
 , { path: "/txs/utxoSumForAddresses"
   , method: "post"
