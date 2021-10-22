@@ -3,19 +3,12 @@ import { Pool } from "pg";
 import { UtilEither} from "../utils";
 
 export interface CardanoFrag {
-  behindby: {
-    years?: number,
-    months?: number,
-    days?: number,
-    hours?: number,
-    minutes?: number,
-    seconds?: number,
-  };
+  behindby: number; 
 }
 
 export const askBehindBy = async (pool: Pool) : Promise<UtilEither<CardanoFrag>> => {
   const query = `
-  select now() - max(time) as behindBy from block;
+  select EXTRACT(EPOCH FROM (now() - max(time))) as behindBy from block;
 `;
 
 const behindBy = await pool.query(query);
