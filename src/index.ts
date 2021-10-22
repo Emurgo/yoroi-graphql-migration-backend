@@ -26,6 +26,7 @@ import { handleGetAccountState } from "./services/accountState";
 import { handleGetRegHistory } from "./services/regHistory";
 import { handleGetRewardHistory } from "./services/rewardHistory";
 import { handleGetMultiAssetTxMintMetadata } from "./services/multiAssetTxMint";
+import { handleTxStatus } from "./services/txStatus";
 
 import { HealthChecker } from "./HealthChecker";
 
@@ -333,8 +334,13 @@ const routes : Route[] = [
     path: "/multiAsset/metadata",
     method: "post",
     handler: handleGetMultiAssetTxMintMetadata(pool)
-  }
-, { path: "/v2/importerhealthcheck"
+  },
+  {
+    path: "/tx/status",
+    method: "post",
+    handler: handleTxStatus(pool)
+  },
+  { path: "/v2/importerhealthcheck"
   , method: "get"
   , handler: async (_req: Request, res: Response) => {
     const status = healthChecker.getStatus();
