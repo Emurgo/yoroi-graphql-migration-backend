@@ -27,12 +27,14 @@ import { handleGetRegHistory } from "./services/regHistory";
 import { handleGetRewardHistory } from "./services/rewardHistory";
 import { handleGetMultiAssetTxMintMetadata } from "./services/multiAssetTxMint";
 import { handleGetTransactions } from "./services/transactions";
+import { handleTxStatus } from "./services/txStatus";
 
 import { HealthChecker } from "./HealthChecker";
 
 import { createCertificatesView } from "./Transactions/certificates";
 import { createTransactionOutputView } from "./Transactions/output";
 import { createTransactionUtilityFunctions } from "./Transactions/userDefinedFunctions";
+import { createValidUtxosView } from "./Transactions/valid_utxos_view";
 import {poolDelegationHistory} from "./services/poolHistory";
 import {handleGetCardanoWalletPools} from "./services/cardanoWallet";
 
@@ -48,6 +50,7 @@ const pool = new Pool({ user: config.get("db.user")
   , port: config.get("db.port")
   });
 createCertificatesView(pool);
+createValidUtxosView(pool);
 createTransactionOutputView(pool);
 createTransactionUtilityFunctions(pool);
 
@@ -319,8 +322,13 @@ const routes : Route[] = [
     path: "/multiAsset/metadata",
     method: "post",
     handler: handleGetMultiAssetTxMintMetadata(pool)
-  }
-, { path: "/v2/importerhealthcheck"
+  },
+  {
+    path: "/tx/status",
+    method: "post",
+    handler: handleTxStatus(pool)
+  },
+  { path: "/v2/importerhealthcheck"
   , method: "get"
   , handler: async (_req: Request, res: Response) => {
     const status = healthChecker.getStatus();

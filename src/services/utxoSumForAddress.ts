@@ -3,12 +3,10 @@ import {Pool} from "pg";
 
 export const askUtxoSumForAddresses = async (pool: Pool, addresses: string[]): Promise<UtilEither<string>> => {
   // TODO: support for payment keys
-    const sqlQuery = `
-    SELECT "public"."utxo_view"."value" AS "value"
-    FROM "public"."utxo_view"
-    WHERE "public"."utxo_view"."address" = any(($1)::varchar array)
-    GROUP BY "public"."utxo_view"."value"
-    ORDER BY "public"."utxo_view"."value" ASC
+  const sqlQuery = `
+  SELECT SUM(value) as value
+  FROM valid_utxos_view
+  WHERE address = any(($1)::varchar array)
   `;
 
     if(addresses.length == 0)
