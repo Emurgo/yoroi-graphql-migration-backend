@@ -14,7 +14,7 @@ export const askUtxoSumForAddresses = async (pool: Pool, addresses: string[]): P
     SELECT SUM(ma_utxo.quantity) amount,
       encode(ma_utxo.policy, 'hex') as policy,
       encode(ma_utxo.name, 'hex') as name
-    FROM utxo_view utxo
+    FROM valid_utxos_view utxo
       INNER JOIN ma_tx_out ma_utxo ON utxo.id = ma_utxo.tx_out_id
     WHERE address = any(($1)::varchar array)
     GROUP BY
