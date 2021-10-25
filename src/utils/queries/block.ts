@@ -36,7 +36,7 @@ export const getBlock = (pool: Pool) => async (hash: string): Promise<BlockFrag>
   );
 
   if (!result.rows || result.rows.length === 0) {
-    throw new Error(`error, there's no block with the hash ${hash}!`);
+    throw new Error("REFERENCE_BLOCK_NOT_FOUND");
   }
 
   const row = result.rows[0];

@@ -15,7 +15,8 @@ import * as utils from "./utils";
 import * as middleware from "./middleware";
 
 import { askBestBlock } from "./services/bestblock";
-import { utxoForAddresses, utxoForAddressesV2 } from "./services/utxoForAddress";
+import { utxoForAddresses } from "./services/utxoForAddress";
+import { utxoAtPoint } from "./services/utxoAtPoint";
 import { askBlockNumByHash, askBlockNumByTxHash, askTransactionHistory } from "./services/transactionHistory";
 import type { BlockNumByTxHashFrag } from "./services/transactionHistory";
 import { filterUsedAddresses } from "./services/filterUsedAddress";
@@ -301,9 +302,9 @@ const routes : Route[] = [
   , method: "post"
   , handler: utxoForAddresses(pool)
 }
-, { path: "/v2/txs/utxoForAddresses"
+, { path: "/v2/txs/utxoAtPoint"
   , method: "post"
-  , handler: utxoForAddressesV2(pool)
+  , handler: utxoAtPoint(pool)
 }
 , { path: "/txs/utxoSumForAddresses"
   , method: "post"

@@ -90,11 +90,11 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
 </details>
 
 <details>
-  <summary>v2/txs/utxoForAddresses</summary>
-  This is a V2 endpoint based on the previous `/txs/utxoForAddresses`. It adds capabilities for passing a reference block and pagination information.
+  <summary>v2/txs/utxoAtPoint</summary>
+  This is endpoint is based on the current `/txs/utxoForAddresses`. It adds capabilities for passing a reference block and pagination information.
 
 
-  `referenceBlock` is optional and if not informed, the current latest block will be used. Passing the reference block basically means you are asking for a "snapshot" of how was the UTxO information for the given addresses up to that block, meaning UTxOs created in transactions from blocks after `referenceBlock` won't be included, but also that UTxOs spent only in blocks after `referenceBlock` will actually be included in the response.
+  `referenceBlockHash` is optional and if not informed, the current latest block will be used. Passing the reference block basically means you are asking for a "snapshot" of how was the UTxO information for the given addresses up to that block, meaning UTxOs created in transactions from blocks after `referenceBlockHash` won't be included, but also that UTxOs spent only in blocks after `referenceBlockHash` will actually be included in the response.
   
   OBS: we don't actually take snapshots, such information can be inferred from on-chain data.
 
@@ -106,11 +106,9 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   {
     // byron addresses, bech32 address, bech32 stake addresses or addr_vkh
     addresses: Array<string>,
-    pagination: {
-      limit: number,
-      offset: number
-    },
-    referenceBlock?: string // the hash of the block
+    page: number,
+    pageSize: number,
+    referenceBlockHash?: string // the hash of the block
   }
   ```
 
