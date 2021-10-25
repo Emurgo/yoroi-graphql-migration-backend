@@ -1,3 +1,5 @@
+import config from "config";
+
 import { Pool } from "pg";
 import { Request, Response } from "express";
 
@@ -8,13 +10,15 @@ const safeBlockQuery = `SELECT epoch_no AS "epoch",
     encode(hash, 'hex') as hash,
     block_no AS height
 FROM BLOCK
-WHERE block_no <= (SELECT MAX(block_no) FROM block) - 10
+WHERE block_no <= (SELECT MAX(block_no) FROM block) - ($1)::int
 ORDER BY id DESC
 LIMIT 1;
 `;
 
 export const handleSafeBlock = (pool: Pool) => async (req: Request, res: Response) => {
-    const result = await pool.query(safeBlockQuery);
+    const safeBlockDifference = parseInt(config.get("safeBlockDifference"));
+
+    const result = await pool.query(safeBlockQuery, [safeBlockDifference]);
     if (result.rowCount === 0) throw new Error("no blocks found!");
 
     const row = result.rows[0];
