@@ -2,12 +2,7 @@ import { Pool } from "pg";
 
 import { UtilEither} from "../utils";
 
-export interface CardanoFrag {
-  epoch: number;
-  slot: number;
-  hash: string;
-  height: number;
-}
+import { CardanoFrag } from "../Transactions/types";
 
 export const askBestBlock = async (pool: Pool) : Promise<UtilEither<CardanoFrag>> => {
   const query = `
