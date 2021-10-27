@@ -29,6 +29,7 @@ import { handleGetRewardHistory } from "./services/rewardHistory";
 import { handleGetMultiAssetTxMintMetadata } from "./services/multiAssetTxMint";
 import { handleTxStatus } from "./services/txStatus";
 import { handleSafeBlock } from "./services/safeBlock";
+import { handleUtxoDiffSincePoint } from "./services/utxoDiffSincePoint";
 
 import { HealthChecker } from "./HealthChecker";
 
@@ -314,6 +315,10 @@ const routes : Route[] = [
 , { path: "/v2/txs/utxoAtPoint"
   , method: "post"
   , handler: utxoAtPoint(pool)
+}
+, { path: "/v2/txs/utxoDiffSincePoint"
+  , method: "post"
+  , handler: handleUtxoDiffSincePoint(pool)
 }
 , { path: "/txs/utxoSumForAddresses"
   , method: "post"
