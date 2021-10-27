@@ -68,6 +68,9 @@ export const utxoAtPoint = (pool: Pool) => async (req: Request, res: Response) =
   switch (verifiedAddresses.kind) {
     case "ok": {
       const referenceBlock = await getBlock(pool)(req.body.referenceBlockHash);
+      if (!referenceBlock) {
+        throw new Error("REFERENCE_BLOCK_NOT_FOUND");
+      }
 
       const result = await pool.query(
         utxoAtPointQuery,

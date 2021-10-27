@@ -28,7 +28,7 @@ export const getLatestBlock = async (pool: Pool): Promise<BlockFrag> => {
   };
 };
 
-export const getBlock = (pool: Pool) => async (hash: string): Promise<BlockFrag> => {
+export const getBlock = (pool: Pool) => async (hash: string): Promise<BlockFrag | undefined> => {
   const result = await pool.query(
     `${baseGetBlockQuery}
     WHERE encode(hash, 'hex') = ($1)::varchar`,
@@ -36,7 +36,7 @@ export const getBlock = (pool: Pool) => async (hash: string): Promise<BlockFrag>
   );
 
   if (!result.rows || result.rows.length === 0) {
-    throw new Error("REFERENCE_BLOCK_NOT_FOUND");
+    return undefined;
   }
 
   const row = result.rows[0];
