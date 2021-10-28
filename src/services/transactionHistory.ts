@@ -12,7 +12,7 @@ import {
 } from "../Transactions/types";
 
 import {
-  TransactionMetadata,
+  GeneralTransactionMetadata,
   TransactionMetadatum,
   BigNum,
 } from "@emurgo/cardano-serialization-lib-nodejs";
@@ -235,7 +235,7 @@ function buildMetadataObj(
   metadataMap: null | Record<string, string>
 ): (null | string) {
   if (metadataMap == null) return null;
-  const metadataWasm = TransactionMetadata.new();
+  const metadataWasm = GeneralTransactionMetadata.new();
   for (const key of Object.keys(metadataMap)) {
     const keyWasm = BigNum.from_str(key);
     // the cbor inserted into SQL is not the full metadata for the transaction
