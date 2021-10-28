@@ -1,6 +1,7 @@
 import config from "config";
 import axios from "axios";
 import { Request, Response } from "express";
+import { calculateTxId } from "../utils";
 
 const submissionEndpoint: string = config.get("server.txSubmissionEndpoint");
 
@@ -16,13 +17,15 @@ export const handleSignedTx = async (
 ): Promise<void> => {
   if (!req.body.signedTx) throw new Error("No signedTx in body");
 
-  const buffer = Buffer.from(req.body.signedTx, "base64");
-
   try {
+    const buffer = Buffer.from(req.body.signedTx, "base64");
+    const txId = await calculateTxId(buffer.toString("base64"));
+
     await axios({
       method: "post"
       , url: submissionEndpoint
       , data: {
+        txId: txId,
         signedTx: buffer.toString("base64")
       }
       , headers: contentTypeHeaders
