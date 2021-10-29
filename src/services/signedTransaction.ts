@@ -28,7 +28,7 @@ export const handleSignedTx = async (req: Request, res: Response): Promise<void>
       }
       , headers: contentTypeHeaders
     });
-    res.status(200).send("OK");
+    res.status(200).send({txId});
   } catch (err) {
     console.error(err);
     res.status(500).send("Error submitting the TX");
