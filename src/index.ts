@@ -6,6 +6,7 @@ import axios from "axios";
 import { Request, Response } from "express";
 
 import { Pool } from "pg";
+import { getTokenInfoHandler } from "./token-registry/getTokenInfo";
 
 // eslint-disable-next-line
 const semverCompare = require("semver-compare");
@@ -305,6 +306,10 @@ const routes : Route[] = [
 , { path: "/getPrice"
   , method: "get"
   , handler: price
+},
+{ path: "/getTokenInfo"
+  , method: "post"
+  , handler: getTokenInfoHandler
 },
   {
     path: "/pool/delegationHistory",
