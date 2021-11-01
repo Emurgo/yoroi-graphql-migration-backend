@@ -6,8 +6,8 @@ export default {
     password: process.env.POSTGRES_PASSWORD || "",
   },
   maxTimeHealthCheck: {
-    minutes: 2,
-    seconds: 30,
+    minutes: 3,
+    seconds: 10,
   },
   server: {
     addressRequestLimit: 50,
