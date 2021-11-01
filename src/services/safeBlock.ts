@@ -19,7 +19,7 @@ export const handleSafeBlock = (pool: Pool) => async (req: Request, res: Respons
     const safeBlockDifference = parseInt(config.get("safeBlockDifference"));
 
     const result = await pool.query(safeBlockQuery, [safeBlockDifference]);
-    if (result.rowCount === 0) throw new Error("no blocks found!");
+    if (result.rowCount === 0) throw new Error(`Unable to determine safe block with the expected depth of: ${safeBlockDifference}!`);
 
     const row = result.rows[0];
 
