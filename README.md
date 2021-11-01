@@ -277,7 +277,11 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
 
   ```js
   {
-    sum: ?string
+    sum: ?string,
+    tokensBalance: [
+      amount: string,
+      assetId: string
+    ]
   }
   ```
 </details>

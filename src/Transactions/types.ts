@@ -187,3 +187,13 @@ export const rowToCertificate = (row:any):Certificate|null => {
     return null;
   }
 };
+
+export interface UtxoSumResponse {
+  sum: string;
+  tokensBalance: TokenBalace[];
+}
+
+export interface TokenBalace {
+  assetId: string;
+  amount: string;
+}
