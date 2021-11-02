@@ -31,7 +31,7 @@ const extractBodyParameters = (pool: Pool) => async (body: any): Promise<{
   }
 
   const untilBlockHash: string = body.untilBlockHash;
-  if(!body.addresses) {
+  if(!body.untilBlockHash) {
     throw new Error("error, no untilBlockHash.");
   }
 
