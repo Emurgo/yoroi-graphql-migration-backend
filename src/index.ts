@@ -27,6 +27,7 @@ import { handleGetRegHistory } from "./services/regHistory";
 import { handleGetRewardHistory } from "./services/rewardHistory";
 import { handleGetMultiAssetTxMintMetadata } from "./services/multiAssetTxMint";
 import { handleTxStatus } from "./services/txStatus";
+import { handleSafeBlock } from "./services/safeBlock";
 
 import { HealthChecker } from "./HealthChecker";
 
@@ -294,6 +295,10 @@ const routes : Route[] = [
 , {   path: "/v2/bestblock"
   , method: "get"
   , handler: bestBlock(pool)
+}
+, {   path: "/v2/safeblock"
+  , method: "get"
+  , handler: handleSafeBlock(pool)
 }
 , { path: "/v2/addresses/filterUsed"
   , method: "post"
