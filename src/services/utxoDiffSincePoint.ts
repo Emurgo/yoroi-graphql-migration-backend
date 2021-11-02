@@ -73,24 +73,32 @@ const extractBodyParameters = (pool: Pool) => async (body: any): Promise<{
       afterPoint
     };
   } else {
-    const latestBlock = await getLatestBlock(pool);
     const safeBlockDifference = parseInt(config.get("safeBlockDifference"));
 
-    const getBlocksQuery = `SELECT encode(hash, 'hex') as "hash", block_no as "blockNumber"
+    const bestBlockQuery = `SELECT encode(hash, 'hex') as "hash", block_no as "blockNumber"
       FROM block
       WHERE encode(hash, 'hex') = any(($1)::varchar array)
         AND block_no IS NOT NULL
-      ORDER BY block_no DESC`;
+      LIMIT 1`;
+
+    const safeBlockQuery = `SELECT encode(hash, 'hex') as "hash", block_no as "blockNumber"
+      FROM block
+      WHERE encode(hash, 'hex') = any(($1)::varchar array)
+        AND block_no IS NOT NULL
+        AND block_no <= (SELECT MAX(block_no) FROM block) - ($2)::int
+      LIMIT 1`;
     
-    const result = await pool.query(getBlocksQuery, [afterBestBlocks]);
-    if (result.rowCount === 0) {
+    const bestBlockResult = await pool.query(bestBlockQuery, [afterBestBlocks]);
+    if (bestBlockResult.rowCount === 0) {
       throw new Error("REFERENCE_POINT_BLOCK_NOT_FOUND");
     }
+    const lastFoundBestBlock: string = bestBlockResult.rows[0].hash;
 
-    const lastFoundBestBlock: string = result.rows[0].hash;
-
-    const lastFoundSafeBlockRow = result.rows.find(r => r.blockNumber <= latestBlock.number - safeBlockDifference);
-    const lastFoundSafeBlock: string = lastFoundSafeBlockRow.hash;
+    const safeBlockResult = await pool.query(safeBlockQuery, [afterBestBlocks, safeBlockDifference]);
+    if (safeBlockResult.rowCount === 0) {
+      throw new Error("REFERENCE_POINT_BLOCK_NOT_FOUND");
+    }
+    const lastFoundSafeBlock: string = safeBlockResult.rows[0].hash;
 
     afterPoint = { blockHash: lastFoundBestBlock };
 
