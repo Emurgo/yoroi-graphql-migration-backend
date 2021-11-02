@@ -4,7 +4,8 @@ export const createViewSql = `
 drop view if exists valid_utxos_view;
 create view valid_utxos_view as
 SELECT
-  tx_out.address
+  tx_out.id
+  , tx_out.address
   , tx_out.payment_cred
   , encode(tx.hash,'hex') as hash
   , tx_out.index

@@ -28,6 +28,7 @@ import { handleGetRewardHistory } from "./services/rewardHistory";
 import { handleGetMultiAssetTxMintMetadata } from "./services/multiAssetTxMint";
 import { handleGetTransactions } from "./services/transactions";
 import { handleTxStatus } from "./services/txStatus";
+import { handleSafeBlock } from "./services/safeBlock";
 
 import { HealthChecker } from "./HealthChecker";
 
@@ -97,7 +98,7 @@ const utxoSumForAddresses = async (req: Request, res:Response) => {
     const result = await askUtxoSumForAddresses(pool, verifiedAddresses.value);
     switch(result.kind) {
     case "ok":
-      res.send({ sum: result.value });
+      res.send(result.value);
       return;
     case "error":
       throw new Error(result.errMsg);
@@ -278,6 +279,10 @@ const routes : Route[] = [
 , {   path: "/v2/bestblock"
   , method: "get"
   , handler: bestBlock(pool)
+}
+, {   path: "/v2/safeblock"
+  , method: "get"
+  , handler: handleSafeBlock(pool)
 }
 , { path: "/v2/addresses/filterUsed"
   , method: "post"
