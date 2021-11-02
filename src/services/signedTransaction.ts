@@ -3,16 +3,23 @@ import axios from "axios";
 import { Request, Response } from "express";
 
 const submissionEndpoint :string = config.get("server.txSubmissionEndpoint");
+const blockfrostProjectKey :string = config.get("blockfrostProjectKey");
 
-const contentTypeHeaders = {"Content-Type": "application/octet-stream"}; // THIS IS FOR CARDANO-WALLET, CBOR IS FOR CARDANO-SUBMIT-API (1.27.0).
-// const contentTypeHeaders = {"Content-Type": "application/cbor"};
+// const contentTypeHeaders = {"Content-Type": "application/octet-stream"}; // THIS IS FOR CARDANO-WALLET, CBOR IS FOR CARDANO-SUBMIT-API (1.27.0).
+const contentTypeHeaders = {
+  "Content-Type": "application/cbor",
+  "User-Agent": "flint-wallet",
+  "Cache-Control": "no-cache",
+  "project_id": blockfrostProjectKey,
+};
 
-export const handleSignedTx = async (req: Request, res: Response): Promise<void> => {
+export const handleSignedTx = async (req: Request, res: Response<any[]>): Promise<void> => {
+  console.log(req.body);
   if (!req.body.signedTx)
     throw new Error("No signedTx in body");
 
   const buffer = Buffer.from(req.body.signedTx, "base64");
-  const LOGGING_MSG_HOLDER: [any, any] = [null, null];
+  const LOGGING_MSG_HOLDER: [null | string, null | string] = [null, null];
   try {
     const endpointResponse: any = await axios({
       method: "post"
@@ -33,17 +40,12 @@ export const handleSignedTx = async (req: Request, res: Response): Promise<void>
       return r;
     }, err => {
       try {
-        LOGGING_MSG_HOLDER[1] = `ERR: ${JSON.stringify(err)}`;
+        LOGGING_MSG_HOLDER[1] = `ERR: ${JSON.stringify(err.response.data)}`;
       } catch (e) {
         LOGGING_MSG_HOLDER[1] = `ERR_ERR: ${err}`;
       }
     });
-    if (endpointResponse.status === 202) {
-      if (endpointResponse.data.Left) {
-        const msg = `Transaction was rejected: ${endpointResponse.data.Left}`;
-        console.log("signedTransaction request body: " + req.body.signedTx);
-        throw Error(msg);
-      }
+    if (endpointResponse.status === 200) {
       res.send([]);
       return;
     } else {

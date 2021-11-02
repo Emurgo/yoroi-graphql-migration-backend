@@ -17,11 +17,12 @@ export default {
       process.env.tokenInfoURL || "http://localhost:8091/v1/getTokenInfo",
     txSubmissionEndpoint:
       process.env.TX_SUBMISSION_ENDPOINT ||
-      "https://backend.yoroiwallet.com/api/submit/tx",
+      "https://cardano-mainnet.blockfrost.io/api/v0/tx/submit",
     smashEndpoint:
       process.env.SMASH_ENDPOINT ||
       "https://smash.yoroiwallet.com/api/v1/metadata/",
     port: process.env.PORT || 8082,
     txsHashesRequestLimit: 150,
   },
+  blockfrostProjectKey: process.env.BLOCKFORST || ""
 };
