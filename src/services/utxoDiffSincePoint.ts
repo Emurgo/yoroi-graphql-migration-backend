@@ -4,7 +4,7 @@ import { Pool } from "pg";
 import { Request, Response } from "express";
 import { isNaN } from "lodash";
 
-import { getBlock, getLatestBlock } from "../utils/queries/block";
+import { getBlock } from "../utils/queries/block";
 import { assertNever, validateAddressesReq, getAddressesByType } from "../utils";
 
 const addressesRequestLimit:number = config.get("server.addressRequestLimit");
