@@ -37,7 +37,7 @@ export const getCardanoWalletPools = async (pool: Pool, limit: number, offset: n
     }
 };
 
-export const handleGetCardanoWalletPools = (pool: Pool) => async (req: Request, res: Response): Promise<void> => {
+export const handleGetCardanoWalletPools = (pool: Pool) => async (req: Request, res: Response<CardanoWalletPool[]>): Promise<void> => {
     let limit = 100;
     if (req.body.limit != null && req.body.limit < limit) {
         limit = req.body.limit;

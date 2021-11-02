@@ -57,7 +57,7 @@ export const metadataDataFromSmash = async (p: Pool, hash: string): Promise<Util
 };
 
 // Note: the results are NOT sorted on purpose
-export const poolDelegationHistory = (p: Pool) => async (req: Request, res: Response): Promise<void>=> {
+export const poolDelegationHistory = (p: Pool) => async (req: Request, res: Response<DelegationRangeResponse[]>): Promise<void>=> {
     if(!req.body.poolRanges)
         throw new Error ("No poolRanges dictionary in body");
 

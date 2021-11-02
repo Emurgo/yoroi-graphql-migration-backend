@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 
 import config from "config";
 import {assertNever, validateAddressesReq, getAddressesByType, extractAssets,} from "../utils";
+import { Asset } from "../Transactions/types";
 
 const utxoForAddressQuery = `
   select tx_out.address
@@ -28,7 +29,17 @@ const utxoForAddressQuery = `
 
 const addressesRequestLimit:number = config.get("server.addressRequestLimit");
 
-export const utxoForAddresses = (pool: Pool) => async (req: Request, res: Response) => {
+type UtxoInfo = {
+  utxo_id: string, // concat tx_hash and tx_index
+  tx_hash: string,
+  tx_index: number,
+  block_num: number, // NOTE: not slot_no
+  receiver: string,
+  amount: string,
+  assets: Asset[],
+};
+
+export const utxoForAddresses = (pool: Pool) => async (req: Request, res: Response<Array<UtxoInfo>>) => {
   if(!req.body || !req.body.addresses) {
     throw new Error("error, no addresses.");
     return;

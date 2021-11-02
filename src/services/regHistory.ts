@@ -58,7 +58,7 @@ const askRegHistory = async (pool: Pool, addresses: string[]): Promise<Dictionar
   return ret;
 };
 
-export const handleGetRegHistory = (pool: Pool) => async (req: Request, res:Response): Promise<void> => {
+export const handleGetRegHistory = (pool: Pool) => async (req: Request, res:Response<Dictionary<Pointer[]>>): Promise<void> => {
   if(!req.body || !req.body.addresses) {
     throw new Error("no addresses.");
     return;
