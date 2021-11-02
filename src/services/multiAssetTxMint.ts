@@ -36,7 +36,7 @@ const getMultiAssetTxMintMetadata = async (pool: Pool, assets: Asset[]) => {
   return ret;
 };
 
-export const handleGetMultiAssetTxMintMetadata = (pool: Pool) => async (req: Request, res:Response): Promise<void> => {
+export const handleGetMultiAssetTxMintMetadata = (pool: Pool) => async (req: Request, res:Response<Record<string, MultiAssetTxMintMetadata[]>>): Promise<void> => {
   if (!req.body || !req.body.assets) throw new Error("missing assets on request body");
   if (!Array.isArray(req.body.assets)) throw new Error("assets should be an array");
   if (req.body.assets.length === 0) throw new Error("assets should not be empty");

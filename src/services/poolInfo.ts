@@ -87,7 +87,7 @@ export const smashPoolLookUp = async (p: Pool, hash: string): Promise<SmashLookU
   };
 };
 
-export const handlePoolInfo = (p: Pool) => async (req: Request, res: Response): Promise<void> => {
+export const handlePoolInfo = (p: Pool) => async (req: Request, res: Response<Dictionary<RemotePool | null>>): Promise<void> => {
   if(!req.body.poolIds)
     throw new Error ("No poolIds in body");
   const hashes = req.body.poolIds;

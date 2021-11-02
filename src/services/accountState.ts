@@ -72,7 +72,7 @@ const askAccountRewards = async (pool: Pool, addresses: string[]): Promise<Dicti
   return ret;
 };
 
-export const handleGetAccountState = (pool: Pool) => async (req: Request, res:Response): Promise<void> => {
+export const handleGetAccountState = (pool: Pool) => async (req: Request, res:Response<Dictionary<RewardInfo | null>>): Promise<void> => {
   if(!req.body || !req.body.addresses) {
     throw new Error("no addresses.");
     return;

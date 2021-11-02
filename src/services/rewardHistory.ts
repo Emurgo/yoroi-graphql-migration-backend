@@ -48,7 +48,7 @@ const askRewardHistory = async (pool: Pool, addresses: string[]): Promise<Dictio
   return ret;
 };
 
-export const handleGetRewardHistory = (pool: Pool) => async (req: Request, res:Response): Promise<void> => {
+export const handleGetRewardHistory = (pool: Pool) => async (req: Request, res:Response<Dictionary<RewardForEpoch[]>>): Promise<void> => {
   if(!req.body || !req.body.addresses) {
     throw new Error("no addresses.");
     return;

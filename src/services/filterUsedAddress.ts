@@ -32,7 +32,7 @@ const filterByPaymentCredQuery = `
 
 const addressesRequestLimit:number = config.get("server.addressRequestLimit");
 
-export const filterUsedAddresses = (pool : Pool) => async (req: Request, res: Response) => {
+export const filterUsedAddresses = (pool : Pool) => async (req: Request, res: Response<string[]>) => {
   if(!req.body || !req.body.addresses) {
     throw new Error("no addresses in request body.");
     return;
