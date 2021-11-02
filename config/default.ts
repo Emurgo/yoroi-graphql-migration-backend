@@ -24,5 +24,5 @@ export default {
     port: process.env.PORT || 8082,
     txsHashesRequestLimit: 150,
   },
-  blockfrostProjectKey: process.env.BLOCKFORST || ""
+  blockfrostProjectKey: process.env.BLOCKFROST || ""
 };
