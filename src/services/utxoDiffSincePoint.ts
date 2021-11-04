@@ -257,6 +257,7 @@ export const handleUtxoDiffSincePoint = (pool: Pool) => async (req: Request, res
 
       apiResponse.lastDiffPointSelected = {
         blockHash: lastRow.blockHash,
+        txHash: lastRow.hash,
         itemIndex: lastRow.index
       };
       apiResponse.diffItems = linearized;      
