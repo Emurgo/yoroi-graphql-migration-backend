@@ -17,7 +17,8 @@ enum DiffType {
 const extractBodyParameters = async (body: any): Promise<{
   addresses: string[],
   untilBlockHash: string,
-  afterPoint: {blockHash: string, itemIndex?: number},
+  afterPoint: {blockHash: string, itemIndex?: number, txHash?: string},
+  diffLimit: number
 }> => {
   if(!body) {
     throw new Error("error, missing request body.");
@@ -33,7 +34,13 @@ const extractBodyParameters = async (body: any): Promise<{
     throw new Error("error, no untilBlockHash.");
   }
 
-  const afterPointFromBody: {blockHash: string, itemIndex?: number | string} = body.afterPoint;
+  if (!body.diffLimit) {
+    throw new Error("error, no diffLimit.");
+  }
+
+  const diffLimit: number = body.diffLimit;
+
+  const afterPointFromBody: {blockHash: string, itemIndex?: number | string, txHash?: string} = body.afterPoint;
 
   if (!afterPointFromBody) {
     throw new Error("error, empty afterBestBlocks.");
@@ -43,9 +50,15 @@ const extractBodyParameters = async (body: any): Promise<{
     throw new Error("error, missing blockHash in afterPoint.");
   }
 
-  const afterPoint: {blockHash: string, itemIndex?: number} = {
+  const afterPoint: {blockHash: string, itemIndex?: number, txHash?: string} = {
     blockHash: afterPointFromBody.blockHash
   };
+
+  if (afterPointFromBody.itemIndex !== undefined || afterPointFromBody.txHash) {
+    if (!(afterPointFromBody.itemIndex !== undefined && afterPointFromBody.txHash)) {
+      throw new Error("error, if itemIndex or txHash are informed, both should be.");
+    }
+  }
 
   if (afterPointFromBody.itemIndex !== undefined && afterPointFromBody.itemIndex !== null) {
     if (isNaN(afterPointFromBody.itemIndex)) {
@@ -57,14 +70,17 @@ const extractBodyParameters = async (body: any): Promise<{
       : parseInt(afterPointFromBody.itemIndex);
     
     if (afterPoint.itemIndex < 0) {
-      throw new Error("error, itemIndex at afterPoint should be a positive number.");
+      throw new Error("error, itemIndex at afterPoint should be a positive number or zero.");
     }
+
+    afterPoint.txHash = afterPointFromBody.txHash;
   }
 
   return {
     addresses,
     untilBlockHash,
-    afterPoint
+    afterPoint,
+    diffLimit
   };
 };
 
@@ -118,7 +134,8 @@ const buildWhereClause = (validContract: boolean, useItemIndex: boolean) => {
       block.block_no > ($4)::uinteger
       OR (
         block.block_no >= ($4)::uinteger
-        AND tx_out.index > ($5)::uinteger
+        AND encode(tx.hash,'hex') = ($5)::varchar
+        AND tx_out.index > ($6)::uinteger
       )
     )`
     : "AND block.block_no > ($4)::uinteger"
@@ -155,7 +172,8 @@ const buildFullQuery = (useItemIndex: boolean) => {
     UNION ALL
     ${buildOutputQuery(useItemIndex)}
   ) as q
-  ORDER BY q."blockNumber", CASE q.type WHEN 'I' THEN 1 ELSE 0 END;`;
+  ORDER BY q."blockNumber", CASE q.type WHEN 'I' THEN 1 ELSE 0 END
+  LIMIT $${5 + (useItemIndex ? 2 : 0)}::uinteger;`;
 };
 
 export const handleUtxoDiffSincePoint = (pool: Pool) => async (req: Request, res: Response) => {
@@ -163,6 +181,7 @@ export const handleUtxoDiffSincePoint = (pool: Pool) => async (req: Request, res
     addresses,
     untilBlockHash,
     afterPoint,
+    diffLimit
   } = await extractBodyParameters(req.body);
 
   const untilBlock = await getBlock(pool)(untilBlockHash);
@@ -182,7 +201,7 @@ export const handleUtxoDiffSincePoint = (pool: Pool) => async (req: Request, res
 
   switch (verifiedAddresses.kind) {
     case "ok": {
-      const queryParameters = [
+      const queryParameters: any[] = [
         [
           ...addressTypes.legacyAddr,
           ...addressTypes.bech32,
@@ -193,8 +212,11 @@ export const handleUtxoDiffSincePoint = (pool: Pool) => async (req: Request, res
       ];
 
       if (afterPoint.itemIndex !== undefined) {
+        queryParameters.push(afterPoint.txHash);
         queryParameters.push(afterPoint.itemIndex);
       }
+
+      queryParameters.push(diffLimit);
 
       const result = await pool.query(
         fullQuery,
