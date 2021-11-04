@@ -3,6 +3,13 @@ import { Dictionary } from "../utils";
 export enum BlockEra { Byron = "byron"
                      , Shelley = "shelley"}
 
+export interface CardanoFrag {
+  epoch: number;
+  slot: number;
+  hash: string;
+  height: number;
+}
+
 export interface TransactionFrag {
     hash: string;
     fee: string;
@@ -187,3 +194,13 @@ export const rowToCertificate = (row:any):Certificate|null => {
     return null;
   }
 };
+
+export interface UtxoSumResponse {
+  sum: string;
+  tokensBalance: TokenBalace[];
+}
+
+export interface TokenBalace {
+  assetId: string;
+  amount: string;
+}

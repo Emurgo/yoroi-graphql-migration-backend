@@ -15,5 +15,6 @@ export default {
     txsHashesRequestLimit: 150,
     ogmiosAddress: process.env.OGMIOS_ADDRESS || "ogmios.waw.emurgo-rnd.com",
     ogmiosPort: process.env.OGMIOS_PORT || 1338
-  }
+  },
+  safeBlockDifference: process.env.SAFE_BLOCK_DIFFERENCE || "10"
 };
