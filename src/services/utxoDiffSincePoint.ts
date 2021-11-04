@@ -117,6 +117,7 @@ const extractBodyParameters = (pool: Pool) => async (body: any): Promise<{
 const buildSelectColumns = (type: DiffType) => {
   return `SELECT tx_out.address
   , encode(block.hash, 'hex') as "blockHash"
+  , tx_out.address
   , tx_out.payment_cred
   , encode(tx.hash,'hex') as hash
   , tx_out.index
@@ -272,10 +273,12 @@ export const handleUtxoDiffSincePoint = (pool: Pool) => async (req: Request, res
           linearized.push({
             type: DiffType.OUTPUT,
             id,
-            receiver: row.adddress,
+            receiver: row.address,
             amount: row.value,
             assets: extractAssets(row.assets),
-            block_num: row.blockNumber
+            block_num: row.blockNumber,
+            tx_hash: row.hash,
+            tx_index: row.index,
           });
         }
       }
