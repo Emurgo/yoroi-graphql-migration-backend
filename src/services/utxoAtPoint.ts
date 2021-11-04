@@ -69,7 +69,7 @@ export const utxoAtPoint = (pool: Pool) => async (req: Request, res: Response) =
     case "ok": {
       const referenceBlock = await getBlock(pool)(req.body.referenceBlockHash);
       if (!referenceBlock) {
-        throw new Error("REFERENCE_BLOCK_NOT_FOUND");
+        throw new Error("REFERENCE_POINT_BLOCK_NOT_FOUND");
       }
 
       const result = await pool.query(
