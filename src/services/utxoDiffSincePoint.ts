@@ -5,7 +5,7 @@ import { Request, Response } from "express";
 import { isNaN } from "lodash";
 
 import { getBlock } from "../utils/queries/block";
-import { assertNever, validateAddressesReq, getAddressesByType } from "../utils";
+import { assertNever, validateAddressesReq, getAddressesByType, extractAssets } from "../utils";
 
 const addressesRequestLimit:number = config.get("server.addressRequestLimit");
 
@@ -274,7 +274,7 @@ export const handleUtxoDiffSincePoint = (pool: Pool) => async (req: Request, res
             id,
             receiver: row.adddress,
             amount: row.value,
-            assets: row.assets,
+            assets: extractAssets(row.assets),
             block_num: row.blockNumber
           });
         }
