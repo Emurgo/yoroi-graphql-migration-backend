@@ -28,6 +28,7 @@ import { handleGetRewardHistory } from "./services/rewardHistory";
 import { handleGetMultiAssetTxMintMetadata } from "./services/multiAssetTxMint";
 import { handleTxStatus } from "./services/txStatus";
 import { handleSafeBlock } from "./services/safeBlock";
+import { handleTipStatusGet, handleTipStatusPost } from "./services/tipStatus";
 
 import { HealthChecker } from "./HealthChecker";
 
@@ -299,6 +300,14 @@ const routes : Route[] = [
 , {   path: "/v2/safeblock"
   , method: "get"
   , handler: handleSafeBlock(pool)
+}
+, {   path: "/v2/tipStatus"
+  , method: "get"
+  , handler: handleTipStatusGet(pool)
+}
+, {   path: "/v2/tipStatus"
+  , method: "post"
+  , handler: handleTipStatusPost(pool)
 }
 , { path: "/v2/addresses/filterUsed"
   , method: "post"
