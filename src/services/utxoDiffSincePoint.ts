@@ -14,12 +14,10 @@ enum DiffType {
   OUTPUT = "output"
 }
 
-const extractBodyParameters = (pool: Pool) => async (body: any): Promise<{
+const extractBodyParameters = async (body: any): Promise<{
   addresses: string[],
   untilBlockHash: string,
   afterPoint: {blockHash: string, itemIndex?: number},
-  lastFoundBestBlock?: string,
-  lastFoundSafeBlock?: string
 }> => {
   if(!body) {
     throw new Error("error, missing request body.");
@@ -35,83 +33,39 @@ const extractBodyParameters = (pool: Pool) => async (body: any): Promise<{
     throw new Error("error, no untilBlockHash.");
   }
 
-  const afterBestBlocks: string[] = body.afterBestBlocks;
   const afterPointFromBody: {blockHash: string, itemIndex?: number | string} = body.afterPoint;
-  let afterPoint: {blockHash: string, itemIndex?: number};
-  if (afterBestBlocks && afterPointFromBody || (!afterBestBlocks && !afterPointFromBody)) {
-    throw new Error("error, use either afterBestBlocks OR afterPoint.");
-  }
 
-  if (afterBestBlocks && afterBestBlocks.length === 0) {
+  if (!afterPointFromBody) {
     throw new Error("error, empty afterBestBlocks.");
   }
 
-  if (afterPointFromBody) {
-    if (!afterPointFromBody.blockHash) {
-      throw new Error("error, missing blockHash in afterPoint.");
-    }
-
-    afterPoint = {blockHash: afterPointFromBody.blockHash};
-
-    if (afterPointFromBody.itemIndex !== undefined && afterPointFromBody.itemIndex !== null) {
-      if (isNaN(afterPointFromBody.itemIndex)) {
-        throw new Error("error, itemIndex at afterPoint should be a number.");
-      }
-
-      afterPoint.itemIndex = typeof afterPointFromBody.itemIndex === "number"
-        ? afterPointFromBody.itemIndex
-        : parseInt(afterPointFromBody.itemIndex);
-      
-      if (afterPoint.itemIndex < 0) {
-        throw new Error("error, itemIndex at afterPoint should be a positive number.");
-      }
-    }
-
-    return {
-      addresses,
-      untilBlockHash,
-      afterPoint
-    };
-  } else {
-    const safeBlockDifference = parseInt(config.get("safeBlockDifference"));
-
-    const bestBlockQuery = `SELECT encode(hash, 'hex') as "hash", block_no as "blockNumber"
-      FROM block
-      WHERE encode(hash, 'hex') = any(($1)::varchar array)
-        AND block_no IS NOT NULL
-      ORDER BY block_no DESC
-      LIMIT 1`;
-
-    const safeBlockQuery = `SELECT encode(hash, 'hex') as "hash", block_no as "blockNumber"
-      FROM block
-      WHERE encode(hash, 'hex') = any(($1)::varchar array)
-        AND block_no IS NOT NULL
-        AND block_no <= (SELECT MAX(block_no) FROM block) - ($2)::int
-      ORDER BY block_no DESC
-      LIMIT 1`;
-    
-    const bestBlockResult = await pool.query(bestBlockQuery, [afterBestBlocks]);
-    if (bestBlockResult.rowCount === 0) {
-      throw new Error("REFERENCE_POINT_BLOCK_NOT_FOUND");
-    }
-    const lastFoundBestBlock: string = bestBlockResult.rows[0].hash;
-
-    const safeBlockResult = await pool.query(safeBlockQuery, [afterBestBlocks, safeBlockDifference]);
-    if (safeBlockResult.rowCount === 0) {
-      throw new Error("REFERENCE_POINT_BLOCK_NOT_FOUND");
-    }
-    const lastFoundSafeBlock: string = safeBlockResult.rows[0].hash;
-
-    afterPoint = { blockHash: lastFoundBestBlock };
-
-    return {
-      addresses,
-      untilBlockHash,
-      afterPoint,
-      lastFoundBestBlock,
-      lastFoundSafeBlock
-    };
+  if (!afterPointFromBody.blockHash) {
+    throw new Error("error, missing blockHash in afterPoint.");
   }
+
+  const afterPoint: {blockHash: string, itemIndex?: number} = {
+    blockHash: afterPointFromBody.blockHash
+  };
+
+  if (afterPointFromBody.itemIndex !== undefined && afterPointFromBody.itemIndex !== null) {
+    if (isNaN(afterPointFromBody.itemIndex)) {
+      throw new Error("error, itemIndex at afterPoint should be a number.");
+    }
+
+    afterPoint.itemIndex = typeof afterPointFromBody.itemIndex === "number"
+      ? afterPointFromBody.itemIndex
+      : parseInt(afterPointFromBody.itemIndex);
+    
+    if (afterPoint.itemIndex < 0) {
+      throw new Error("error, itemIndex at afterPoint should be a positive number.");
+    }
+  }
+
+  return {
+    addresses,
+    untilBlockHash,
+    afterPoint
+  };
 };
 
 const buildSelectColumns = (type: DiffType) => {
@@ -209,9 +163,7 @@ export const handleUtxoDiffSincePoint = (pool: Pool) => async (req: Request, res
     addresses,
     untilBlockHash,
     afterPoint,
-    lastFoundBestBlock,
-    lastFoundSafeBlock
-  } = await extractBodyParameters(pool)(req.body);
+  } = await extractBodyParameters(req.body);
 
   const untilBlock = await getBlock(pool)(untilBlockHash);
   if (!untilBlock) {
@@ -250,10 +202,6 @@ export const handleUtxoDiffSincePoint = (pool: Pool) => async (req: Request, res
       );
 
       const apiResponse = {} as any;
-      if (lastFoundBestBlock) {
-        apiResponse.lastFoundBestBlock = lastFoundBestBlock;
-        apiResponse.lastFoundSafeBlock = lastFoundSafeBlock;
-      }
 
       if (result.rows.length === 0) {
         apiResponse.diffItems = [];
