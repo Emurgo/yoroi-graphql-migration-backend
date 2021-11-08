@@ -41,8 +41,8 @@ jobs:
         with:
           context: .
           push: true
-          tags: dcspark/pricing-service:${{ github.event.release.tag_name }}
-          cache-from: type=registry,ref=dcspark/pricing-service:${{ github.event.release.tag_name }}
+          tags: dcspark/cardano-backend:${{ github.event.release.tag_name }}
+          cache-from: type=registry,ref=dcspark/cardano-backend:${{ github.event.release.tag_name }}
           cache-to: type=inline
           platforms: linux/amd64,linux/arm64
 
