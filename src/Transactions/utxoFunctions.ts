@@ -25,7 +25,7 @@ DROP FUNCTION IF EXISTS utxo_used_as_invalid_collateral;
 CREATE OR REPLACE FUNCTION utxo_used_as_invalid_collateral (
   _tx_out_tx_id bigint,
   _tx_out_index smallint,
-  _reference_block_no uinteger default null
+  _reference_block_no uinteger
 ) RETURNS bool AS $$
 BEGIN
     RETURN EXISTS((
