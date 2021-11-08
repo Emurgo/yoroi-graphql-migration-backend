@@ -1,4 +1,4 @@
-FROM node:12.19.0-alpine3.12
+FROM node:14.17.6-alpine3.13
 
 # Create app directory
 WORKDIR /usr/src/app
@@ -15,6 +15,6 @@ RUN npm install
 
 # Bundle app source
 
-EXPOSE 8080
+EXPOSE 8082
 CMD [ "node", "./dist/index.js" ]
 
