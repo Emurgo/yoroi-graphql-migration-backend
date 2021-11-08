@@ -7,10 +7,10 @@ on:
   release:
     # Only use the types keyword to narrow down the activity types that will trigger your workflow.
     types: [published, edited]
-  push:
-    tags:
-      - "v*.*.*"
-      - "pre-*"
+#   push:
+#     tags:
+#       - "v*.*.*"
+#       - "pre-*"
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
