@@ -1,67 +1,69 @@
+import {
+  formatTokenMetadata,
+  getMultiAssetTxMintMetadata,
+  PolicyIdAssetMapType,
+  PolicyIdAssetInfoMap,
+} from "./../utils/tokenMetadata";
+import axios from "axios";
+import config from "config";
 import { Pool } from "pg";
 import { Request, Response } from "express";
+import { isObject } from "lodash";
 
-interface Asset {
-  name: string
-  policy: string
-}
-
-interface MultiAssetTxMintMetadata {
-  key: string
-  metadata: any
-}
-
-const getMultiAssetTxMintMetadata = async (pool: Pool, assets: Asset[]) => {
-  const query = createGetMultiAssetTxMintMetadataQuery(assets);
-
-  const params = assets
-    .map(a => [a.name, a.policy])
-    .reduce((prev, curr) => prev.concat(curr), []);
-
-  const ret: {[key: string]: MultiAssetTxMintMetadata[]} = {};
-
-  const results = await pool.query(query, params);
-  for (const row of results.rows) {
-    const policyAndName = `${row.policy}.${row.asset}`;
-    if (!ret[policyAndName]) {
-      ret[policyAndName] = new Array<MultiAssetTxMintMetadata>();
+export const handleGetMultiAssetTxMintMetadata =
+  (pool: Pool) =>
+  async (req: Request, res: Response): Promise<void> => {
+    if (!req.body || !req.body.policyIdAssetMap) {
+      throw new Error("Missing policyIdAssetMap on request body.");
+    }
+    if (!isObject(req.body.policyIdAssetMap)) {
+      throw new Error("policyIdAssetMap should not be empty.");
     }
 
-    ret[policyAndName].push({
-      key: row.key,
-      metadata: row.json
-    });
-  }
+    const policyIdAssetMap: PolicyIdAssetMapType = req.body.policyIdAssetMap;
 
-  return ret;
-};
+    const metadata = await getMultiAssetTxMintMetadata(pool, policyIdAssetMap);
 
-export const handleGetMultiAssetTxMintMetadata = (pool: Pool) => async (req: Request, res:Response<Record<string, MultiAssetTxMintMetadata[]>>): Promise<void> => {
-  if (!req.body || !req.body.assets) throw new Error("missing assets on request body");
-  if (!Array.isArray(req.body.assets)) throw new Error("assets should be an array");
-  if (req.body.assets.length === 0) throw new Error("assets should not be empty");
-  if (req.body.assets.find((a: any) => !a.name || !a.policy)) throw new Error("all assets on body should have a name and a policy");
+    const mintTxResults: PolicyIdAssetInfoMap = formatTokenMetadata(
+      metadata,
+      policyIdAssetMap
+    );
 
-  const assets: Asset[] = req.body.assets;
+    const apiURL: string = config.get("server.tokenInfoFeed");
+    try {
+      const tokenRegistryResponse = await axios.post(apiURL, req.body);
+      switch (tokenRegistryResponse.status) {
+        case 500:
+          res
+            .status(500)
+            .send("Problem with the token registry API server. Server error.");
+          break;
+        case 400:
+          res.status(400).send(" Bad request token registry API server.");
+          break;
+        default:
+          if (tokenRegistryResponse.data?.success) {
+            const tokenRegistryData = tokenRegistryResponse.data?.data;
 
-  const metadata = await getMultiAssetTxMintMetadata(pool, assets);
-  res.send(metadata);
-};
+            Object.keys(policyIdAssetMap).forEach((policyIdHex: string) => {
+              const assetIds = policyIdAssetMap[policyIdHex];
 
-function createGetMultiAssetTxMintMetadataQuery(assets: Asset[]) {
-  const whereConditions = assets
-    .map((a, idx) => `( mint.name = ($${idx * 2 + 1})::bytea
-      and encode(mint.policy, 'hex') = ($${idx * 2 + 2})::varchar )`)
-    .join(" or ");
+              assetIds.forEach((assetIdHex: string) => {
+                if (mintTxResults[policyIdHex] == null) {
+                  mintTxResults[policyIdHex] = {};
+                }
+                mintTxResults[policyIdHex][assetIdHex] = {
+                  ...mintTxResults[policyIdHex][assetIdHex],
+                  ...tokenRegistryData[policyIdHex]?.[assetIdHex],
+                };
+              });
+            });
+          }
+      }
+    } catch (e) {
+      console.log(`Error getting details from Token Registry ${e}`);
+      throw new Error("Error getting details from Token Registry");
+    }
 
-  const query = `
-  select encode(mint.policy, 'hex') as policy,
-    mint.name as asset,
-    meta.key,
-    meta.json
-  from ma_tx_mint mint
-    join tx on mint.tx_id = tx.id
-    join tx_metadata meta on tx.id = meta.tx_id
-  where ${whereConditions}`;
-  return query;
-}
+    res.send(mintTxResults);
+  };
