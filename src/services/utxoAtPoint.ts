@@ -4,7 +4,7 @@ import { Request, Response } from "express";
 import config from "config";
 import {assertNever, validateAddressesReq, getAddressesByType, extractAssets,} from "../utils";
 
-import { getBlock, getLatestBlock } from "../utils/queries/block";
+import { getBlock } from "../utils/queries/block";
 
 const addressesRequestLimit:number = config.get("server.addressRequestLimit");
 
@@ -43,8 +43,11 @@ export const utxoAtPoint = (pool: Pool) => async (req: Request, res: Response) =
   if(!req.body || !req.body.addresses) {
     throw new Error("error, no addresses.");
   }
-  if (!req.body.page || !req.body.pageSize) {
-    throw new Error("error, pagination info missing. The request should include the `page` and `pageSize` fields");
+  if(!req.body || !req.body.addresses) {
+    throw new Error("error, no addresses.");
+  }
+  if (!req.body.referenceBlockHash) {
+    throw new Error("error, missing the `referenceBlockHash`.");
   }
 
   const page = parseInt(req.body.page);
@@ -64,9 +67,7 @@ export const utxoAtPoint = (pool: Pool) => async (req: Request, res: Response) =
   const verifiedAddresses = validateAddressesReq(addressesRequestLimit, req.body.addresses);
   switch (verifiedAddresses.kind) {
     case "ok": {
-      const referenceBlock = req.body.referenceBlockHash
-        ? await getBlock(pool)(req.body.referenceBlockHash)
-        : await getLatestBlock(pool);
+      const referenceBlock = await getBlock(pool)(req.body.referenceBlockHash);
 
       const result = await pool.query(
         utxoAtPointQuery,
