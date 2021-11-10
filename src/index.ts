@@ -26,13 +26,19 @@ import { handleGetAccountState } from "./services/accountState";
 import { handleGetRegHistory } from "./services/regHistory";
 import { handleGetRewardHistory } from "./services/rewardHistory";
 import { handleGetMultiAssetTxMintMetadata } from "./services/multiAssetTxMint";
+import { handleTxStatus } from "./services/txStatus";
+import { handleSafeBlock } from "./services/safeBlock";
 
 import { HealthChecker } from "./HealthChecker";
 
 import { createCertificatesView } from "./Transactions/certificates";
 import { createTransactionOutputView } from "./Transactions/output";
+import { createValidUtxosView } from "./Transactions/valid_utxos_view";
 import {poolDelegationHistory} from "./services/poolHistory";
 import {handleGetCardanoWalletPools} from "./services/cardanoWallet";
+
+import { handleMessageBoard } from "./services/messageBoard";
+import { handleMessageDirect } from "./services/messageDirect";
 
 const pool = new Pool({ user: config.get("db.user")
   , host: config.get("db.host")
@@ -41,6 +47,7 @@ const pool = new Pool({ user: config.get("db.user")
   , port: config.get("db.port")
   });
 createCertificatesView(pool);
+createValidUtxosView(pool);
 createTransactionOutputView(pool);
 
 
@@ -86,7 +93,7 @@ const utxoSumForAddresses = async (req: Request, res:Response) => {
     const result = await askUtxoSumForAddresses(pool, verifiedAddresses.value);
     switch(result.kind) {
     case "ok":
-      res.send({ sum: result.value });
+      res.send(result.value);
       return;
     case "error":
       throw new Error(result.errMsg);
@@ -289,6 +296,10 @@ const routes : Route[] = [
   , method: "get"
   , handler: bestBlock(pool)
 }
+, {   path: "/v2/safeblock"
+  , method: "get"
+  , handler: handleSafeBlock(pool)
+}
 , { path: "/v2/addresses/filterUsed"
   , method: "post"
   , handler: filterUsedAddresses(pool)
@@ -309,6 +320,16 @@ const routes : Route[] = [
   , method: "post"
   , handler: handleSignedTx
 },
+{
+  path: "/messages/getMessageBoard",
+  method: "post",
+  handler: handleMessageBoard(pool),
+},
+{
+  path: "/messages/getMessageDirect",
+  method: "post",
+  handler: handleMessageDirect(pool),
+},
   {
     path: "/pool/cardanoWallet",
     method: "get",
@@ -318,8 +339,13 @@ const routes : Route[] = [
     path: "/multiAsset/metadata",
     method: "post",
     handler: handleGetMultiAssetTxMintMetadata(pool)
-  }
-, { path: "/v2/importerhealthcheck"
+  },
+  {
+    path: "/tx/status",
+    method: "post",
+    handler: handleTxStatus(pool)
+  },
+  { path: "/v2/importerhealthcheck"
   , method: "get"
   , handler: async (_req: Request, res: Response) => {
     const status = healthChecker.getStatus();

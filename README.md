@@ -238,7 +238,11 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
 
   ```js
   {
-    sum: ?string
+    sum: ?string,
+    tokensBalance: [
+      amount: string,
+      assetId: string
+    ]
   }
   ```
 </details>
@@ -415,6 +419,30 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   ```js
   []
   ```
+</details>
+<details>
+  <summary>tx/status</summary>
+  This endpoint is used to return the current on-chain status of up to 100 transactions, given their ids. Currently, we return only the depth, meaning the number of blocks on top of the transactions
+
+  Input
+
+  ```
+  {
+    "txHashes": string[]
+  }
+  ```
+
+  Output: the `txHashes` sent in the request are transformed into keys under the `depth` field, and the value corresponding to this key will be the number of blocks on top of the transaction
+
+  ```
+  {
+    "depth": {
+      "<txHash>": number
+    }
+  }
+  ```
+
+
 </details>
 <details>
   <summary>status</summary>
