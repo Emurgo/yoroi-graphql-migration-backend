@@ -234,11 +234,11 @@ const getFundInfo = async (req: Request, res:  Response) => {
   res.send(
       {
           "currentFund": {
-            "id": 6,
-            "registrationStart": "2021-08-12T11:00:00Z",
-            "registrationEnd": "2021-10-04T11:00:00Z",
-            "votingStart": "2021-10-07T11:00:00Z",
-            "votingEnd": "2021-10-21T11:00:00Z",
+            "id": 7,
+            "registrationStart": "2021-11-11T11:00:00Z",
+            "registrationEnd": "2022-01-13T11:00:00Z",
+            "votingStart": "2022-01-13T11:00:00Z",
+            "votingEnd": "2022-01-27T11:00:00Z",
             "votingPowerThreshold": "450"
           }
         });
