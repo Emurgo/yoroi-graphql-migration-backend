@@ -12,14 +12,15 @@ export const askUtxoSumForAddresses = async (pool: Pool, addresses: string[]): P
 
   const tokensQuery = `
     SELECT SUM(ma_utxo.quantity) amount,
-      encode(ma_utxo.policy, 'hex') as policy,
-      encode(ma_utxo.name, 'hex') as name
+      encode(ma.policy, 'hex') as policy,
+      encode(ma.name, 'hex') as name
     FROM valid_utxos_view utxo
       INNER JOIN ma_tx_out ma_utxo ON utxo.id = ma_utxo.tx_out_id
+      INNER JOIN multi_asset ma ON ma_utxo.ident = ma.id
     WHERE address = any(($1)::varchar array)
     GROUP BY
-      ma_utxo.policy,
-      ma_utxo.name;
+      ma.policy,
+      ma.name;
   `;
 
   if(addresses.length == 0)
