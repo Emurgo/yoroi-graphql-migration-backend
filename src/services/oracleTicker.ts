@@ -50,7 +50,6 @@ export const handleOracleTicker =
     const ret: Dictionary<Ticker[]> = {};
 
     const oracleTickers = await p.query(queryMetadataOracle, [addresses]);
-    console.log(oracleTickers);
     oracleTickers.rows.map(async (oracleTicker) => {
       try {
         if (!ret[oracleTicker.address]) {
