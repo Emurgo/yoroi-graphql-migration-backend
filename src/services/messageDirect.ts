@@ -2,9 +2,9 @@ import { Pool } from "pg";
 
 import { Request, Response } from "express";
 
-export interface Message {
+interface Message {
   [key: string]: {
-    block_no: number;
+    blockNumber: number;
     title: string;
     content: string;
     valid: number | null;
@@ -12,7 +12,7 @@ export interface Message {
   };
 }
 
-export interface MessageJson {
+interface MessageJson {
   [key: string]: {
     title: string;
     content: string[];
@@ -24,6 +24,53 @@ export interface MessageJson {
 interface Dictionary<T> {
   [keys: string]: T;
 }
+
+const queryMessageDirect = `
+  WITH queried_pool_address AS (
+    SELECT sa.id
+    FROM pool_owner po
+      JOIN pool_hash ph ON (po.pool_hash_id = ph.id)
+      JOIN stake_address sa ON (sa.id = po.addr_id)
+    WHERE po.registered_tx_id = (
+        SELECT MAX(registered_tx_id)
+        FROM pool_owner po
+          JOIN pool_hash ph ON (po.pool_hash_id = ph.id)
+        WHERE encode(ph.hash_raw, 'hex') = $1
+      )
+  )
+  SELECT b.block_no AS "blockNumber",
+    json AS "messageJson"
+  FROM tx_metadata txm
+    JOIN tx_out txo ON (txm.tx_id = txo.tx_id)
+    JOIN tx tx ON (tx.id = txo.tx_id)
+    JOIN block b ON (tx.block_id = b.id)
+    JOIN stake_address sa ON (txo.stake_address_id = sa.id)
+  WHERE tx.id IN (
+      SELECT txo.tx_id
+      FROM tx_metadata txm
+        JOIN tx_out txo ON (txo.tx_id = txm.tx_id)
+        JOIN tx_in txi ON (txi.tx_in_id = txm.tx_id)
+        JOIN tx_out txo2 ON (
+          txo2.tx_id = txi.tx_out_id
+          AND txo2.index = txi.tx_out_index
+        )
+      WHERE txo2.stake_address_id IN (
+          SELECT *
+          FROM queried_pool_address
+        )
+        AND txm.key = 1991
+    )
+    AND sa.view = $2
+    AND (
+      $3::INTEGER IS NULL
+      OR b.block_no >= $3
+    )
+    AND (
+      $4::INTEGER IS NULL
+      OR b.block_no <= $4
+    )
+  ORDER BY tx.id DESC;
+`;
 
 export const handleMessageDirect =
   (p: Pool) =>
@@ -38,53 +85,6 @@ export const handleMessageDirect =
 
     const ret: Dictionary<null | Message[]> = {};
 
-    const queryMessageDirect = `
-    WITH queried_pool_address AS (
-      SELECT sa.id
-      FROM pool_owner po
-        JOIN pool_hash ph ON (po.pool_hash_id = ph.id)
-        JOIN stake_address sa ON (sa.id = po.addr_id)
-      WHERE po.registered_tx_id = (
-          SELECT MAX(registered_tx_id)
-          FROM pool_owner po
-            JOIN pool_hash ph ON (po.pool_hash_id = ph.id)
-          WHERE encode(ph.hash_raw, 'hex') = $1
-        )
-    )
-    SELECT b.block_no AS "block_no",
-      json AS "message_json"
-    FROM tx_metadata txm
-      JOIN tx_out txo ON (txm.tx_id = txo.tx_id)
-      JOIN tx tx ON (tx.id = txo.tx_id)
-      JOIN block b ON (tx.block_id = b.id)
-      JOIN stake_address sa ON (txo.stake_address_id = sa.id)
-    WHERE tx.id IN (
-        SELECT txo.tx_id
-        FROM tx_metadata txm
-          JOIN tx_out txo ON (txo.tx_id = txm.tx_id)
-          JOIN tx_in txi ON (txi.tx_in_id = txm.tx_id)
-          JOIN tx_out txo2 ON (
-            txo2.tx_id = txi.tx_out_id
-            AND txo2.index = txi.tx_out_index
-          )
-        WHERE txo2.stake_address_id IN (
-            SELECT *
-            FROM queried_pool_address
-          )
-          AND txm.key = 1991
-      )
-      AND sa.view = $2
-      AND (
-        $3::INTEGER IS NULL
-        OR b.block_no >= $3
-      )
-      AND (
-        $4::INTEGER IS NULL
-        OR b.block_no <= $4
-      )
-    ORDER BY tx.id DESC;
-    `;
-
     const messagesDirect = await p.query(queryMessageDirect, [
       hash,
       address,
@@ -96,7 +96,7 @@ export const handleMessageDirect =
 
     messagesDirect.rows.map(async (message) => {
       try {
-        const messageJson = message.message_json;
+        const messageJson = message.messageJson;
         console.log(message);
         messageJson.map((perLanguageMessage: MessageJson) => {
           const lang = Object.keys(perLanguageMessage)[0];
@@ -111,7 +111,7 @@ export const handleMessageDirect =
 
           // if optional parameters are missing, fill them with nulls
           const finalMessage = {
-            block_no: message.block_no,
+            blockNumber: message.blockNumber,
             title: perLanguageMessage[lang].title,
             content: perLanguageMessage[lang].content.join(""),
             valid:

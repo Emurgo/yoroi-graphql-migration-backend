@@ -3,9 +3,9 @@ import { Request, Response } from "express";
 import config from "config";
 
 const addressesRequestLimit: number = config.get("server.addressRequestLimit");
-export interface Message {
+interface Message {
   [key: string]: {
-    block_no: number;
+    blockNumber: number;
     title: string;
     content: string;
     valid: number | null;
@@ -13,7 +13,7 @@ export interface Message {
   };
 }
 
-export interface MessageJson {
+interface MessageJson {
   [key: string]: {
     title: string;
     content: string[];
@@ -25,6 +25,86 @@ export interface MessageJson {
 interface Dictionary<T> {
   [keys: string]: T;
 }
+
+const queryMessageBoard = `
+  WITH queried_pool_address AS (
+    SELECT sa.id
+    FROM pool_owner po
+      JOIN pool_hash ph ON (po.pool_hash_id = ph.id)
+      JOIN stake_address sa ON (sa.id = po.addr_id)
+    WHERE po.registered_tx_id = (
+        SELECT MAX(registered_tx_id)
+        FROM pool_owner po
+          JOIN pool_hash ph ON (po.pool_hash_id = ph.id)
+        WHERE encode(ph.hash_raw, 'hex') = $1
+      )
+  )
+  SELECT "blockNumber", "messageJson"
+  FROM (
+      SELECT *
+      FROM (
+          SELECT b.block_no AS "blockNumber",
+            txm.json AS "messageJson",
+            tx.id AS "id"
+          FROM tx_metadata txm
+            JOIN tx ON (txm.tx_id = tx.id)
+            JOIN block b ON (tx.block_id = b.id)
+            JOIN tx_out txo ON (txm.tx_id = txo.tx_id)
+            JOIN tx_in txi ON (txi.tx_in_id = tx.id)
+            JOIN tx_out txo2 ON (
+              txo2.tx_id = txi.tx_out_id
+              AND txo2.index = txi.tx_out_index
+            )
+          WHERE txo.stake_address_id IN (
+              SELECT *
+              FROM queried_pool_address
+            )
+            AND txo2.stake_address_id IN (
+              SELECT *
+              FROM queried_pool_address
+            )
+            AND (
+              $2::INTEGER IS NULL
+              OR b.block_no >= $2
+            )
+            AND (
+              $3::INTEGER IS NULL
+              OR b.block_no <= $3
+            )
+            AND txm.key = 1990
+        ) AS "txs"
+      WHERE (
+          (
+            -- Handles cases when a tx also includes pool's change address
+            -- SELECT only those transactions that have a single stake address
+            -- In other words, this removes all txs that include more than one
+            -- stake address as this is surely not a board message
+            -- (sent from own address to own address)
+            SELECT COUNT(DISTINCT txo.stake_address_id)
+            FROM tx
+              JOIN tx_out txo ON (
+                tx.id = txo.tx_id
+                AND tx.id = txs.id
+              )
+          ) = 1
+        )
+    ) AS "txs_unique"
+  WHERE (
+      SELECT CASE
+          WHEN txs_unique IS NULL THEN null
+          ELSE txo.stake_address_id
+        END
+      FROM tx
+        JOIN tx_out txo ON (
+          tx.id = txo.tx_id
+          AND tx.id = txs_unique.id
+        )
+    ) = (
+      SELECT *
+      FROM queried_pool_address
+    )
+  ORDER BY id DESC;
+`;
 
 export const handleMessageBoard =
   (p: Pool) =>
@@ -51,87 +131,6 @@ export const handleMessageBoard =
     }
 
     for (const hash of hashes) {
-      const queryMessageBoard = `
-      WITH queried_pool_address AS (
-        SELECT sa.id
-        FROM pool_owner po
-          JOIN pool_hash ph ON (po.pool_hash_id = ph.id)
-          JOIN stake_address sa ON (sa.id = po.addr_id)
-        WHERE po.registered_tx_id = (
-            SELECT MAX(registered_tx_id)
-            FROM pool_owner po
-              JOIN pool_hash ph ON (po.pool_hash_id = ph.id)
-            WHERE encode(ph.hash_raw, 'hex') = $1
-          )
-      )
-      SELECT block_no, message_json
-      FROM (
-          SELECT *
-          FROM (
-              SELECT b.block_no AS "block_no",
-                txm.json AS "message_json",
-                tx.id AS "id"
-              FROM tx_metadata txm
-                JOIN tx ON (txm.tx_id = tx.id)
-                JOIN block b ON (tx.block_id = b.id)
-                JOIN tx_out txo ON (txm.tx_id = txo.tx_id)
-                JOIN tx_in txi ON (txi.tx_in_id = tx.id)
-                JOIN tx_out txo2 ON (
-                  txo2.tx_id = txi.tx_out_id
-                  AND txo2.index = txi.tx_out_index
-                )
-              WHERE txo.stake_address_id IN (
-                  SELECT *
-                  FROM queried_pool_address
-                )
-                AND txo2.stake_address_id IN (
-                  SELECT *
-                  FROM queried_pool_address
-                )
-                AND (
-                  $2::INTEGER IS NULL
-                  OR b.block_no >= $2
-                )
-                AND (
-                  $3::INTEGER IS NULL
-                  OR b.block_no <= $3
-                )
-                AND txm.key = 1990
-            ) AS "txs"
-          WHERE (
-              (
-                -- Handles cases when a tx also includes pool's change address
-                -- SELECT only those transactions that have a single stake address
-                -- In other words, this removes all txs that include more than one
-                -- stake address as this is surely not a board message
-                -- (sent from own address to own address)
-
-                SELECT COUNT(DISTINCT txo.stake_address_id)
-                FROM tx
-                  JOIN tx_out txo ON (
-                    tx.id = txo.tx_id
-                    AND tx.id = txs.id
-                  )
-              ) = 1
-            )
-        ) AS "txs_unique"
-      WHERE (
-          SELECT CASE
-              WHEN txs_unique IS NULL THEN null
-              ELSE txo.stake_address_id
-            END
-          FROM tx
-            JOIN tx_out txo ON (
-              tx.id = txo.tx_id
-              AND tx.id = txs_unique.id
-            )
-        ) = (
-          SELECT *
-          FROM queried_pool_address
-        )
-      ORDER BY id DESC;
-    `;
-
       const messagesBoard = await p.query(queryMessageBoard, [
         hash,
         fromBlock,
@@ -141,7 +140,7 @@ export const handleMessageBoard =
       const finalMessages: Message[] = [];
       messagesBoard.rows.map(async (message) => {
         try {
-          const messageJson = message.message_json;
+          const messageJson = message.messageJson;
 
           messageJson.map((perLanguageMessage: MessageJson) => {
             const lang = Object.keys(perLanguageMessage)[0];
@@ -156,7 +155,7 @@ export const handleMessageBoard =
 
             // if optional parameters are missing, fill them with nulls
             const finalMessage = {
-              block_no: message.block_no,
+              blockNumber: message.blockNumber,
               title: perLanguageMessage[lang].title,
               content: perLanguageMessage[lang].content.join(""),
               valid:
