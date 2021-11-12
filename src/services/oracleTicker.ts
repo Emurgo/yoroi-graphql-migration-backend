@@ -2,7 +2,7 @@ import { Pool } from "pg";
 
 import { Request, Response } from "express";
 
-export interface Ticker {
+interface Ticker {
   [address: string]: {
     ticker: string;
     latestBlock: number;
@@ -12,6 +12,31 @@ export interface Ticker {
 interface Dictionary<T> {
   [addresses: string]: T;
 }
+
+const queryMetadataOracle = `
+  SELECT
+    keys.address AS "address",
+    keys.ticker AS "ticker",
+    (
+      SELECT b.block_no AS "latestBlock"
+      FROM tx
+        JOIN block b ON (b.id = tx.block_id)
+      WHERE tx.id = latest
+    ) AS "latestBlock"
+  FROM
+    (
+      SELECT
+        txo.address AS "address",
+        jsonb_object_keys(txm.json) AS "ticker",
+        MAX(txm.tx_id) AS "latest"
+      FROM tx_out txo
+        JOIN tx_metadata txm ON (txo.tx_id = txm.tx_id)
+      WHERE txo.address = ANY ($1)
+        AND txm.key = 1968
+      GROUP BY ticker,
+        txo.address
+    ) AS "keys"
+`;
 
 export const handleOracleTicker =
   (p: Pool) =>
@@ -23,30 +48,6 @@ export const handleOracleTicker =
     }
 
     const ret: Dictionary<Ticker[]> = {};
-
-    const queryMetadataOracle = `
-      SELECT
-        keys.address AS "address",
-        keys.ticker AS "ticker",
-        (
-          SELECT b.block_no AS "latestBlock"
-          FROM tx
-            JOIN block b ON (b.id = tx.block_id)
-          WHERE tx.id = latest
-        ) AS "latestBlock"
-      FROM (
-          SELECT
-            txo.address AS "address",
-            jsonb_object_keys(txm.json) AS "ticker",
-            MAX(txm.tx_id) AS "latest"
-          FROM tx_out txo
-            JOIN tx_metadata txm ON (txo.tx_id = txm.tx_id)
-          WHERE txo.address = ANY ($1)
-            AND txm.key = 1968
-          GROUP BY ticker,
-            txo.address
-        ) AS "keys"
-    `;
 
     const oracleTickers = await p.query(queryMetadataOracle, [addresses]);
     console.log(oracleTickers);

@@ -2,7 +2,7 @@ import { Pool } from "pg";
 
 import { Request, Response } from "express";
 
-export interface Datapoint {
+interface Datapoint {
   [address: string]: {
     blockNumber: number;
     blockDistance: number | null; // null if block parameter is not used
@@ -15,6 +15,261 @@ export interface Datapoint {
 interface Dictionary<T> {
   [addresses: string]: T;
 }
+
+const queryMetadataOracle = `
+  SELECT *
+  FROM
+    (
+      -- newer than queried block
+      (
+        SELECT
+          txo.address as "address",
+          b.block_no AS "blockNumber",
+          CASE
+            WHEN $3::INTEGER IS NOT NULL THEN (block_no - $3)
+          END AS "blockDistance",
+          encode(tx.hash, 'hex') AS "txHash",
+          tx.block_index AS "txIndex",
+          CASE
+            WHEN $2::TEXT IS NOT NULL THEN (txm.json->$2) -- if no ticker is specified, return all tickers
+            ELSE txm.json
+          END AS "payload"
+        FROM tx_out txo
+          JOIN tx_metadata txm ON (txo.tx_id = txm.tx_id)
+          JOIN tx ON (tx.id = txm.tx_id)
+          JOIN block b ON (b.id = tx.block_id)
+        WHERE
+          txo.address = ANY ($1)
+          AND txm.key = 1968
+          AND CASE
+            WHEN $2::TEXT IS NOT NULL THEN (txm.json->$2) IS NOT NULL
+            ELSE true
+          END
+          AND CASE
+            WHEN $3::INTEGER IS NOT NULL THEN block_no >= $3 IS NOT NULL
+            ELSE true
+          END
+        GROUP BY
+          txo.address,
+          tx.hash,
+          b.block_no,
+          tx.block_index,
+          txm.json
+        ORDER BY (
+            CASE
+              WHEN $3::INTEGER IS NOT NULL THEN (block_no - $3)
+            END
+          ) ASC,
+          -- if a block is specified, order by nearest first
+          (
+            CASE
+              WHEN $3::INTEGER IS NULL THEN block_no
+            END
+          ) DESC -- if a block is not specified, order by newest data
+        LIMIT CASE
+            -- default limit to 1 result, max 10
+            WHEN $4 >= 1
+            AND $4 <= 10 THEN $4
+            ELSE 1
+          END
+      )
+      UNION
+      -- older than queried block
+      (
+        SELECT
+          txo.address as "address",
+          b.block_no AS "blockNumber",
+          CASE
+            WHEN $3::INTEGER IS NOT NULL THEN ($3 - block_no)
+          END AS "blockDistance",
+          encode(tx.hash, 'hex') AS "txHash",
+          tx.block_index AS "txIndex",
+          CASE
+            WHEN $2::TEXT IS NOT NULL THEN (txm.json->$2) -- if no ticker is specified, return all tickers
+            ELSE txm.json
+          END AS "payload"
+        FROM tx_out txo
+          JOIN tx_metadata txm ON (txo.tx_id = txm.tx_id)
+          JOIN tx ON (tx.id = txm.tx_id)
+          JOIN block b ON (b.id = tx.block_id)
+        WHERE
+          txo.address = ANY ($1)
+          AND txm.key = 1968
+          AND CASE
+            WHEN $2::TEXT IS NOT NULL THEN (txm.json->$2) IS NOT NULL
+            ELSE true
+          END
+          AND CASE
+            WHEN $3::INTEGER IS NOT NULL THEN block_no < $3 IS NOT NULL
+            ELSE true
+          END
+        GROUP BY
+          txo.address,
+          tx.hash,
+          b.block_no,
+          tx.block_index,
+          txm.json
+        ORDER BY (
+            CASE
+              WHEN $3::INTEGER IS NOT NULL THEN ABS($3 - block_no)
+            END
+          ) ASC,
+          -- if a block is specified, order by nearest first
+          (
+            CASE
+              WHEN $3::INTEGER IS NULL THEN block_no
+            END
+          ) DESC -- if a block is not specified, order by newest data
+        LIMIT CASE
+            -- default limit to 1 result, max 10
+            WHEN $4 >= 1
+            AND $4 <= 10 THEN $4
+            ELSE 1
+          END
+      )
+    ) AS "nearest_datapoints"
+  ORDER BY (
+      CASE
+        WHEN $3::INTEGER IS NOT NULL THEN ABS($3 - "blockNumber")
+      END
+    ) ASC, "blockNumber" DESC,
+    -- if a block is specified, order by nearest first
+    (
+      CASE
+        WHEN $3::INTEGER IS NULL THEN "blockNumber"
+      END
+    ) DESC -- if a block is not specified, order by newest data
+  LIMIT CASE
+      -- default limit to 1 result, max 10
+      WHEN $4 >= 1
+      AND $4 <= 10 THEN $4
+      ELSE 1
+    END
+`;
+
+const queryMetadataOracleSource = `
+  SELECT *
+  FROM
+    (
+      -- newer than queried block
+      (
+        SELECT
+          txo.address as "address",
+          b.block_no AS "blockNumber",
+          CASE
+            WHEN $3::INTEGER IS NOT NULL THEN (block_no - $3)
+          END AS "blockDistance",
+          encode(tx.hash, 'hex') AS "txHash",
+          tx.block_index AS "txIndex",
+          source AS "payload"
+        FROM tx_out txo
+          JOIN tx_metadata txm ON (txo.tx_id = txm.tx_id)
+          JOIN tx ON (tx.id = txm.tx_id)
+          JOIN block b ON (b.id = tx.block_id)
+          CROSS JOIN jsonb_array_elements(txm.json->$2) source
+        WHERE
+          txo.address = ANY ($1)
+          AND txm.key = 1968
+          AND (txm.json->$2) IS NOT NULL
+          AND CASE
+            WHEN $3::INTEGER IS NOT NULL THEN block_no >= $3 IS NOT NULL
+            ELSE true
+          END
+          AND source->>'source' = $4
+        GROUP BY
+          txo.address,
+          tx.hash,
+          b.block_no,
+          tx.block_index,
+          txm.json,
+          source.*
+        ORDER BY (
+            CASE
+              WHEN $3::INTEGER IS NOT NULL THEN (block_no - $3)
+            END
+          ) ASC,
+          -- if a block is specified, order by nearest first
+          (
+            CASE
+              WHEN $3::INTEGER IS NULL THEN block_no
+            END
+          ) DESC -- if a block is not specified, order by newest data
+        LIMIT CASE
+            -- default limit to 1 result, max 10
+            WHEN $5 >= 1
+            AND $5 <= 10 THEN $5
+            ELSE 1
+          END
+      )
+      UNION
+      -- older than queried block
+      (
+        SELECT
+          txo.address as "address",
+          b.block_no AS "blockNumber",
+          CASE
+            WHEN $3::INTEGER IS NOT NULL THEN (block_no - $3)
+          END AS "blockDistance",
+          encode(tx.hash, 'hex') AS "txHash",
+          tx.block_index AS "txIndex",
+          source AS "payload"
+        FROM tx_out txo
+          JOIN tx_metadata txm ON (txo.tx_id = txm.tx_id)
+          JOIN tx ON (tx.id = txm.tx_id)
+          JOIN block b ON (b.id = tx.block_id)
+          CROSS JOIN jsonb_array_elements(txm.json->$2) source
+        WHERE
+          txo.address = ANY ($1)
+          AND txm.key = 1968
+          AND (txm.json->$2) IS NOT NULL
+          AND CASE
+            WHEN $3::INTEGER IS NOT NULL THEN block_no < $3 IS NOT NULL
+            ELSE true
+          END
+          AND source->>'source' = $4
+        GROUP BY
+          txo.address,
+          tx.hash,
+          b.block_no,
+          tx.block_index,
+          source.*
+        ORDER BY (
+            CASE
+              WHEN $3::INTEGER IS NOT NULL THEN ABS($3 - block_no)
+            END
+          ) ASC,
+          -- if a block is specified, order by nearest first
+          (
+            CASE
+              WHEN $3::INTEGER IS NULL THEN block_no
+            END
+          ) DESC -- if a block is not specified, order by newest data
+        LIMIT CASE
+            -- default limit to 1 result, max 10
+            WHEN $5 >= 1
+            AND $5 <= 10 THEN $5
+            ELSE 1
+          END
+      )
+    ) AS "nearest_datapoints"
+  ORDER BY (
+      CASE
+        WHEN $3::INTEGER IS NOT NULL THEN ABS($3 - "blockNumber")
+      END
+    ) ASC, "blockNumber" DESC,
+    -- if a block is specified, order by nearest first
+    (
+      CASE
+        WHEN $3::INTEGER IS NULL THEN "blockNumber"
+      END
+    ) DESC -- if a block is not specified, order by newest data
+  LIMIT CASE
+      -- default limit to 1 result, max 10
+      WHEN $5 >= 1
+      AND $5 <= 10 THEN $5
+      ELSE 1
+    END
+`;
 
 export const handleOracleDatapoint =
   (p: Pool) =>
@@ -30,261 +285,6 @@ export const handleOracleDatapoint =
     }
 
     const ret: Dictionary<Datapoint[]> = {};
-
-    const queryMetadataOracle = `
-      SELECT *
-      FROM
-        (
-          -- newer than queried block
-          (
-            SELECT
-              txo.address as "address",
-              b.block_no AS "blockNumber",
-              CASE
-                WHEN $3::INTEGER IS NOT NULL THEN (block_no - $3)
-              END AS "blockDistance",
-              encode(tx.hash, 'hex') AS "txHash",
-              tx.block_index AS "txIndex",
-              CASE
-                WHEN $2::TEXT IS NOT NULL THEN (txm.json->$2) -- if no ticker is specified, return all tickers
-                ELSE txm.json
-              END AS "payload"
-            FROM tx_out txo
-              JOIN tx_metadata txm ON (txo.tx_id = txm.tx_id)
-              JOIN tx ON (tx.id = txm.tx_id)
-              JOIN block b ON (b.id = tx.block_id)
-            WHERE
-              txo.address = ANY ($1)
-              AND txm.key = 1968
-              AND CASE
-                WHEN $2::TEXT IS NOT NULL THEN (txm.json->$2) IS NOT NULL
-                ELSE true
-              END
-              AND CASE
-                WHEN $3::INTEGER IS NOT NULL THEN block_no >= $3 IS NOT NULL
-                ELSE true
-              END
-            GROUP BY
-              txo.address,
-              tx.hash,
-              b.block_no,
-              tx.block_index,
-              txm.json
-            ORDER BY (
-                CASE
-                  WHEN $3::INTEGER IS NOT NULL THEN (block_no - $3)
-                END
-              ) ASC,
-              -- if a block is specified, order by nearest first
-              (
-                CASE
-                  WHEN $3::INTEGER IS NULL THEN block_no
-                END
-              ) DESC -- if a block is not specified, order by newest data
-            LIMIT CASE
-                -- default limit to 1 result, max 10
-                WHEN $4 >= 1
-                AND $4 <= 10 THEN $4
-                ELSE 1
-              END
-          )
-          UNION
-          -- older than queried block
-          (
-            SELECT
-              txo.address as "address",
-              b.block_no AS "blockNumber",
-              CASE
-                WHEN $3::INTEGER IS NOT NULL THEN ($3 - block_no)
-              END AS "blockDistance",
-              encode(tx.hash, 'hex') AS "txHash",
-              tx.block_index AS "txIndex",
-              CASE
-                WHEN $2::TEXT IS NOT NULL THEN (txm.json->$2) -- if no ticker is specified, return all tickers
-                ELSE txm.json
-              END AS "payload"
-            FROM tx_out txo
-              JOIN tx_metadata txm ON (txo.tx_id = txm.tx_id)
-              JOIN tx ON (tx.id = txm.tx_id)
-              JOIN block b ON (b.id = tx.block_id)
-            WHERE
-              txo.address = ANY ($1)
-              AND txm.key = 1968
-              AND CASE
-                WHEN $2::TEXT IS NOT NULL THEN (txm.json->$2) IS NOT NULL
-                ELSE true
-              END
-              AND CASE
-                WHEN $3::INTEGER IS NOT NULL THEN block_no < $3 IS NOT NULL
-                ELSE true
-              END
-            GROUP BY
-              txo.address,
-              tx.hash,
-              b.block_no,
-              tx.block_index,
-              txm.json
-            ORDER BY (
-                CASE
-                  WHEN $3::INTEGER IS NOT NULL THEN ABS($3 - block_no)
-                END
-              ) ASC,
-              -- if a block is specified, order by nearest first
-              (
-                CASE
-                  WHEN $3::INTEGER IS NULL THEN block_no
-                END
-              ) DESC -- if a block is not specified, order by newest data
-            LIMIT CASE
-                -- default limit to 1 result, max 10
-                WHEN $4 >= 1
-                AND $4 <= 10 THEN $4
-                ELSE 1
-              END
-          )
-        ) AS "nearest_datapoints"
-      ORDER BY (
-          CASE
-            WHEN $3::INTEGER IS NOT NULL THEN ABS($3 - "blockNumber")
-          END
-        ) ASC, "blockNumber" DESC,
-        -- if a block is specified, order by nearest first
-        (
-          CASE
-            WHEN $3::INTEGER IS NULL THEN "blockNumber"
-          END
-        ) DESC -- if a block is not specified, order by newest data
-      LIMIT CASE
-          -- default limit to 1 result, max 10
-          WHEN $4 >= 1
-          AND $4 <= 10 THEN $4
-          ELSE 1
-        END
-    `;
-
-    const queryMetadataOracleSource = `
-      SELECT *
-      FROM
-        (
-          -- newer than queried block
-          (
-            SELECT
-              txo.address as "address",
-              b.block_no AS "blockNumber",
-              CASE
-                WHEN $3::INTEGER IS NOT NULL THEN (block_no - $3)
-              END AS "blockDistance",
-              encode(tx.hash, 'hex') AS "txHash",
-              tx.block_index AS "txIndex",
-              source AS "payload"
-            FROM tx_out txo
-              JOIN tx_metadata txm ON (txo.tx_id = txm.tx_id)
-              JOIN tx ON (tx.id = txm.tx_id)
-              JOIN block b ON (b.id = tx.block_id)
-              CROSS JOIN jsonb_array_elements(txm.json->$2) source
-            WHERE
-              txo.address = ANY ($1)
-              AND txm.key = 1968
-              AND (txm.json->$2) IS NOT NULL
-              AND CASE
-                WHEN $3::INTEGER IS NOT NULL THEN block_no >= $3 IS NOT NULL
-                ELSE true
-              END
-              AND source->>'source' = $4
-            GROUP BY
-              txo.address,
-              tx.hash,
-              b.block_no,
-              tx.block_index,
-              txm.json,
-              source.*
-            ORDER BY (
-                CASE
-                  WHEN $3::INTEGER IS NOT NULL THEN (block_no - $3)
-                END
-              ) ASC,
-              -- if a block is specified, order by nearest first
-              (
-                CASE
-                  WHEN $3::INTEGER IS NULL THEN block_no
-                END
-              ) DESC -- if a block is not specified, order by newest data
-            LIMIT CASE
-                -- default limit to 1 result, max 10
-                WHEN $5 >= 1
-                AND $5 <= 10 THEN $5
-                ELSE 1
-              END
-          )
-          UNION
-          -- older than queried block
-          (
-            SELECT
-              txo.address as "address",
-              b.block_no AS "blockNumber",
-              CASE
-                WHEN $3::INTEGER IS NOT NULL THEN (block_no - $3)
-              END AS "blockDistance",
-              encode(tx.hash, 'hex') AS "txHash",
-              tx.block_index AS "txIndex",
-              source AS "payload"
-            FROM tx_out txo
-              JOIN tx_metadata txm ON (txo.tx_id = txm.tx_id)
-              JOIN tx ON (tx.id = txm.tx_id)
-              JOIN block b ON (b.id = tx.block_id)
-              CROSS JOIN jsonb_array_elements(txm.json->$2) source
-            WHERE
-              txo.address = ANY ($1)
-              AND txm.key = 1968
-              AND (txm.json->$2) IS NOT NULL
-              AND CASE
-                WHEN $3::INTEGER IS NOT NULL THEN block_no < $3 IS NOT NULL
-                ELSE true
-              END
-              AND source->>'source' = $4
-            GROUP BY
-              txo.address,
-              tx.hash,
-              b.block_no,
-              tx.block_index,
-              source.*
-            ORDER BY (
-                CASE
-                  WHEN $3::INTEGER IS NOT NULL THEN ABS($3 - block_no)
-                END
-              ) ASC,
-              -- if a block is specified, order by nearest first
-              (
-                CASE
-                  WHEN $3::INTEGER IS NULL THEN block_no
-                END
-              ) DESC -- if a block is not specified, order by newest data
-            LIMIT CASE
-                -- default limit to 1 result, max 10
-                WHEN $5 >= 1
-                AND $5 <= 10 THEN $5
-                ELSE 1
-              END
-          )
-        ) AS "nearest_datapoints"
-      ORDER BY (
-          CASE
-            WHEN $3::INTEGER IS NOT NULL THEN ABS($3 - "blockNumber")
-          END
-        ) ASC, "blockNumber" DESC,
-        -- if a block is specified, order by nearest first
-        (
-          CASE
-            WHEN $3::INTEGER IS NULL THEN "blockNumber"
-          END
-        ) DESC -- if a block is not specified, order by newest data
-      LIMIT CASE
-          -- default limit to 1 result, max 10
-          WHEN $5 >= 1
-          AND $5 <= 10 THEN $5
-          ELSE 1
-        END
-    `;
 
     const metadataOracle = await p.query(queryMetadataOracle, [
       addresses, // mandatory, list of trusted oracles
