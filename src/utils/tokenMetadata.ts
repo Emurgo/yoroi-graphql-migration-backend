@@ -9,15 +9,13 @@ export type MultiAssetTxMintMetadataType = {
 
 type AssetInfoMap = Record<
   string,
-  {
-    name?: string;
-    decimals?: number;
-    ticker?: string;
-    url?: string;
-    policy: string;
-    imageUrl?: string; //only nft
-    logo?: string;
-  }
+  Partial<{
+    name: string;
+    decimals: number;
+    ticker: string;
+    logo: string;
+    imageUrl: string; //only for nft
+  }> & { policy: string }
 >;
 
 function hex_to_ascii(str1: string) {
@@ -44,14 +42,14 @@ function createGetMultiAssetTxMintMetadataQuery(assets: PolicyIdAssetMapType) {
     .join(" or ");
 
   const query = `
-    select encode(mint.policy, 'hex') as policy,
-      encode(mint.name, 'hex') as asset,
-      meta.key,
-      meta.json
-    from ma_tx_mint mint
-      join tx on mint.tx_id = tx.id
-      join tx_metadata meta on tx.id = meta.tx_id
-    where ${whereConditions}`;
+      select encode(mint.policy, 'hex') as policy,
+        encode(mint.name, 'hex') as asset,
+        meta.key,
+        meta.json
+      from ma_tx_mint mint
+        join tx on mint.tx_id = tx.id
+        join tx_metadata meta on tx.id = meta.tx_id
+      where ${whereConditions}`;
   return query;
 }
 
@@ -90,8 +88,6 @@ export function formatTokenMetadata(
           const identifier = `${policyIdHex}.${assetHex}`;
           const mintTxData = metadata[identifier];
           const assetNameAscii = hex_to_ascii(assetHex);
-
-          /// TODO clarify Can there be multiple txs?
           const tokenMeta = mintTxData?.[0];
 
           // NFT
@@ -102,16 +98,18 @@ export function formatTokenMetadata(
 
             assetMap[assetHex] = {
               name: currentAssetDetails?.name,
-              imageUrl: currentAssetDetails?.image, // TODO will come from DB
+              imageUrl: currentAssetDetails?.image,
               policy: policyIdHex,
-              // what more data do we need to show at the frontend?
             };
           }
           return assetMap;
         },
         {}
       );
-      policyMap[policyIdHex] = assetInfoMap;
+      if (Object.keys(assetInfoMap).length > 0) {
+        policyMap[policyIdHex] = assetInfoMap;
+      }
+
       return policyMap;
     },
     {}
