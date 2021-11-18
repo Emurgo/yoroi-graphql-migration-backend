@@ -1,13 +1,12 @@
+import { Pool } from "pg";
+import { Request, Response } from "express";
+
 import {
   formatTokenMetadata,
   getMultiAssetTxMintMetadata,
   PolicyIdAssetMapType,
   PolicyIdAssetInfoMap,
 } from "./../utils/tokenMetadata";
-
-import { Pool } from "pg";
-import { Request, Response } from "express";
-import { isObject } from "lodash";
 
 export const handleGetMultiAssetTxMintMetadata =
   (pool: Pool) =>

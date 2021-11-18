@@ -93,8 +93,24 @@ export function formatTokenMetadata(
           // NFT
           if (tokenMeta?.["key"] === "721") {
             const mintedTokens = tokenMeta?.["metadata"];
+
+            if (
+              mintedTokens == null ||
+              mintedTokens?.[policyIdHex]?.[assetNameAscii] == null
+            ) {
+              return assetMap;
+            }
+
             const currentAssetDetails =
               mintedTokens[policyIdHex][assetNameAscii];
+
+            // image and name should be present
+            if (
+              currentAssetDetails?.name == null ||
+              currentAssetDetails?.image == null
+            ) {
+              return assetMap;
+            }
 
             assetMap[assetHex] = {
               name: currentAssetDetails?.name,
