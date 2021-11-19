@@ -18,6 +18,9 @@ type AssetInfoMap = Record<
   }> & { policy: string }
 >;
 
+// NFT metadata format - https://cips.cardano.org/cips/cip25/
+const NFT_METADATA_ONCHAIN_KEY = "721";
+
 function hex_to_ascii(str1: string) {
   const hex = str1.toString();
   let str = "";
@@ -41,6 +44,7 @@ function createGetMultiAssetTxMintMetadataQuery(assets: PolicyIdAssetMapType) {
     })
     .join(" or ");
 
+  // NFT metadata format - https://cips.cardano.org/cips/cip25/
   const query = `
       select encode(mint.policy, 'hex') as policy,
         encode(mint.name, 'hex') as asset,
@@ -49,7 +53,7 @@ function createGetMultiAssetTxMintMetadataQuery(assets: PolicyIdAssetMapType) {
       from ma_tx_mint mint
         join tx on mint.tx_id = tx.id
         join tx_metadata meta on tx.id = meta.tx_id
-      where ${whereConditions}`;
+      where meta.key=${NFT_METADATA_ONCHAIN_KEY} AND ( ${whereConditions} )`;
   return query;
 }
 
@@ -88,10 +92,12 @@ export function formatTokenMetadata(
           const identifier = `${policyIdHex}.${assetHex}`;
           const mintTxData = metadata[identifier];
           const assetNameAscii = hex_to_ascii(assetHex);
-          const tokenMeta = mintTxData?.[0];
+          const tokenMeta = mintTxData?.filter(
+            (txData: MultiAssetTxMintMetadataType) =>
+              txData.key === NFT_METADATA_ONCHAIN_KEY
+          )?.[0];
 
-          // NFT
-          if (tokenMeta?.["key"] === "721") {
+          if (tokenMeta !== null) {
             const mintedTokens = tokenMeta?.["metadata"];
 
             if (
