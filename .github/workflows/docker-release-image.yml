@@ -60,7 +60,7 @@ jobs:
 
           cache-from: type=registry,ref=dcspark/cardano-backend:${{ github.event.release.tag_name }}
           cache-to: type=inline
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
       # - 
       #   name: Run Trivy vulnerability scanner
       #   uses: aquasecurity/trivy-action@master
