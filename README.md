@@ -439,3 +439,58 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
 
 
 </details>
+<details>
+  <summary>/multiAsset/metadata</summary>
+  Input
+
+  Up to 50 addresses in the request
+
+  ```js
+  {
+    policyIdAssetMap: PolicyIdAssetArrMapType;
+  }
+  ```
+
+  Output
+
+  ```js
+  {
+    sucess: boolean;
+    data: Record<string, Record<string, {
+      name: string;
+      imageUrl: string;
+      policy: string;
+    }>>;
+    message?: string;
+  }
+  ```
+</details>
+<details>
+  <summary>/getTokenInfo</summary>
+  Input
+
+  Up to 50 addresses in the request
+
+  ```js
+  {
+    policyIdAssetMap: PolicyIdAssetArrMapType;
+  }
+  ```
+
+  Output
+
+  ```js
+  {
+    sucess: boolean;
+    data: Record<string, Record<string, {
+      name?: string;
+      decimals?: number;
+      ticker?: string;
+      url?: string;
+      policy: string;
+      logo?: string;
+    }>>;
+    message?: string;
+  }
+  ```
+</details>

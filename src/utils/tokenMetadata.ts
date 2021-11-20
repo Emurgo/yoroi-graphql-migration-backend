@@ -1,21 +1,18 @@
 import { Pool } from "pg";
 
 export type PolicyIdAssetMapType = Record<string, Array<string>>;
-export type PolicyIdAssetInfoMap = Record<string, AssetInfoMap>;
+export type PolicyIdAssetMetadataInfoMap = Record<string, AssetMetadataInfoMap>;
 export type MultiAssetTxMintMetadataType = {
   key: string;
   metadata: any;
 };
 
-type AssetInfoMap = Record<
+type AssetMetadataInfoMap = Record<
   string,
-  Partial<{
+  {
     name: string;
-    decimals: number;
-    ticker: string;
-    logo: string;
-    imageUrl: string; //only for nft
-  }> & { policy: string }
+    imageUrl: string;
+  } & { policy: string }
 >;
 
 // NFT metadata format - https://cips.cardano.org/cips/cip25/
@@ -60,7 +57,7 @@ function createGetMultiAssetTxMintMetadataQuery(assets: PolicyIdAssetMapType) {
 export async function getMultiAssetTxMintMetadata(
   pool: Pool,
   assets: PolicyIdAssetMapType
-) {
+): Promise<Record<string, MultiAssetTxMintMetadataType[]>> {
   const query = createGetMultiAssetTxMintMetadataQuery(assets);
   const ret: { [key: string]: MultiAssetTxMintMetadataType[] } = {};
   const results = await pool.query(query);
@@ -83,11 +80,11 @@ export async function getMultiAssetTxMintMetadata(
 export function formatTokenMetadata(
   metadata: { [key: string]: MultiAssetTxMintMetadataType[] },
   policyIdAssetMap: PolicyIdAssetMapType
-): PolicyIdAssetInfoMap {
-  const results = Object.keys(policyIdAssetMap).reduce<PolicyIdAssetInfoMap>(
+): PolicyIdAssetMetadataInfoMap {
+  const results = Object.keys(policyIdAssetMap).reduce<PolicyIdAssetMetadataInfoMap>(
     (policyMap, policyIdHex: string) => {
       const assetNamesHex: string[] = policyIdAssetMap[policyIdHex];
-      const assetInfoMap = assetNamesHex?.reduce<AssetInfoMap>(
+      const assetInfoMap = assetNamesHex?.reduce<AssetMetadataInfoMap>(
         (assetMap, assetHex: string) => {
           const identifier = `${policyIdHex}.${assetHex}`;
           const mintTxData = metadata[identifier];
@@ -117,10 +114,16 @@ export function formatTokenMetadata(
             ) {
               return assetMap;
             }
+            if (
+              typeof currentAssetDetails.name === "string" ||
+              typeof currentAssetDetails.image === "string"
+            ) {
+              return assetMap;
+            }
 
             assetMap[assetHex] = {
-              name: currentAssetDetails?.name,
-              imageUrl: currentAssetDetails?.image,
+              name: currentAssetDetails.name,
+              imageUrl: currentAssetDetails.image,
               policy: policyIdHex,
             };
           }

@@ -10,7 +10,8 @@
     "dev": "tsc-watch --onSuccess \"node ./dist/index.js\"",
     "eslint": "eslint src tests",
     "test": "mocha -r ts-node/register tests/**/*.test.ts --slow 0",
-    "testtxhist": "mocha -r ts-node/register tests/txHistory.test.ts"
+    "testtxhist": "mocha -r ts-node/register tests/txHistory.test.ts",
+    "typecheck": "tsc --project tsconfig.typecheck.json"
   },
   "author": "",
   "license": "MIT",

@@ -5,7 +5,7 @@ import {
   formatTokenMetadata,
   getMultiAssetTxMintMetadata,
   PolicyIdAssetMapType,
-  PolicyIdAssetInfoMap,
+  PolicyIdAssetMetadataInfoMap,
 } from "./../utils/tokenMetadata";
 
 export const handleGetMultiAssetTxMintMetadata =
@@ -25,7 +25,7 @@ export const handleGetMultiAssetTxMintMetadata =
 
     const metadata = await getMultiAssetTxMintMetadata(pool, policyIdAssetMap);
 
-    const mintTxResults: PolicyIdAssetInfoMap = formatTokenMetadata(
+    const mintTxResults: PolicyIdAssetMetadataInfoMap = formatTokenMetadata(
       metadata,
       policyIdAssetMap
     );
