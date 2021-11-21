@@ -455,7 +455,7 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
 
   ```js
   {
-    sucess: boolean;
+    success: boolean;
     data: Record<string, Record<string, {
       name: string;
       imageUrl: string;
@@ -481,7 +481,7 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
 
   ```js
   {
-    sucess: boolean;
+    success: boolean;
     data: Record<string, Record<string, {
       name?: string;
       decimals?: number;
