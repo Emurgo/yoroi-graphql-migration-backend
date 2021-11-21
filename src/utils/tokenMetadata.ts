@@ -77,6 +77,21 @@ export async function getMultiAssetTxMintMetadata(
   return ret;
 }
 
+/** metadata can only be at most 64 bytes, so some URLs are split into arrays of strings instead */
+export function joinMetadata(metadataRow: unknown): string | null {
+  if (metadataRow == null) return null;
+  if (typeof metadataRow === "string") return metadataRow;
+  else if (Array.isArray(metadataRow)) {
+    // note: metadata format allows you to nest stuff in whatever way you want
+    // so we want to make sure we're really looking at an array of strings
+    for (const row of metadataRow) {
+      if (typeof row !== "string") return null;
+    }
+    return metadataRow.join(""); // combine the metadata back together
+  }
+  return null;
+}
+
 export function formatTokenMetadata(
   metadata: { [key: string]: MultiAssetTxMintMetadataType[] },
   policyIdAssetMap: PolicyIdAssetMapType
@@ -108,22 +123,18 @@ export function formatTokenMetadata(
               mintedTokens[policyIdHex][assetNameAscii];
 
             // image and name should be present
+            const name = joinMetadata(currentAssetDetails?.name);
+            const image = joinMetadata(currentAssetDetails?.image);
             if (
-              currentAssetDetails?.name == null ||
-              currentAssetDetails?.image == null
-            ) {
-              return assetMap;
-            }
-            if (
-              typeof currentAssetDetails.name === "string" ||
-              typeof currentAssetDetails.image === "string"
+              name == null ||
+              image == null
             ) {
               return assetMap;
             }
 
             assetMap[assetHex] = {
-              name: currentAssetDetails.name,
-              imageUrl: currentAssetDetails.image,
+              name: name,
+              imageUrl: image,
               policy: policyIdHex,
             };
           }
