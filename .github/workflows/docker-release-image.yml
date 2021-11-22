@@ -57,6 +57,7 @@ jobs:
           tags: |
             dcspark/cardano-backend:${{ github.event.release.tag_name }}
             838498055354.dkr.ecr.us-east-1.amazonaws.com/cardano-backend:${{ github.event.release.tag_name }}
+            838498055354.dkr.ecr.us-east-1.amazonaws.com/cardano-backend:${{ github.sha }}
 
           cache-from: type=registry,ref=dcspark/cardano-backend:${{ github.event.release.tag_name }}
           cache-to: type=inline
