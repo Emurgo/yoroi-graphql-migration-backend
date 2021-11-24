@@ -37,4 +37,4 @@ const getMultiAssetSupply = async (pool: Pool, asset: Asset): Promise<number> =>
   if (result.rows.length === 0) throw new Error("asset no found: " + asset.name);
 
   return parseFloat(result.rows[0].supply);
-}
+};
