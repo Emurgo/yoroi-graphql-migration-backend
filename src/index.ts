@@ -29,6 +29,7 @@ import { handleGetMultiAssetSupply } from "./services/multiAssetSupply";
 import { handleGetMultiAssetTxMintMetadata } from "./services/multiAssetTxMint";
 import { handleTxStatus } from "./services/txStatus";
 import { handleTipStatusGet, handleTipStatusPost } from "./services/tipStatus";
+import { handleValidateNft } from "./services/validateNft";
 
 import { HealthChecker } from "./HealthChecker";
 
@@ -349,6 +350,11 @@ const routes : Route[] = [
     path: "/multiAsset/metadata",
     method: "post",
     handler: handleGetMultiAssetTxMintMetadata(pool)
+  },
+  {
+    path: "/multiAsset/validateNFT/:fingerprint",
+    method: "get",
+    handler: handleValidateNft(pool)
   },
   {
     path: "/tx/status",

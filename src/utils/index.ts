@@ -36,7 +36,7 @@ type Handler = (
   req: Request,
   res: Response,
   next: NextFunction
-) => Promise<void> | void;
+) => Promise<void> | void | Promise<Response>;
 
 export interface Route {
   path: string;

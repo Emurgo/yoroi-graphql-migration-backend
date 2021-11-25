@@ -16,5 +16,11 @@ export default {
     ogmiosAddress: process.env.OGMIOS_ADDRESS || "ogmios.waw.emurgo-rnd.com",
     ogmiosPort: process.env.OGMIOS_PORT || 1338
   },
+  aws: {
+    lambdaEndpoint: process.env.LAMBDA_ENDPOINT || "",
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
+    region: process.env.AWS_REGION ?? ""
+  },
   safeBlockDifference: process.env.SAFE_BLOCK_DIFFERENCE || "10"
 };
