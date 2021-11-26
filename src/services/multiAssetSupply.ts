@@ -14,7 +14,7 @@ export const handleGetMultiAssetSupply = (pool: Pool) => async (req: Request, re
 
   const assets: Asset[] = req.body.assets;
 
-  const ret = await Promise.all(assets.map(async (asset) => {
+  const supplies = await Promise.all(assets.map(async (asset) => {
     const supply = await getMultiAssetSupply(pool, asset);
 
     const policyAndName = `${asset.policy}.${asset.name}`;
@@ -22,7 +22,9 @@ export const handleGetMultiAssetSupply = (pool: Pool) => async (req: Request, re
     return supply;
   }));
 
-  res.send(ret);
+  res.send({
+    supplies
+  });
 };
 
 const getMultiAssetSupply = async (pool: Pool, asset: Asset): Promise<number> => {
