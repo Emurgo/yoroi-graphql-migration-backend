@@ -14,12 +14,14 @@ export const handleGetMultiAssetSupply = (pool: Pool) => async (req: Request, re
 
   const assets: Asset[] = req.body.assets;
 
-  const supplies = await Promise.all(assets.map(async (asset) => {
+  let supplies: {[key: string]: number} = {};
+
+  await Promise.all(assets.map(async (asset) => {
     const supply = await getMultiAssetSupply(pool, asset);
 
     const policyAndName = `${asset.policy}.${asset.name}`;
     
-    return supply;
+    supplies[policyAndName] = supply;
   }));
 
   res.send({
