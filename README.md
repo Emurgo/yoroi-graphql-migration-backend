@@ -499,7 +499,7 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   {
     // current supplies of given assets.
     // entry for an asset is null if it is not found.
-    supplies: Array<number>
+    supplies: Array<number | null>
   }
   ```
 </details>
