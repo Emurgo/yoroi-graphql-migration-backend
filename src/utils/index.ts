@@ -1,3 +1,4 @@
+import { blake2b } from "hash-wasm";
 import { Router, Request, Response, NextFunction } from "express";
 import {
   Address,
@@ -6,6 +7,7 @@ import {
   PointerAddress,
   EnterpriseAddress,
   RewardAddress,
+  Transaction,
 } from "@emurgo/cardano-serialization-lib-nodejs";
 import { decode, fromWords } from "bech32";
 import { Prefixes } from "./cip5";
@@ -257,4 +259,13 @@ export function getAddressesByType(addresses: string[]): {
     paymentCreds,
     stakingKeys,
   };
+}
+
+export async function calculateTxId(signedTx: string): Promise<string> {
+  const txBuffer = Buffer.from(signedTx, "base64");
+  const tx = Transaction.from_bytes(txBuffer);
+  const txBody = tx.body();
+
+  const blake2bTxHash = await blake2b(txBody.to_bytes(), 256);
+  return blake2bTxHash;
 }
