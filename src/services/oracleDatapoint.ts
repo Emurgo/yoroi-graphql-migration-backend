@@ -8,7 +8,7 @@ interface Datapoint {
     blockDistance: number | null; // null if block parameter is not used
     txHash: string;
     txIndex: number;
-    payload: JSON;
+    payload: any;
   };
 }
 
