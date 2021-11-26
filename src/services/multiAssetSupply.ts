@@ -14,7 +14,7 @@ export const handleGetMultiAssetSupply = (pool: Pool) => async (req: Request, re
 
   const assets: Asset[] = req.body.assets;
 
-  let supplies: {[key: string]: number} = {};
+  const supplies: {[key: string]: number} = {};
 
   await Promise.all(assets.map(async (asset) => {
     const supply = await getMultiAssetSupply(pool, asset);
