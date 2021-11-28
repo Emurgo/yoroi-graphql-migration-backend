@@ -8,6 +8,8 @@ export const handleGetTxIO = (pool: Pool) => async (req: Request, res:Response):
 
   const tx_hash = req.params.tx_hash.trim();
 
+  if (!(await txExists(pool, tx_hash))) throw new Error("transaction can't be found");
+
   const inputs = await getInputs(pool, tx_hash);
   const collateralInputs = await getCollateralInputs(pool, tx_hash);
   const outputs = await getOutputs(pool, tx_hash);
@@ -15,6 +17,17 @@ export const handleGetTxIO = (pool: Pool) => async (req: Request, res:Response):
   res.send({
     inputs, collateralInputs, outputs
   });
+};
+
+const txExists = async (pool: Pool, tx_hash: string): Promise<boolean> => {
+  const query = `
+    select * from tx
+    where encode(tx.hash, 'hex') = $1
+    limit 1`;
+
+  const result = await pool.query(query, [tx_hash]);
+
+  return result.rowCount === 1;
 };
 
 const getInputs = async (pool: Pool, tx_hash: string): Promise<Array<TransInputFrag>> => {
