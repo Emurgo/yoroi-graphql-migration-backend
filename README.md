@@ -500,3 +500,39 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   Array<number>
   ```
 </details>
+<details>
+  <summary>txs/io/:tx_hash</summary>
+  This endpoint is used to get inputs and outputs of a transaction with the given hash
+
+  Input
+
+  None (GET request)
+
+  Output
+
+  ```js
+  {
+    inputs: Array<{ // these will be ordered by the input transaction id asc
+      address: string,
+      amount: string,
+      id: string, // concatenation of txHash || index
+      index: number,
+      txHash: string, 
+      assets: Asset[]
+    }>,
+    collateralInputs: Array<{
+      address: string,
+      amount: string,
+      id: string, // concatenation of txHash || index
+      index: number,
+      txHash: string,
+      assets: Asset[]
+    }>,
+    outputs: Array<{ //these will be ordered by transaction index asc.
+      address: string,
+      amount: string,
+      assets: Asset[]
+    }>,
+  }
+  ```
+</details>

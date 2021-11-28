@@ -29,6 +29,7 @@ import { handleGetMultiAssetSupply } from "./services/multiAssetSupply";
 import { handleGetMultiAssetTxMintMetadata } from "./services/multiAssetTxMint";
 import { handleTxStatus } from "./services/txStatus";
 import { handleSafeBlock } from "./services/safeBlock";
+import { handleGetTxIO } from "./services/txIO";
 
 import { HealthChecker } from "./HealthChecker";
 
@@ -316,6 +317,10 @@ const routes : Route[] = [
 , { path: "/v2/txs/history"
   , method: "post"
   , handler: txHistory 
+}
+, { path: "/txs/io/:tx_hash"
+  , method: "get"
+  , handler: handleGetTxIO(pool) 
 }
 , { path: "/txs/signed"
   , method: "post"
