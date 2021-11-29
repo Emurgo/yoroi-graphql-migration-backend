@@ -41,7 +41,7 @@ type Handler = (
 export interface Route {
   path: string;
   method: string;
-  handler: Handler | Handler[];
+  handler: Handler | Handler[] | Response;
 }
 
 export const applyRoutes = (routes: Route[], router: Router) => {
