@@ -39,12 +39,14 @@ const safeBlockFromReferenceQuery = `SELECT encode(hash, 'hex') as "hash", block
   ORDER BY block_no DESC
   LIMIT 1`;
 
-const getBestAndSafeBlocks = (pool: Pool) => async (): Promise<{
+const getBestAndSafeBlocks = async (pool: Pool): Promise<{
   safeBlock: string | undefined,
   bestBlock: string | undefined
 }> => {
-  const bestBlockResult = await pool.query(bestBlockQuery);
-  const safeBlockResult = await pool.query(safeBlockQuery, [safeBlockDifference]);
+  const [bestBlockResult, safeBlockResult] = await Promise.all([
+    pool.query(bestBlockQuery),
+    pool.query(safeBlockQuery, [safeBlockDifference])
+  ]);
 
   return {
     safeBlock: safeBlockResult.rowCount > 0 ? safeBlockResult.rows[0].hash : undefined,
@@ -53,7 +55,7 @@ const getBestAndSafeBlocks = (pool: Pool) => async (): Promise<{
 };
 
 export const handleTipStatusGet = (pool: Pool) => async (req: Request, res: Response) => {
-  const result = await getBestAndSafeBlocks(pool)();
+  const result = await getBestAndSafeBlocks(pool);
   res.send(result);
 };
 
@@ -75,15 +77,21 @@ export const handleTipStatusPost = (pool: Pool) => async (req: Request, res: Res
     throw new Error("error, bestBlocks should not be empty");
   }
 
-  const { safeBlock, bestBlock } = await getBestAndSafeBlocks(pool)();
-  
-  const bestBlockFromReferenceResult = await pool.query(bestBlockFromReferenceQuery, [bestBlocks]);
+  const [
+    { safeBlock, bestBlock },
+    bestBlockFromReferenceResult,
+    safeBlockFromReferenceResult
+  ] = await Promise.all([
+    getBestAndSafeBlocks(pool),
+    pool.query(bestBlockFromReferenceQuery, [bestBlocks]),
+    pool.query(safeBlockFromReferenceQuery, [bestBlocks, safeBlockDifference])
+  ]);
+
   if (bestBlockFromReferenceResult.rowCount === 0) {
     throw new Error("REFERENCE_POINT_BLOCK_NOT_FOUND");
   }
-  const lastFoundBestBlock: string = bestBlockFromReferenceResult.rows[0].hash;
 
-  const safeBlockFromReferenceResult = await pool.query(safeBlockFromReferenceQuery, [bestBlocks, safeBlockDifference]);
+  const lastFoundBestBlock: string = bestBlockFromReferenceResult.rows[0].hash;
   if (safeBlockFromReferenceResult.rowCount === 0) {
     throw new Error("REFERENCE_POINT_BLOCK_NOT_FOUND");
   }
