@@ -143,8 +143,13 @@ export const handleValidateNft = (pool: Pool) => async (req: Request, res: Respo
     });
   }
 
+  if (req.query.skipValidation) {
+    return res.status(204)
+      .send();  
+  }
+
   sendNftForValidation(lambda, fingerprint, metadata.image);
 
-  return res.status(204)
+  return res.status(202)
     .send();
 };
