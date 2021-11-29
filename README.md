@@ -404,6 +404,46 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   ```
 </details>
 <details>
+  <summary>GET v2/tipStatus</summary>
+  Input
+
+  None (GET request)
+
+  Output
+
+  ```js
+  {
+    safeBlock: string,
+    bestBlock: string
+  }
+  ```
+</details>
+<details>
+  <summary>POST v2/tipStatus</summary>
+  Input
+
+  ```js
+  {
+    reference: {
+      bestBlocks: string[]
+    }
+  }
+  ```
+
+  Output
+
+  ```js
+  {
+    safeBlock: string,
+    bestBlock: string,
+    reference: {
+      lastFoundSafeBlock: string,
+      lastFoundBestBlock: string
+    }
+  }
+  ```
+</details>
+<details>
   <summary>txs/signed</summary>
   Input
 
