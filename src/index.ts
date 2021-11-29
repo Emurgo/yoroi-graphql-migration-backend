@@ -25,6 +25,7 @@ import { handlePoolInfo } from "./services/poolInfo";
 import { handleGetAccountState } from "./services/accountState";
 import { handleGetRegHistory } from "./services/regHistory";
 import { handleGetRewardHistory } from "./services/rewardHistory";
+import { handleGetMultiAssetSupply } from "./services/multiAssetSupply";
 import { handleGetMultiAssetTxMintMetadata } from "./services/multiAssetTxMint";
 import { handleGetTransactions } from "./services/transactions";
 import { handleTxStatus } from "./services/txStatus";
@@ -226,7 +227,7 @@ const getFundInfo = async (req: Request, res:  Response) => {
       {
           "currentFund": {
             "id": 7,
-            "registrationStart": "2021-11-11T11:00:00Z",
+            "registrationStart": "2021-11-18T11:00:00Z",
             "registrationEnd": "2022-01-13T11:00:00Z",
             "votingStart": "2022-01-13T11:00:00Z",
             "votingEnd": "2022-01-27T11:00:00Z",
@@ -322,6 +323,11 @@ const routes : Route[] = [
     path: "/pool/cardanoWallet",
     method: "get",
     handler: handleGetCardanoWalletPools(pool)
+  },
+  {
+    path: "/multiAsset/supply",
+    method: "post",
+    handler: handleGetMultiAssetSupply(pool)
   },
   {
     path: "/multiAsset/metadata",
