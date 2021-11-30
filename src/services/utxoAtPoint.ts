@@ -17,11 +17,12 @@ const utxoAtPointQuery = `SELECT tx_out.address,
        (
            SELECT json_agg(
                ROW (
-                   encode(ma_tx_out.policy::bytea, 'hex'::text),
-                   encode(ma_tx_out.name::bytea, 'hex'::text),
+                   encode(multi_asset.policy::bytea, 'hex'::text),
+                   encode(multi_asset.name::bytea, 'hex'::text),
                    ma_tx_out.quantity)
                ) AS json_agg
             FROM ma_tx_out
+              INNER JOIN multi_asset on ma_tx_out.ident = multi_asset.id
             WHERE ma_tx_out.tx_out_id = tx_out.id
         ) AS assets
 FROM tx
