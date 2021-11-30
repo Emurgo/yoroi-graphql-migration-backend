@@ -14,23 +14,28 @@ export const handleGetMultiAssetSupply = (pool: Pool) => async (req: Request, re
 
   const assets: Asset[] = req.body.assets;
 
-  const ret = await Promise.all(assets.map(async (asset) => {
+  const supplies: {[key: string]: number} = {};
+
+  await Promise.all(assets.map(async (asset) => {
     const supply = await getMultiAssetSupply(pool, asset);
 
     const policyAndName = `${asset.policy}.${asset.name}`;
     
-    return supply;
+    supplies[policyAndName] = supply;
   }));
 
-  res.send(ret);
+  res.send({
+    supplies
+  });
 };
 
 const getMultiAssetSupply = async (pool: Pool, asset: Asset): Promise<number> => {
   const query = `
-    select sum(quantity) as supply
-    from ma_tx_mint mint
+    select sum(mint.quantity) as supply
+    from multi_asset
+    join ma_tx_mint mint on multi_asset.id = mint.id
     where
-      mint.name = ($1)::bytea and encode(mint.policy, 'hex') = ($2)::varchar`;
+      multi_asset.name = ($1)::bytea and encode(multi_asset.policy, 'hex') = ($2)::varchar`;
 
   const result = await pool.query(query, [asset.name, asset.policy]);
 
