@@ -94,8 +94,9 @@ const buildSelectColumns = (type: DiffType) => {
   , tx_out.value
   , block.block_no as "blockNumber"
   , (
-    select json_agg(ROW (encode("policy", 'hex'), encode("name", 'hex'), "quantity"))
+    select json_agg(ROW (encode(multi_asset."policy", 'hex'), encode(multi_asset."name", 'hex'), "quantity"))
     from ma_tx_out
+      inner join multi_asset on ma_tx_out.ident = multi_asset.id
     where ma_tx_out."tx_out_id" = tx_out.id
   ) as assets
   , '${type === DiffType.OUTPUT ? "O" : "I"}' as "type"`;
