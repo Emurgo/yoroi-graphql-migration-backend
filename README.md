@@ -404,6 +404,46 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   ```
 </details>
 <details>
+  <summary>GET v2/tipStatus</summary>
+  Input
+
+  None (GET request)
+
+  Output
+
+  ```js
+  {
+    safeBlock: string,
+    bestBlock: string
+  }
+  ```
+</details>
+<details>
+  <summary>POST v2/tipStatus</summary>
+  Input
+
+  ```js
+  {
+    reference: {
+      bestBlocks: string[]
+    }
+  }
+  ```
+
+  Output
+
+  ```js
+  {
+    safeBlock: string,
+    bestBlock: string,
+    reference: {
+      lastFoundSafeBlock: string,
+      lastFoundBestBlock: string
+    }
+  }
+  ```
+</details>
+<details>
   <summary>txs/signed</summary>
   Input
 
@@ -496,8 +536,13 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   Output
 
   ```js
-  // current supplies of given assets
-  Array<number>
+  {
+    // current supplies of given assets.
+    // entry for an asset is null if it is not found.
+    supplies: {
+      "${asset.policy}.${asset.name}": number | null
+    }
+  }
   ```
 </details>
 <details>
