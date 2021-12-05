@@ -13,8 +13,6 @@ export default {
     smashEndpoint: process.env.SMASH_ENDPOINT || "https://smash.yoroiwallet.com/api/v1/metadata/",
     port: process.env.PORT || 8082,
     txsHashesRequestLimit: 150,
-    ogmiosAddress: process.env.OGMIOS_ADDRESS || "ogmios.waw.emurgo-rnd.com",
-    ogmiosPort: process.env.OGMIOS_PORT || 1338
   },
   safeBlockDifference: process.env.SAFE_BLOCK_DIFFERENCE || "10"
 };
