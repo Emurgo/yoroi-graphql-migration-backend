@@ -1,12 +1,21 @@
-import { errMsgs, UtilEither, getAddressesByType } from "../utils";
+import { errMsgs, UtilEither, extractAssets, getAddressesByType } from "../utils";
 
 import {
+    rowToCertificate,
+    BlockEra,
+    BlockFrag,
+    Certificate,
+    TransInputFrag,
+    TransOutputFrag,
     TransactionFrag,
+    Asset
 } from "../Transactions/types";
 
 import {
-  mapTxRowsToTransactionFrags
-} from "../utils/mappers";
+  TransactionMetadata,
+  TransactionMetadatum,
+  BigNum,
+} from "@emurgo/cardano-serialization-lib-nodejs";
 
 import { Pool } from "pg";
 
@@ -128,20 +137,70 @@ const askTransactionSqlQuery = `
        , tx.fee
        , tx.valid_contract
        , tx.script_size
-       , tx_metadata_agg(tx.id) as metadata
+       , (select jsonb_object_agg(key, bytes)
+        from tx_metadata
+        where tx_metadata.tx_id = tx.id) as metadata
        , tx.block_index as "txIndex"
        , block.block_no as "blockNumber"
        , block.hash as "blockHash"
        , block.epoch_no as "blockEpochNo"
        , block.slot_no as "blockSlotNo"
        , block.epoch_slot_no as "blockSlotInEpoch"
-       , block_era_from_vrf_key(vrf_key) as "blockEra"
+       , case when vrf_key is null then 'byron' 
+              else 'shelley' end 
+         as "blockEra"
        , block.time at time zone 'UTC' as "includedAt"
-       , in_addr_val_pairs(tx.hash) as "inAddrValPairs"
-        , collateral_in_addr_val_pairs(tx.hash) as "collateralInAddrValPairs"
-       , out_addr_val_pairs(tx.id, tx.hash) as "outAddrValPairs"
-       , withdraws_agg(tx.id) as withdrawals
-       , certificates_agg(tx.id) as certificates
+       , (select json_agg(( source_tx_out.address
+                          , source_tx_out.value
+                          , encode(source_tx.hash, 'hex')
+                          , tx_in.tx_out_index
+                          , (select json_agg(ROW(encode("policy", 'hex'), encode("name", 'hex'), "quantity"))
+                            from ma_tx_out
+                            WHERE ma_tx_out."tx_out_id" = source_tx_out.id)
+                          ) order by tx_in.id asc) as inAddrValPairs
+          FROM tx inadd_tx
+          JOIN tx_in
+            ON tx_in.tx_in_id = inadd_tx.id
+          JOIN tx_out source_tx_out 
+            ON tx_in.tx_out_id = source_tx_out.tx_id AND tx_in.tx_out_index::smallint = source_tx_out.index::smallint
+          JOIN tx source_tx 
+            ON source_tx_out.tx_id = source_tx.id
+          where inadd_tx.hash = tx.hash) as "inAddrValPairs"
+        , (select json_agg(( source_tx_out.address
+            , source_tx_out.value
+            , encode(source_tx.hash, 'hex')
+            , collateral_tx_in.tx_out_index
+            , (select json_agg(ROW(encode("policy", 'hex'), encode("name", 'hex'), "quantity"))
+              from ma_tx_out
+              WHERE ma_tx_out."tx_out_id" = source_tx_out.id)
+            ) order by collateral_tx_in.id asc) as collateralInAddrValPairs
+          FROM tx inadd_tx
+          JOIN collateral_tx_in
+          ON collateral_tx_in.tx_in_id = inadd_tx.id
+          JOIN tx_out source_tx_out 
+          ON collateral_tx_in.tx_out_id = source_tx_out.tx_id AND collateral_tx_in.tx_out_index::smallint = source_tx_out.index::smallint
+          JOIN tx source_tx 
+          ON source_tx_out.tx_id = source_tx.id
+          where inadd_tx.hash = tx.hash) as "collateralInAddrValPairs"
+       , (select json_agg((
+                    "address", 
+                    "value",
+                   (select json_agg(ROW(encode("policy", 'hex'), encode("name", 'hex'), "quantity"))
+                        FROM ma_tx_out
+                        JOIN tx_out token_tx_out
+                        ON tx.id = token_tx_out.tx_id         
+                        WHERE ma_tx_out."tx_out_id" = token_tx_out.id AND hasura_to."address" = token_tx_out.address AND hasura_to.index = token_tx_out.index)
+                    ) order by "index" asc) as outAddrValPairs
+          from "TransactionOutput" hasura_to
+          where hasura_to."txHash" = tx.hash) as "outAddrValPairs"
+       , (select json_agg((encode(addr."hash_raw",'hex'), "amount") order by w."id" asc)
+          from withdrawal as w
+          join stake_address as addr
+          on addr.id = w.addr_id
+          where tx_id = tx.id) as withdrawals
+       , (select json_agg(row_to_json(combined_certificates) order by "certIndex" asc)
+          from combined_certificates 
+          where "txId" = tx.id) as certificates
                             
   from tx
 
@@ -170,6 +229,47 @@ const askTransactionSqlQuery = `
   limit $5;
 `;
 
+const MAX_INT = "2147483647";
+
+function buildMetadataObj(
+  metadataMap: null | Record<string, string>
+): (null | string) {
+  if (metadataMap == null) return null;
+  const metadataWasm = TransactionMetadata.new();
+  for (const key of Object.keys(metadataMap)) {
+    const keyWasm = BigNum.from_str(key);
+    // the cbor inserted into SQL is not the full metadata for the transaction
+    // instead, each row is a CBOR map with a single entry <transaction_metadatum_label, transaction_metadatum>
+    const singletonMap = TransactionMetadatum.from_bytes(
+      Buffer.from(
+        // need to cutoff the \\x prefix added by SQL
+        metadataMap[key].substring(2),
+        "hex"
+      )
+    );
+    const map = singletonMap.as_map();
+    const keys = map.keys();
+    for (let i = 0; i < keys.len(); i++) {
+      const cborKey = keys.get(i);
+      const datumWasm = map.get(cborKey);
+      metadataWasm.insert(
+        keyWasm,
+        datumWasm
+      );
+      datumWasm.free();
+      cborKey.free();
+    }
+    keyWasm.free();
+    singletonMap.free();
+    map.free();
+    keys.free();
+  }
+  const result = Buffer.from(metadataWasm.to_bytes()).toString("hex");
+  metadataWasm.free();
+
+  return result;
+}
+
 export const askTransactionHistory = async (
   pool: Pool
   , limit: number
@@ -193,12 +293,72 @@ export const askTransactionHistory = async (
     , addressTypes.paymentCreds
     , addressTypes.stakingKeys
   ]);
-  const txs = mapTxRowsToTransactionFrags(ret.rows);
+  const txs = ret.rows.map( (row: any):TransactionFrag => {
+    const inputs = row.inAddrValPairs 
+      ? row.inAddrValPairs.map((obj: any): TransInputFrag => ({
+            address: obj.f1,
+            amount: obj.f2.toString(),
+            id: obj.f3.concat(obj.f4.toString()),
+            index: obj.f4,
+            txHash: obj.f3,
+            assets: extractAssets(obj.f5)
+      }))
+      : []; 
+    const collateralInputs = row.collateralInAddrValPairs 
+      ? row.collateralInAddrValPairs.map((obj: any): TransInputFrag => ({
+            address: obj.f1,
+            amount: obj.f2.toString(),
+            id: obj.f3.concat(obj.f4.toString()),
+            index: obj.f4,
+            txHash: obj.f3,
+            assets: extractAssets(obj.f5)
+      }))
+      : [];
+    const outputs = row.outAddrValPairs 
+      ? row.outAddrValPairs.map((obj: any): TransOutputFrag => ({
+            address: obj.f1,
+            amount: obj.f2.toString(),
+            assets: extractAssets(obj.f3)
+        }))
+      : [];
+    const withdrawals : TransOutputFrag[] = row.withdrawals 
+      ? row.withdrawals.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString(), assets: [] as Asset[] }))
+      : [];
+    const certificates = row.certificates !== null
+      ? row.certificates
+        .map(rowToCertificate) 
+        .filter( (i:Certificate|null) => i !== null)
+      : [];
+    const blockFrag : BlockFrag = { number: row.blockNumber
+      , hash: row.blockHash.toString("hex")
+      , epochNo: row.blockEpochNo
+      , slotNo: row.blockSlotInEpoch };
+    return { hash: row.hash.toString("hex")
+      , block: blockFrag
+      , validContract: row.valid_contract
+      , scriptSize: row.script_size
+      , fee: row.fee.toString()
+      , metadata: buildMetadataObj(row.metadata)
+      , includedAt: row.includedAt
+      , inputs: inputs
+      , collateralInputs: collateralInputs
+      , outputs: outputs
+      , ttl: MAX_INT // https://github.com/input-output-hk/cardano-db-sync/issues/212
+      , blockEra: row.blockEra === "byron" ? BlockEra.Byron : BlockEra.Shelley
+      , txIndex: row.txIndex
+      , withdrawals: withdrawals
+      , certificates: certificates
+    };
+  });
+            
+
   return { kind: "ok", value: txs } ;
   //if('data' in ret && 'data' in ret.data && 'transactions' in ret.data.data)
   //    return {'kind':'ok', value:ret.data.data.transactions};
   //else
   //    return {'kind':'error', errMsg:'TxsHistory, could not understand graphql response'};
+
+
 };
 
 export interface BlockNumByTxHashFrag {
