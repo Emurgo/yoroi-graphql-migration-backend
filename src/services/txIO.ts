@@ -39,9 +39,10 @@ const getInputs = async (pool: Pool, tx_hash: string): Promise<Array<TransInputF
       tx_out.value,
       tx_in.tx_out_index,
       (
-        select json_agg(ROW(encode("policy", 'hex'), encode("name", 'hex'), "quantity"))
+        select json_agg(ROW(encode("ma"."policy", 'hex'), encode("ma"."name", 'hex'), "quantity"))
         from ma_tx_out
-        where ma_tx_out.tx_out_id = tx_out.id
+        inner join multi_asset ma on ma_tx_out.ident = ma.id
+        WHERE ma_tx_out."tx_out_id" = tx_out.id
       ) as asset_queries
     from tx
     join tx_in on tx_in.tx_in_id = tx.id
@@ -69,9 +70,10 @@ const getCollateralInputs = async (pool: Pool, tx_hash: string): Promise<Array<T
       tx_out.value,
       tx_in.tx_out_index,
       (
-        select json_agg(ROW(encode("policy", 'hex'), encode("name", 'hex'), "quantity"))
+        select json_agg(ROW(encode("ma"."policy", 'hex'), encode("ma"."name", 'hex'), "quantity"))
         from ma_tx_out
-        where ma_tx_out.tx_out_id = tx_out.id
+        inner join multi_asset ma on ma_tx_out.ident = ma.id
+        WHERE ma_tx_out."tx_out_id" = tx_out.id
       ) as asset_queries
     from tx
     join collateral_tx_in tx_in on tx_in.tx_in_id = tx.id
@@ -98,9 +100,10 @@ const getOutputs = async (pool: Pool, tx_hash: string): Promise<Array<TransOutpu
       tx_out.address,
       tx_out.value,
       (
-        select json_agg(ROW(encode("policy", 'hex'), encode("name", 'hex'), "quantity"))
+        select json_agg(ROW(encode("ma"."policy", 'hex'), encode("ma"."name", 'hex'), "quantity"))
         from ma_tx_out
-        where ma_tx_out.tx_out_id = tx_out.id
+        inner join multi_asset ma on ma_tx_out.ident = ma.id
+        WHERE ma_tx_out."tx_out_id" = tx_out.id
       ) as asset_queries
     from tx
     join tx_out on tx.id = tx_out.tx_id
