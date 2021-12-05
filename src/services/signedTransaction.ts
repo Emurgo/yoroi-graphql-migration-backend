@@ -19,9 +19,11 @@ const submitToQueue = async (req: Request, res: Response) => {
     const buffer = Buffer.from(req.body.signedTx, "base64");
     const txId = await calculateTxId(buffer.toString("base64"));
 
+    const signedTxQueueEndpoint = config.get("server.signedTxQueueEndpoint");
+
     await axios({
       method: "post"
-      , url: submissionEndpoint
+      , url: `${signedTxQueueEndpoint}api/submit/tx`
       , data: {
         txId: txId,
         signedTx: buffer.toString("base64")

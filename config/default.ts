@@ -10,6 +10,7 @@ export default {
     addressRequestLimit: 50,
     apiResponseLimit: 50,
     txSubmissionEndpoint: process.env.TX_SUBMISSION_ENDPOINT || "https://backend.yoroiwallet.com/api/submit/tx",
+    signedTxQueueEndpoint: process.env.SIGNED_TX_QUEUE_ENDPOINT || "http://localhost:3030/",
     smashEndpoint: process.env.SMASH_ENDPOINT || "https://smash.yoroiwallet.com/api/v1/metadata/",
     port: process.env.PORT || 8082,
     txsHashesRequestLimit: 150,
