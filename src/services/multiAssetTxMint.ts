@@ -50,16 +50,17 @@ export const handleGetMultiAssetTxMintMetadata = (pool: Pool) => async (req: Req
 
 function createGetMultiAssetTxMintMetadataQuery(assets: Asset[]) {
   const whereConditions = assets
-    .map((a, idx) => `( mint.name = ($${idx * 2 + 1})::bytea
-      and encode(mint.policy, 'hex') = ($${idx * 2 + 2})::varchar )`)
+    .map((a, idx) => `( ma.name = ($${idx * 2 + 1})::bytea
+      and encode(ma.policy, 'hex') = ($${idx * 2 + 2})::varchar )`)
     .join(" or ");
 
   const query = `
-  select encode(mint.policy, 'hex') as policy,
-    mint.name as asset,
+  select encode(ma.policy, 'hex') as policy,
+    ma.name as asset,
     meta.key,
     meta.json
   from ma_tx_mint mint
+    join multi_asset ma on mint.ident = ma.id
     join tx on mint.tx_id = tx.id
     join tx_metadata meta on tx.id = meta.tx_id
   where ${whereConditions}`;

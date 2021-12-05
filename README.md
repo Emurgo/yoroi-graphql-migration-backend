@@ -443,6 +443,46 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   ```
 </details>
 <details>
+  <summary>GET v2/tipStatus</summary>
+  Input
+
+  None (GET request)
+
+  Output
+
+  ```js
+  {
+    safeBlock: string,
+    bestBlock: string
+  }
+  ```
+</details>
+<details>
+  <summary>POST v2/tipStatus</summary>
+  Input
+
+  ```js
+  {
+    reference: {
+      bestBlocks: string[]
+    }
+  }
+  ```
+
+  Output
+
+  ```js
+  {
+    safeBlock: string,
+    bestBlock: string,
+    reference: {
+      lastFoundSafeBlock: string,
+      lastFoundBestBlock: string
+    }
+  }
+  ```
+</details>
+<details>
   <summary>txs/signed</summary>
   Input
 
@@ -515,4 +555,32 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   200 status if things look good. Error if node is not syncing
 
 
+</details>
+<details>
+  <summary>multiAsset/supply</summary>
+  This endpoint is used to get current supplies of given multi assets
+
+  Input
+
+  ```js
+  {
+    // list of multi assets to get supplies of
+    assets: Array<{
+      policy: string,
+      name: string
+    }>
+  }
+  ```
+
+  Output
+
+  ```js
+  {
+    // current supplies of given assets.
+    // entry for an asset is null if it is not found.
+    supplies: {
+      "${asset.policy}.${asset.name}": number | null
+    }
+  }
+  ```
 </details>

@@ -26,9 +26,10 @@ import { handlePoolInfo } from "./services/poolInfo";
 import { handleGetAccountState } from "./services/accountState";
 import { handleGetRegHistory } from "./services/regHistory";
 import { handleGetRewardHistory } from "./services/rewardHistory";
+import { handleGetMultiAssetSupply } from "./services/multiAssetSupply";
 import { handleGetMultiAssetTxMintMetadata } from "./services/multiAssetTxMint";
 import { handleTxStatus } from "./services/txStatus";
-import { handleSafeBlock } from "./services/safeBlock";
+import { handleTipStatusGet, handleTipStatusPost } from "./services/tipStatus";
 
 import { HealthChecker } from "./HealthChecker";
 
@@ -244,11 +245,11 @@ const getFundInfo = async (req: Request, res:  Response) => {
   res.send(
       {
           "currentFund": {
-            "id": 6,
-            "registrationStart": "2021-08-12T11:00:00Z",
-            "registrationEnd": "2021-10-04T11:00:00Z",
-            "votingStart": "2021-10-07T11:00:00Z",
-            "votingEnd": "2021-10-21T11:00:00Z",
+            "id": 7,
+            "registrationStart": "2021-11-18T11:00:00Z",
+            "registrationEnd": "2022-01-13T11:00:00Z",
+            "votingStart": "2022-01-13T11:00:00Z",
+            "votingEnd": "2022-01-27T11:00:00Z",
             "votingPowerThreshold": "450"
           }
         });
@@ -299,9 +300,13 @@ const routes : Route[] = [
   , method: "get"
   , handler: bestBlock(pool)
 }
-, {   path: "/v2/safeblock"
+, {   path: "/v2/tipStatus"
   , method: "get"
-  , handler: handleSafeBlock(pool)
+  , handler: handleTipStatusGet(pool)
+}
+, {   path: "/v2/tipStatus"
+  , method: "post"
+  , handler: handleTipStatusPost(pool)
 }
 , { path: "/v2/addresses/filterUsed"
   , method: "post"
@@ -341,6 +346,11 @@ const routes : Route[] = [
     path: "/pool/cardanoWallet",
     method: "get",
     handler: handleGetCardanoWalletPools(pool)
+  },
+  {
+    path: "/multiAsset/supply",
+    method: "post",
+    handler: handleGetMultiAssetSupply(pool)
   },
   {
     path: "/multiAsset/metadata",
