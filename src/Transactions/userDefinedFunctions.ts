@@ -52,6 +52,7 @@ BEGIN
             , (
                 SELECT json_agg(ROW(encode("policy", 'hex'), encode("name", 'hex'), "quantity"))
                 FROM ma_tx_out
+                inner join multi_asset on ma_tx_out.ident = multi_asset.id
                 WHERE ma_tx_out."tx_out_id" = source_tx_out.id
             )) order by tx_in.id asc) as inAddrValPairs
         FROM tx inadd_tx
@@ -76,6 +77,7 @@ BEGIN
             , (
                 SELECT json_agg(ROW(encode("policy", 'hex'), encode("name", 'hex'), "quantity"))
                 FROM ma_tx_out
+                inner join multi_asset on ma_tx_out.ident = multi_asset.id
                 WHERE ma_tx_out."tx_out_id" = source_tx_out.id
             )) order by collateral_tx_in.id asc) as collateralInAddrValPairs
         FROM tx inadd_tx
@@ -98,6 +100,7 @@ BEGIN
             , (
                 SELECT json_agg(ROW(encode("policy", 'hex'), encode("name", 'hex'), "quantity"))
                 FROM ma_tx_out
+                    JOIN multi_asset on ma_tx_out.ident = multi_asset.id
                     JOIN tx_out token_tx_out ON token_tx_out.tx_id = _tx_id
                 WHERE ma_tx_out."tx_out_id" = token_tx_out.id
                   AND hasura_to."address" = token_tx_out.address
