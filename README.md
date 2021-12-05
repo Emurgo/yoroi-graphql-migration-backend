@@ -586,8 +586,11 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
 
   ```
   {
-    "depth": {
+    depth: {
       "<txHash>": number
+    },
+    submissionStatus?: {
+      "<txHash>": "WAITING" | "FAILED" | "MAX_RETRY_REACHED" | "SUCCEESS"
     }
   }
   ```
