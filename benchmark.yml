@@ -1,0 +1,43 @@
+concurrency: 64
+base: 'http://127.0.0.1:8082'
+iterations: 256
+rampup: 2
+
+plan:
+  - name: TxHistory
+    request:
+      url: /v2/txs/history
+      method: POST
+      body: >
+        {
+          "addresses": [
+            "2657WMsDfac6kyMx453f1FZTAVTHcNcuF5pTRD16bcRfGBu53LVPREup3xCV9s5fu",
+            "2657WMsDfac7C25iSqxto8YSZb7S4cTCLNQAQL2Hv7KJ2GQvsYb1hekjyZUs91yHX",
+            "2657WMsDfac7dcjdWNEKG4ZfBurbcQqr5SJBRTNx1QMrUDD8SghP5RK5PFkQuDJvh",
+            "2cWKMJemoBah8ab5afFhdx7NhyM8pe4XWsTHd36LuckAPjQ8iYh2y9uzy1NMVdpHbkb8t",
+            "2cWKMJemoBah8aM8uXv736YRonQkXLCjC37kJupXam6hqNRZNaETdW8nRsr3VSnkhg9FR",
+            "2cWKMJemoBah8azBhLY1VXH816WWZnh27yMN25cC6DswMHKMbHyYB6kjXKep7iQQz4RNU",
+            "2cWKMJemoBah8bHWzycDVLZBPNCZ4VF5wZNaw4b8eZtEkXdWUjBwBGmHWp7sG8jWmHufK",
+            "2cWKMJemoBah8bybXvWf6XpmP7xUchpL2AW1jRkT9eCLYj6jHBhH6sNuVfsWZn6bFr7z6",
+            "2cWKMJemoBah8bydfs7B6JxzxV2tnNcuSqHM2HNFHfdtMCrReNctWFFZFYzMc8kAL1ZTW",
+            "2cWKMJemoBah8crWp1WK7wDSbD3xvPhpijae8K4KU4BJ2fDCdTaJXqVWFuGTpdK7QEkAh",
+            "2cWKMJemoBah8cZ26awNkzuMeSkjZ66vh3LP7ACKW6gxccjk4hZzEFaMZnq6xpqWXAaCN",
+            "2cWKMJemoBah8dDf62kbwC3N37QFBQ4ZPdzUhU2a7j52cfs8MHqhMaVw9y3o1VdsMPgQj",
+            "2cWKMJemoBah8e1jZXXCHy6aD8EeChdgKxAbZ1xvNS3m9PZCzatXAkjGUk1TnFAR2P7jm",
+            "2cWKMJemoBah8eaig1wviWZh5LRvHjvyDDZCiAxHbQmmNC3JuviExPzhuBQYLwhHJqQfc",
+            "2cWKMJemoBah8ecNRen3VjoyPyLKiikgsZEaYPwe2SKG2C7a5qzJJqSCxSBDaXXi31Jcq",
+            "2cWKMJemoBah8eV911CCkwfvK1WdrogqGGMRj1U56nAKGBXWTGp2M4J5t24DWcJmtu5Fn",
+            "2cWKMJemoBah8faGyMMBpa5KB1DrgTVSy91htTVFMGaqbrAbeJkPnpjJNEDxTXKGge5u1",
+            "2cWKMJemoBah8gQ8NoLBKozFkn4JvsWMHob6vNwq7hf8ah2BfHTpiUcxtUxw1MjSrXMR7",
+            "2cWKMJemoBah8grnGFpwQM2hZahx2yZkic2Qx1ncTp9zmpnQ6mdyhGdmjzRnCE5j2ZcCM",
+            "2cWKMJemoBah8gU9RcpEAdKiavxWDVCRNJubGSAFiypoMSGUJxGeWHqkQf7Q2KDKXzPSv",
+            "2cWKMJemoBah8h9KMw9B1T8Rb4xzMMeqTr1yeBURt58CT22dMrzuXwfhqLMPeV1CVTwgJ",
+            "2cWKMJemoBah8ijpV3mJ6FYRqBtStphdudkqmaDWGQqbNr1RaX11ruJJpVPrYhMRcGUsB",
+            "2cWKMJemoBah8ipAaJCJ4CTuKqEbbp79DZyPVy3VJxkajKTjmxThXsouVTsBVkRj4yhWk",
+            "2cWKMJemoBah8jdC8ymbLspaxtULkrnN3uy9F1pTh5Z9UCi6xyJqEsmUBh6Vysm4ntbrv",
+            "2cWKMJemoBah8kobdDWKfy3CiHiBrFnA7G5vH6dksyfbHMtaNgcLYCVwae87ZAq3sByxY"
+          ],
+          "untilBlock": "81ff419d9c95582957f76022cfd9b3c0477b61d6f6a272811830c8c1df4fbe4d"
+        }
+      headers:
+        Content-Type: 'application/json'
