@@ -1,5 +1,4 @@
 import { UtilEither } from "./utils";
-import * as BestBlock from "./services/bestblock";
 import { CardanoFrag } from "./Transactions/types";
 
 const REQUEST_RATE_MS = 2000;
