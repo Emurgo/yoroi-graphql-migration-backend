@@ -8,12 +8,14 @@ export const handleGetTxIO = (pool: Pool) => async (req: Request, res:Response):
 
   const tx_hash = req.params.tx_hash.trim();
 
-  if (!(await txExists(pool, tx_hash))) throw new Error("transaction can't be found");
+  const tx_id = await getTxId(pool, tx_hash);
+
+  if (tx_id === null) throw new Error("transaction can't be found");
 
   const [inputs, collateralInputs, outputs] = await Promise.all([
     getInputs(pool, tx_hash),
     getCollateralInputs(pool, tx_hash),
-    getOutputs(pool, tx_hash)
+    getOutputs(pool, tx_id, tx_hash)
   ]);
 
   res.send({
@@ -21,100 +23,74 @@ export const handleGetTxIO = (pool: Pool) => async (req: Request, res:Response):
   });
 };
 
-const txExists = async (pool: Pool, tx_hash: string): Promise<boolean> => {
+const getTxId = async (pool: Pool, tx_hash: string): Promise<any> => {
   const query = `
-    select * from tx
+    select tx.id from tx
     where encode(tx.hash, 'hex') = $1
     limit 1`;
 
   const result = await pool.query(query, [tx_hash]);
 
-  return result.rowCount === 1;
+  if (result.rowCount !== 1) {
+    return null;
+  }
+
+  return result.rows[0].id;
 };
 
 const getInputs = async (pool: Pool, tx_hash: string): Promise<Array<TransInputFrag>> => {
   const query = `
-    select
-      tx_out.address,
-      tx_out.value,
-      tx_in.tx_out_index,
-      (
-        select json_agg(ROW(encode("ma"."policy", 'hex'), encode("ma"."name", 'hex'), "quantity"))
-        from ma_tx_out
-        inner join multi_asset ma on ma_tx_out.ident = ma.id
-        WHERE ma_tx_out."tx_out_id" = tx_out.id
-      ) as asset_queries
-    from tx
-    join tx_in on tx_in.tx_in_id = tx.id
-    join tx_out on tx_in.tx_out_id = tx_out.tx_id and tx_in.tx_out_index::smallint = tx_out.index::smallint
-    join tx source_tx on tx_out.tx_id = source_tx.id
-    where encode(tx.hash, 'hex') = $1
-    order by tx_in.id asc`;
+    select * from in_addr_val_pairs(decode($1, 'hex'));`;
 
   const result = await pool.query(query, [tx_hash]);
 
-  return result.rows.map((row: any): TransInputFrag => ({
-    address: row.address,
-    amount: row.value,
-    id: tx_hash.concat(row.tx_out_index),
-    index: row.tx_out_index,
-    txHash: tx_hash,
-    assets: extractAssets(row.asset_queries)
+  if (result.rows[0].in_addr_val_pairs === null) {
+    return [];
+  }
+
+  return result.rows[0].in_addr_val_pairs.map((obj: any): TransInputFrag => ({
+    address: obj.f1,
+    amount: obj.f2.toString(),
+    id: obj.f3.concat(obj.f4.toString()),
+    index: obj.f4,
+    txHash: obj.f3,
+    assets: extractAssets(obj.f5)
   }));
 };
 
 const getCollateralInputs = async (pool: Pool, tx_hash: string): Promise<Array<TransInputFrag>> => {
   const query = `
-    select
-      tx_out.address,
-      tx_out.value,
-      tx_in.tx_out_index,
-      (
-        select json_agg(ROW(encode("ma"."policy", 'hex'), encode("ma"."name", 'hex'), "quantity"))
-        from ma_tx_out
-        inner join multi_asset ma on ma_tx_out.ident = ma.id
-        WHERE ma_tx_out."tx_out_id" = tx_out.id
-      ) as asset_queries
-    from tx
-    join collateral_tx_in tx_in on tx_in.tx_in_id = tx.id
-    join tx_out on tx_in.tx_out_id = tx_out.tx_id and tx_in.tx_out_index::smallint = tx_out.index::smallint
-    join tx source_tx on tx_out.tx_id = source_tx.id
-    where encode(tx.hash, 'hex') = $1
-    order by tx_in.id asc`;
+    select * from collateral_in_addr_val_pairs(decode($1, 'hex'));`;
 
   const result = await pool.query(query, [tx_hash]);
 
-  return result.rows.map((row: any): TransInputFrag => ({
-    address: row.address,
-    amount: row.value,
-    id: tx_hash.concat(row.tx_out_index),
-    index: row.tx_out_index,
-    txHash: tx_hash,
-    assets: extractAssets(row.asset_queries)
+  if (result.rows[0].collateral_in_addr_val_pairs === null) {
+    return [];
+  }
+
+  return result.rows[0].collateral_in_addr_val_pairs.map((obj: any): TransInputFrag => ({
+    address: obj.f1,
+    amount: obj.f2.toString(),
+    id: obj.f3.concat(obj.f4.toString()),
+    index: obj.f4,
+    txHash: obj.f3,
+    assets: extractAssets(obj.f5)
   }));
 };
 
-const getOutputs = async (pool: Pool, tx_hash: string): Promise<Array<TransOutputFrag>> => {
+const getOutputs = async (pool: Pool, tx_id: number, tx_hash: string): Promise<Array<TransOutputFrag>> => {
   const query = `
-    select
-      tx_out.address,
-      tx_out.value,
-      (
-        select json_agg(ROW(encode("ma"."policy", 'hex'), encode("ma"."name", 'hex'), "quantity"))
-        from ma_tx_out
-        inner join multi_asset ma on ma_tx_out.ident = ma.id
-        WHERE ma_tx_out."tx_out_id" = tx_out.id
-      ) as asset_queries
-    from tx
-    join tx_out on tx.id = tx_out.tx_id
-    where encode(tx.hash, 'hex') = $1
-    order by tx_out.index asc`;
+    select * from out_addr_val_pairs($1, decode($2, 'hex'));`;
 
-  const result = await pool.query(query, [tx_hash]);
+  const result = await pool.query(query, [tx_id, tx_hash]);
 
-  return result.rows.map((row: any): TransOutputFrag => ({
-    address: row.address,
-    amount: row.value,
-    assets: extractAssets(row.asset_queries)
+  if (result.rows[0].out_addr_val_pairs === null) {
+    return [];
+  }
+
+  return result.rows[0].out_addr_val_pairs.map((obj: any): TransOutputFrag => ({
+    address: obj.f1,
+    amount: obj.f2.toString(),
+    assets: extractAssets(obj.f3)
   }));
 };
