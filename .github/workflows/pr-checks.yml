@@ -28,3 +28,6 @@ jobs:
       - name: run eslint
         run: |
           npm run eslint
+      - name: run prettier
+        run: |
+          npx prettier --check src

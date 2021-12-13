@@ -1,4 +1,4 @@
-import { Pool, } from "pg";
+import { Pool } from "pg";
 
 export const createTransactionOutputViewSql = `
 DROP VIEW if exists TransactionOutput;
@@ -11,7 +11,7 @@ CREATE VIEW "TransactionOutput" AS  SELECT tx_out.address,
 `;
 
 export const createTransactionOutputView = (pool: Pool): void => {
-  if(process.env.NODE_TYPE !== "slave"){
+  if (process.env.NODE_TYPE !== "slave") {
     pool.query(createTransactionOutputViewSql);
   }
 };
