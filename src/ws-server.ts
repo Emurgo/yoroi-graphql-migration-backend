@@ -2,7 +2,7 @@ import { Pool } from "pg";
 
 const MSG_TYPE_RESTORE = "RESTORE";
 
-const restoreUtxo = async(pool: Pool): Promise<string[]> => {
+const restoreUtxo = async (pool: Pool): Promise<string[]> => {
   /*
     byron-era addresses don't have staking keys so this is an optimization
     Ae2 addresses & enterprise addresses also have no staking keys, so we still have to check the address format
@@ -16,22 +16,29 @@ const restoreUtxo = async(pool: Pool): Promise<string[]> => {
       stake_address_id is NULL
       and address like 'Ddz%'
   `);
-  return ret.rows.map( (row :any) => row.address);
+  return ret.rows.map((row: any) => row.address);
 };
 
 export const connectionHandler = (pool: Pool) => {
-
-  return (ws : WebSocket) => {
+  return (ws: WebSocket) => {
     ws.onmessage = (event: MessageEvent) => {
       try {
         const data = JSON.parse(event.data);
-        switch(data.msg) {
-        case MSG_TYPE_RESTORE: {
-          restoreUtxo(pool)
-            .then( (addresses) => {
-              ws.send(JSON.stringify({ msg: MSG_TYPE_RESTORE, addresses: addresses }));
-            })
-            .catch( (error) => {console.log(error);}); }
+        switch (data.msg) {
+          case MSG_TYPE_RESTORE: {
+            restoreUtxo(pool)
+              .then((addresses) => {
+                ws.send(
+                  JSON.stringify({
+                    msg: MSG_TYPE_RESTORE,
+                    addresses: addresses,
+                  })
+                );
+              })
+              .catch((error) => {
+                console.log(error);
+              });
+          }
         }
       } catch (e: any) {
         const errorStr = e.stack == null ? e : e.stack;

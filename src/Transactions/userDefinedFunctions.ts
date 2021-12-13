@@ -1,4 +1,4 @@
-import { Pool, } from "pg";
+import { Pool } from "pg";
 
 const transactionUtilityFunctionsSql = `
 CREATE OR REPLACE FUNCTION tx_metadata_agg (_tx_id BIGINT) RETURNS json AS $$
@@ -114,7 +114,7 @@ $$ LANGUAGE plpgsql;
 `;
 
 export const createTransactionUtilityFunctions = (pool: Pool): void => {
-  if(process.env.NODE_TYPE !== "slave"){
+  if (process.env.NODE_TYPE !== "slave") {
     pool.query(transactionUtilityFunctionsSql);
   }
 };

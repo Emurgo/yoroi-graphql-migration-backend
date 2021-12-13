@@ -1,8 +1,11 @@
-import {errMsgs, UtilEither} from "../utils";
-import {Pool} from "pg";
+import { errMsgs, UtilEither } from "../utils";
+import { Pool } from "pg";
 import { UtxoSumResponse } from "../Transactions/types";
 
-export const askUtxoSumForAddresses = async (pool: Pool, addresses: string[]): Promise<UtilEither<UtxoSumResponse>> => {
+export const askUtxoSumForAddresses = async (
+  pool: Pool,
+  addresses: string[]
+): Promise<UtilEither<UtxoSumResponse>> => {
   // TODO: support for payment keys
   const sqlQuery = `
     SELECT SUM(value) as value
@@ -23,30 +26,31 @@ export const askUtxoSumForAddresses = async (pool: Pool, addresses: string[]): P
       ma.name;
   `;
 
-  if(addresses.length == 0)
-      return {kind:"error", errMsg: errMsgs.noValue};
+  if (addresses.length == 0) return { kind: "error", errMsg: errMsgs.noValue };
 
   try {
-      const res = await pool.query(sqlQuery, [addresses]);
-      const totalAda = res.rows.length > 0 ? res.rows[0].value : "0";
+    const res = await pool.query(sqlQuery, [addresses]);
+    const totalAda = res.rows.length > 0 ? res.rows[0].value : "0";
 
-      const tokensRes = await pool.query(tokensQuery, [addresses]);
+    const tokensRes = await pool.query(tokensQuery, [addresses]);
 
-      return {
-          kind:"ok",
-          value: {
-            sum: totalAda,
-            tokensBalance: tokensRes.rows
-              .map(r => {
-                return {
-                  amount: r.amount,
-                  assetId: `${r.policy}.${r.name}`
-                };
-              })
-          },
-      };
+    return {
+      kind: "ok",
+      value: {
+        sum: totalAda,
+        tokensBalance: tokensRes.rows.map((r) => {
+          return {
+            amount: r.amount,
+            assetId: `${r.policy}.${r.name}`,
+          };
+        }),
+      },
+    };
   } catch (err: any) {
-      const errString = err.stack + "";
-      return {kind:"error", errMsg: "askUtxoSumForAddresses error: " + errString};
+    const errString = err.stack + "";
+    return {
+      kind: "error",
+      errMsg: "askUtxoSumForAddresses error: " + errString,
+    };
   }
 };

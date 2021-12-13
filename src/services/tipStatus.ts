@@ -39,70 +39,81 @@ const safeBlockFromReferenceQuery = `SELECT encode(hash, 'hex') as "hash", block
   ORDER BY block_no DESC
   LIMIT 1`;
 
-const getBestAndSafeBlocks = async (pool: Pool): Promise<{
-  safeBlock: string | undefined,
-  bestBlock: string | undefined
+const getBestAndSafeBlocks = async (
+  pool: Pool
+): Promise<{
+  safeBlock: string | undefined;
+  bestBlock: string | undefined;
 }> => {
   const [bestBlockResult, safeBlockResult] = await Promise.all([
     pool.query(bestBlockQuery),
-    pool.query(safeBlockQuery, [safeBlockDifference])
+    pool.query(safeBlockQuery, [safeBlockDifference]),
   ]);
 
   return {
-    safeBlock: safeBlockResult.rowCount > 0 ? safeBlockResult.rows[0].hash : undefined,
-    bestBlock: bestBlockResult.rowCount > 0 ? bestBlockResult.rows[0].hash : undefined,
+    safeBlock:
+      safeBlockResult.rowCount > 0 ? safeBlockResult.rows[0].hash : undefined,
+    bestBlock:
+      bestBlockResult.rowCount > 0 ? bestBlockResult.rows[0].hash : undefined,
   };
 };
 
-export const handleTipStatusGet = (pool: Pool) => async (req: Request, res: Response) => {
-  const result = await getBestAndSafeBlocks(pool);
-  res.send(result);
-};
+export const handleTipStatusGet =
+  (pool: Pool) => async (req: Request, res: Response) => {
+    const result = await getBestAndSafeBlocks(pool);
+    res.send(result);
+  };
 
-export const handleTipStatusPost = (pool: Pool) => async (req: Request, res: Response) => {
-  if (!req.body.reference) {
-    throw new Error("error, missing reference");
-  }
-
-  if (!req.body.reference.bestBlocks) {
-    throw new Error("error, missing bestBlocks inside reference");
-  }
-
-  const bestBlocks: string[] = req.body.reference.bestBlocks;
-  if (!Array.isArray(bestBlocks)) {
-    throw new Error("error, bestBlocks should be an array");
-  }
-
-  if (bestBlocks.length === 0) {
-    throw new Error("error, bestBlocks should not be empty");
-  }
-
-  const [
-    { safeBlock, bestBlock },
-    bestBlockFromReferenceResult,
-    safeBlockFromReferenceResult
-  ] = await Promise.all([
-    getBestAndSafeBlocks(pool),
-    pool.query(bestBlockFromReferenceQuery, [bestBlocks]),
-    pool.query(safeBlockFromReferenceQuery, [bestBlocks, safeBlockDifference])
-  ]);
-
-  if (bestBlockFromReferenceResult.rowCount === 0) {
-    throw new Error("REFERENCE_POINT_BLOCK_NOT_FOUND");
-  }
-
-  const lastFoundBestBlock: string = bestBlockFromReferenceResult.rows[0].hash;
-  if (safeBlockFromReferenceResult.rowCount === 0) {
-    throw new Error("REFERENCE_POINT_BLOCK_NOT_FOUND");
-  }
-  const lastFoundSafeBlock: string = safeBlockFromReferenceResult.rows[0].hash;
-
-  res.send({
-    safeBlock,
-    bestBlock,
-    reference: {
-      lastFoundSafeBlock,
-      lastFoundBestBlock
+export const handleTipStatusPost =
+  (pool: Pool) => async (req: Request, res: Response) => {
+    if (!req.body.reference) {
+      throw new Error("error, missing reference");
     }
-  });
-};
+
+    if (!req.body.reference.bestBlocks) {
+      throw new Error("error, missing bestBlocks inside reference");
+    }
+
+    const bestBlocks: string[] = req.body.reference.bestBlocks;
+    if (!Array.isArray(bestBlocks)) {
+      throw new Error("error, bestBlocks should be an array");
+    }
+
+    if (bestBlocks.length === 0) {
+      throw new Error("error, bestBlocks should not be empty");
+    }
+
+    const [
+      { safeBlock, bestBlock },
+      bestBlockFromReferenceResult,
+      safeBlockFromReferenceResult,
+    ] = await Promise.all([
+      getBestAndSafeBlocks(pool),
+      pool.query(bestBlockFromReferenceQuery, [bestBlocks]),
+      pool.query(safeBlockFromReferenceQuery, [
+        bestBlocks,
+        safeBlockDifference,
+      ]),
+    ]);
+
+    if (bestBlockFromReferenceResult.rowCount === 0) {
+      throw new Error("REFERENCE_POINT_BLOCK_NOT_FOUND");
+    }
+
+    const lastFoundBestBlock: string =
+      bestBlockFromReferenceResult.rows[0].hash;
+    if (safeBlockFromReferenceResult.rowCount === 0) {
+      throw new Error("REFERENCE_POINT_BLOCK_NOT_FOUND");
+    }
+    const lastFoundSafeBlock: string =
+      safeBlockFromReferenceResult.rows[0].hash;
+
+    res.send({
+      safeBlock,
+      bestBlock,
+      reference: {
+        lastFoundSafeBlock,
+        lastFoundBestBlock,
+      },
+    });
+  };

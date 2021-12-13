@@ -10,7 +10,8 @@
     "dev": "tsc-watch --onSuccess \"node ./dist/index.js\"",
     "eslint": "eslint src tests",
     "test": "mocha -r ts-node/register tests/**/*.test.ts --slow 0",
-    "testtxhist": "mocha -r ts-node/register tests/txHistory.test.ts"
+    "testtxhist": "mocha -r ts-node/register tests/txHistory.test.ts",
+    "prettier": "npx prettier --write src"
   },
   "author": "",
   "license": "MIT",
@@ -33,6 +34,7 @@
     "mocha": "^8.2.0",
     "pg": "^8.4.2",
     "pm2": "^4.5.0",
+    "prettier": "^2.5.1",
     "semver-compare": "^1.0.0",
     "ts-node": "^9.0.0",
     "tsc-watch": "^4.2.9",
