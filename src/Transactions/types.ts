@@ -3,6 +3,13 @@ import { Dictionary } from "../utils";
 export enum BlockEra { Byron = "byron"
                      , Shelley = "shelley"}
 
+export interface CardanoFrag {
+  epoch: number;
+  slot: number;
+  hash: string;
+  height: number;
+}
+
 export interface TransactionFrag {
     hash: string;
     fee: string;
