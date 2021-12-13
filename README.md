@@ -320,6 +320,14 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
       txHash: string, 
       assets: Asset[]
     }>,
+    collateral_inputs: Array<{
+      address: string,
+      amount: string,
+      id: string, // concatenation of txHash || index
+      index: number,
+      txHash: string,
+      assets: Asset[]
+    }>,
     outputs: Array<{ //these will be ordered by transaction index asc.
       address: string,
       amount: string,
@@ -366,7 +374,9 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
       type: 'MoveInstantaneousRewardsCert',
       rewards: { [addresses: string]: string } // dictionary of stake addresses to their reward amounts in lovelace
       pot: 0 | 1 // 0 = Reserves, 1 = Treasury
-    |}>
+    |}>,
+    valid_contract: boolean, // False if the contract is invalid. True if the contract is valid or there is no contract.
+    script_size: number, // The sum of the script sizes (in bytes) of scripts in the transaction.
   }>
   ```
 </details>
