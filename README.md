@@ -417,6 +417,30 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   ```
 </details>
 <details>
+  <summary>tx/status</summary>
+  This endpoint is used to return the current on-chain status of up to 100 transactions, given their ids. Currently, we return only the depth, meaning the number of blocks on top of the transactions
+
+  Input
+
+  ```
+  {
+    "txHashes": string[]
+  }
+  ```
+
+  Output: the `txHashes` sent in the request are transformed into keys under the `depth` field, and the value corresponding to this key will be the number of blocks on top of the transaction
+
+  ```
+  {
+    "depth": {
+      "<txHash>": number
+    }
+  }
+  ```
+
+
+</details>
+<details>
   <summary>status</summary>
 
   This endpoint is used to test whether or not the server can still be reached and get any manually flagged errors.
