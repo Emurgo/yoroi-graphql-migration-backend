@@ -6,25 +6,10 @@ import {assertNever, validateAddressesReq, getAddressesByType, extractAssets,} f
 import { Asset } from "../Transactions/types";
 
 const utxoForAddressQuery = `
-  select tx_out.address
-       , encode(tx.hash,'hex') as hash
-       , tx_out.index
-       , tx_out.value
-       , block.block_no as "blockNumber"
-       , (select json_agg(ROW (encode("policy", 'hex'), encode("name", 'hex'), "quantity"))
-          from ma_tx_out
-          WHERE ma_tx_out."tx_out_id" = tx_out.id) as assets
-  FROM tx
-  JOIN tx_out
-    ON tx.id = tx_out.tx_id
-  LEFT JOIN tx_in
-    ON tx_out.tx_id = tx_in.tx_out_id
-   AND tx_out.index::smallint = tx_in.tx_out_index::smallint
-  JOIN block
-    on block.id = tx.block_id
-  WHERE tx_in.tx_in_id IS NULL
-    and (   tx_out.address = any(($1)::varchar array) 
-         or tx_out.payment_cred = any(($2)::bytea array));
+    SELECT *
+    FROM valid_utxos_view
+    WHERE address = any(($1)::varchar array) 
+         OR payment_cred = any(($2)::bytea array);
 `;
 
 const addressesRequestLimit:number = config.get("server.addressRequestLimit");

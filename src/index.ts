@@ -34,6 +34,7 @@ import { askBehindBy } from "./services/healthCheckByTime";
 
 import { createCertificatesView } from "./Transactions/certificates";
 import { createTransactionOutputView } from "./Transactions/output";
+import { createValidUtxosView } from "./Transactions/valid_utxos_view";
 import { poolDelegationHistory } from "./services/poolHistory";
 import { handleGetCardanoWalletPools } from "./services/cardanoWallet";
 
@@ -43,6 +44,7 @@ const pool = new Pool({ user: config.get("db.user")
   , database: config.get("db.database")
   , password: config.get("db.password")});
 createCertificatesView(pool);
+createValidUtxosView(pool);
 createTransactionOutputView(pool);
 
 
