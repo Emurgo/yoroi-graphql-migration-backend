@@ -30,7 +30,7 @@ import { handleGetRewardHistory } from "./services/rewardHistory";
 import { handleGetMultiAssetSupply } from "./services/multiAssetSupply";
 import { handleGetMultiAssetTxMintMetadata } from "./services/multiAssetTxMint";
 import { handleTxStatus } from "./services/txStatus";
-import { handleSafeBlock } from "./services/safeBlock";
+import { handleTipStatusGet, handleTipStatusPost } from "./services/tipStatus";
 
 import { HealthChecker } from "./HealthChecker";
 import { askBehindBy } from "./services/healthCheckByTime";
@@ -324,9 +324,13 @@ const routes : Route[] = [
   , method: "get"
   , handler: bestBlock(pool)
 }
-, {   path: "/v2/safeblock"
+, {   path: "/v2/tipStatus"
   , method: "get"
-  , handler: handleSafeBlock(pool)
+  , handler: handleTipStatusGet(pool)
+}
+, {   path: "/v2/tipStatus"
+  , method: "post"
+  , handler: handleTipStatusPost(pool)
 }
 , { path: "/v2/addresses/filterUsed"
   , method: "post"
