@@ -30,6 +30,7 @@ import { handleGetRewardHistory } from "./services/rewardHistory";
 import { handleGetMultiAssetSupply } from "./services/multiAssetSupply";
 import { handleGetMultiAssetTxMintMetadata } from "./services/multiAssetTxMint";
 import { handleTxStatus } from "./services/txStatus";
+import { handleGetTxIO } from "./services/txIO";
 import { handleTipStatusGet, handleTipStatusPost } from "./services/tipStatus";
 import { handleGetTransactions } from "./services/transactions";
 
@@ -332,7 +333,11 @@ const routes : Route[] = [
   , method: "post"
   , handler: txHistory 
 }
-, { path: "/v2/txs/get"
+, { path: "/txs/io/:tx_hash"
+  , method: "get"
+  , handler: handleGetTxIO(pool) 
+}
+  , { path: "/v2/txs/get"
   , method: "post"
   , handler: handleGetTransactions(pool)
 }
