@@ -154,8 +154,9 @@ const askTransactionSqlQuery = `
                           , source_tx_out.value
                           , encode(source_tx.hash, 'hex')
                           , tx_in.tx_out_index
-                          , (select json_agg(ROW(encode("policy", 'hex'), encode("name", 'hex'), "quantity"))
+                          , (select json_agg(ROW(encode("ma"."policy", 'hex'), encode("ma"."name", 'hex'), "quantity"))
                             from ma_tx_out
+                            inner join multi_asset ma on ma_tx_out.ident = ma.id
                             WHERE ma_tx_out."tx_out_id" = source_tx_out.id)
                           ) order by tx_in.id asc) as inAddrValPairs
           FROM tx inadd_tx
@@ -170,8 +171,9 @@ const askTransactionSqlQuery = `
             , source_tx_out.value
             , encode(source_tx.hash, 'hex')
             , collateral_tx_in.tx_out_index
-            , (select json_agg(ROW(encode("policy", 'hex'), encode("name", 'hex'), "quantity"))
+            , (select json_agg(ROW(encode("ma"."policy", 'hex'), encode("ma"."name", 'hex'), "quantity"))
               from ma_tx_out
+              inner join multi_asset ma on ma_tx_out.ident = ma.id
               WHERE ma_tx_out."tx_out_id" = source_tx_out.id)
             ) order by collateral_tx_in.id asc) as collateralInAddrValPairs
           FROM tx inadd_tx
@@ -185,8 +187,9 @@ const askTransactionSqlQuery = `
        , (select json_agg((
                     "address", 
                     "value",
-                   (select json_agg(ROW(encode("policy", 'hex'), encode("name", 'hex'), "quantity"))
+                   (select json_agg(ROW(encode("ma"."policy", 'hex'), encode("ma"."name", 'hex'), "quantity"))
                         FROM ma_tx_out
+                        inner join multi_asset ma on ma_tx_out.ident = ma.id
                         JOIN tx_out token_tx_out
                         ON tx.id = token_tx_out.tx_id         
                         WHERE ma_tx_out."tx_out_id" = token_tx_out.id AND hasura_to."address" = token_tx_out.address AND hasura_to.index = token_tx_out.index)

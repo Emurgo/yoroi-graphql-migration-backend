@@ -3,7 +3,8 @@ import { expect } from "chai";
 import { config, } from "./config";
 
 import { UtilEither } from "../src/utils";
-import * as BestBlock from "../src/services/bestblock";
+
+import { CardanoFrag } from "../src/Transactions/types";
 import { HealthChecker } from "../src/HealthChecker";
 
 const endpoint = config.apiUrl;
@@ -16,7 +17,7 @@ describe("/importerhealthcheck", function() {
     expect(result.data.message).to.be.eql("Importer is OK");
   });
   it("fails for broken graphql api", async function () {
-    const badFunc = async () : Promise<UtilEither<BestBlock.CardanoFrag>> => {
+    const badFunc = async () : Promise<UtilEither<CardanoFrag>> => {
       return { kind: "error", errMsg: "haha I don't work" };
 
     };

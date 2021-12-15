@@ -55,7 +55,7 @@ interface Dictionary<T> {
     [key: string]: T;
 }
 
-const askAccountRewards = async (pool: Pool, addresses: string[]): Promise<Dictionary<RewardInfo|null>> => {
+const getAccountStateFromDB = async (pool: Pool, addresses: string[]): Promise<Dictionary<RewardInfo|null>> => {
   const ret : Dictionary<RewardInfo|null> = {};
   const rewards = await pool.query(accountRewardsQuery, [addresses]);
   for(const row of rewards.rows) {
@@ -82,7 +82,7 @@ export const handleGetAccountState = (pool: Pool) => async (req: Request, res:Re
   const verifiedAddrs = validateAddressesReq(addrReqLimit, req.body.addresses);
   switch(verifiedAddrs.kind){
   case "ok": {
-    const accountState = await askAccountRewards(pool, verifiedAddrs.value);
+    const accountState = await getAccountStateFromDB(pool, verifiedAddrs.value);
     res.send(accountState); 
     return;
   }

@@ -29,13 +29,11 @@ function hex_to_ascii(str1: string) {
 
 function createGetMultiAssetTxMintMetadataQuery(assets: PolicyIdAssetMapType) {
   const whereConditions = Object.keys(assets)
-    .map((policIdHex: string) => {
-      const assetNameHex = assets?.[policIdHex] ?? [];
-      const query = assetNameHex
-        .map(
-          (assetHex) => `( encode(mint.name, 'hex')= ('${assetHex}')::varchar
-        and encode(mint.policy, 'hex') = ('${policIdHex}')::varchar )`
-        )
+    .map((policyIdHex: string) => {
+      const assetNames = assets?.[policyIdHex] ?? [];
+      const query = assetNames
+        .map((a, idx) => `( ma.name = ($${idx * 2 + 1})::bytea
+          and encode(ma.policy, 'hex') = ($${idx * 2 + 2})::varchar )`)
         .join(" or ");
       return query;
     })
@@ -43,11 +41,12 @@ function createGetMultiAssetTxMintMetadataQuery(assets: PolicyIdAssetMapType) {
 
   // NFT metadata format - https://cips.cardano.org/cips/cip25/
   const query = `
-      select encode(mint.policy, 'hex') as policy,
-        encode(mint.name, 'hex') as asset,
+      select encode(ma.policy, 'hex') as policy,
+        encode(ma.name, 'hex') as asset,
         meta.key,
         meta.json
       from ma_tx_mint mint
+        join multi_asset ma on mint.ident = ma.id
         join tx on mint.tx_id = tx.id
         join tx_metadata meta on tx.id = meta.tx_id
       where meta.key=${NFT_METADATA_ONCHAIN_KEY} AND ( ${whereConditions} )`;
@@ -59,9 +58,20 @@ export async function getMultiAssetTxMintMetadata(
   assets: PolicyIdAssetMapType
 ): Promise<Record<string, MultiAssetTxMintMetadataType[]>> {
   const query = createGetMultiAssetTxMintMetadataQuery(assets);
-  const ret: { [key: string]: MultiAssetTxMintMetadataType[] } = {};
-  const results = await pool.query(query);
+  const params = Object.keys(assets)
+    .map((policyIdHex: string) => {
+      const assetNames = assets?.[policyIdHex] ?? [];
+      return assetNames.map((assetName) => [
+        assetName,
+        policyIdHex
+      ])
+      .reduce((prev, curr) => prev.concat(curr), []);
+    })
+    .reduce((prev, curr) => prev.concat(curr), []);
 
+  const ret: { [key: string]: MultiAssetTxMintMetadataType[] } = {};
+  const results = await pool.query(query, params);
+  
   for (const row of results.rows) {
     const policyAndName = `${row.policy}.${row.asset}`;
     if (!ret[policyAndName]) {
