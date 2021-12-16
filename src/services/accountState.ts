@@ -48,13 +48,14 @@ interface RewardInfo {
   rewards: string;
   withdrawals: string;
   poolOperator: null;
+  isRewardsOff?: boolean;
 }
 
 interface Dictionary<T> {
     [key: string]: T;
 }
 
-const askAccountRewards = async (pool: Pool, addresses: string[]): Promise<Dictionary<RewardInfo|null>> => {
+const getAccountStateFromDB = async (pool: Pool, addresses: string[]): Promise<Dictionary<RewardInfo|null>> => {
   const ret : Dictionary<RewardInfo|null> = {};
   const rewards = await pool.query(accountRewardsQuery, [addresses]);
   for(const row of rewards.rows) {
@@ -64,6 +65,7 @@ const askAccountRewards = async (pool: Pool, addresses: string[]): Promise<Dicti
       , rewards: row.reward
       , withdrawals: row.withdrawal
       , poolOperator: null //not implemented
+      , isRewardsOff: true
     };
   }
   for( const addr of addresses)
@@ -80,7 +82,7 @@ export const handleGetAccountState = (pool: Pool) => async (req: Request, res:Re
   const verifiedAddrs = validateAddressesReq(addrReqLimit, req.body.addresses);
   switch(verifiedAddrs.kind){
   case "ok": {
-    const accountState = await askAccountRewards(pool, verifiedAddrs.value);
+    const accountState = await getAccountStateFromDB(pool, verifiedAddrs.value);
     res.send(accountState); 
     return;
   }

@@ -27,23 +27,34 @@ import { handlePoolInfo } from "./services/poolInfo";
 import { handleGetAccountState } from "./services/accountState";
 import { handleGetRegHistory } from "./services/regHistory";
 import { handleGetRewardHistory } from "./services/rewardHistory";
+import { handleGetMultiAssetSupply } from "./services/multiAssetSupply";
 import { handleGetMultiAssetTxMintMetadata } from "./services/multiAssetTxMint";
+import { handleTxStatus } from "./services/txStatus";
+import { handleGetTxIO } from "./services/txIO";
+import { handleTipStatusGet, handleTipStatusPost } from "./services/tipStatus";
+import { handleGetTransactions } from "./services/transactions";
 
 import { HealthChecker } from "./HealthChecker";
 import { askBehindBy } from "./services/healthCheckByTime";
 
 import { createCertificatesView } from "./Transactions/certificates";
 import { createTransactionOutputView } from "./Transactions/output";
-import { poolDelegationHistory } from "./services/poolHistory";
-import { handleGetCardanoWalletPools } from "./services/cardanoWallet";
+import { createValidUtxosView } from "./Transactions/valid_utxos_view";
+import { createTransactionUtilityFunctions } from "./Transactions/userDefinedFunctions";
+import {poolDelegationHistory} from "./services/poolHistory";
+import {handleGetCardanoWalletPools} from "./services/cardanoWallet";
 
+
+import { mapTransactionFragsToResponse } from "./utils/mappers";
 
 const pool = new Pool({ user: config.get("db.user")
   , host: config.get("db.host")
   , database: config.get("db.database")
   , password: config.get("db.password")});
 createCertificatesView(pool);
+createValidUtxosView(pool);
 createTransactionOutputView(pool);
+createTransactionUtilityFunctions(pool);
 
 
 const healthChecker = new HealthChecker(() => askBestBlock(pool));
@@ -110,7 +121,7 @@ const utxoSumForAddresses = async (req: Request, res:Response) => {
     const result = await askUtxoSumForAddresses(pool, verifiedAddresses.value);
     switch(result.kind) {
     case "ok":
-      res.send({ sum: result.value });
+      res.send(result.value);
       return;
     case "error":
       throw new Error(result.errMsg);
@@ -179,28 +190,7 @@ const txHistory = async (req: Request, res: Response) => {
     const maybeTxs = await askTransactionHistory(pool, limit, body.addresses, afterInfo, untilBlockNum.value);
     switch(maybeTxs.kind) {
     case "ok":{
-      const txs = maybeTxs.value.map( tx => ({
-        hash: tx.hash,
-        fee: tx.fee,
-        metadata: tx.metadata,
-        validContract: tx.validContract,
-        scriptSize: tx.scriptSize,
-        //ttl: tx.ttl,
-        type: tx.blockEra,
-        withdrawals: tx.withdrawals,
-        certificates: tx.certificates,
-        tx_ordinal: tx.txIndex,
-        tx_state: "Successful", // graphql doesn't handle pending/failed txs
-        last_update: tx.includedAt,
-        block_num: tx.block.number,
-        block_hash: tx.block.hash,
-        time: tx.includedAt,
-        epoch: tx.block.epochNo,
-        slot: tx.block.slotNo,
-        inputs: tx.inputs,
-        collateralInputs: tx.collateralInputs,
-        outputs: tx.outputs
-      }));
+      const txs = mapTransactionFragsToResponse(maybeTxs.value);
 
       res.send(txs);
       return;
@@ -256,11 +246,11 @@ const getFundInfo = async (req: Request, res:  Response) => {
   res.send(
       {
           "currentFund": {
-            "id": 6,
-            "registrationStart": "2021-08-12T11:00:00Z",
-            "registrationEnd": "2021-09-30T11:00:00Z",
-            "votingStart": "2021-10-07T11:00:00Z",
-            "votingEnd": "2021-10-21T11:00:00Z",
+            "id": 7,
+            "registrationStart": "2021-11-18T11:00:00Z",
+            "registrationEnd": "2022-01-13T11:00:00Z",
+            "votingStart": "2022-01-13T11:00:00Z",
+            "votingEnd": "2022-01-27T11:00:00Z",
             "votingPowerThreshold": "450"
           }
         });
@@ -319,6 +309,14 @@ const routes : Route[] = [
   , method: "get"
   , handler: bestBlock(pool)
 }
+, {   path: "/v2/tipStatus"
+  , method: "get"
+  , handler: handleTipStatusGet(pool)
+}
+, {   path: "/v2/tipStatus"
+  , method: "post"
+  , handler: handleTipStatusPost(pool)
+}
 , { path: "/v2/addresses/filterUsed"
   , method: "post"
   , handler: filterUsedAddresses(pool)
@@ -335,6 +333,14 @@ const routes : Route[] = [
   , method: "post"
   , handler: txHistory 
 }
+, { path: "/txs/io/:tx_hash"
+  , method: "get"
+  , handler: handleGetTxIO(pool) 
+}
+  , { path: "/v2/txs/get"
+  , method: "post"
+  , handler: handleGetTransactions(pool)
+}
 , { path: "/txs/signed"
   , method: "post"
   , handler: handleSignedTx
@@ -345,11 +351,21 @@ const routes : Route[] = [
     handler: handleGetCardanoWalletPools(pool)
   },
   {
+    path: "/multiAsset/supply",
+    method: "post",
+    handler: handleGetMultiAssetSupply(pool)
+  },
+  {
     path: "/multiAsset/metadata",
     method: "post",
     handler: handleGetMultiAssetTxMintMetadata(pool)
-  }
-, { path: "/v2/importerhealthcheck"
+  },
+  {
+    path: "/tx/status",
+    method: "post",
+    handler: handleTxStatus(pool)
+  },
+  { path: "/v2/importerhealthcheck"
   , method: "get"
   , handler: async (_req: Request, res: Response) => {
     const status = healthChecker.getStatus();

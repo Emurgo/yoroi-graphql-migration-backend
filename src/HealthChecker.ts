@@ -1,5 +1,5 @@
 import { UtilEither } from "./utils";
-import * as BestBlock from "./services/bestblock";
+import { CardanoFrag } from "./Transactions/types";
 
 const REQUEST_RATE_MS = 2000;
 const REQUEST_TIMEOUT_MS = 5000;
@@ -13,14 +13,14 @@ export class HealthChecker {
   // is changing over time.  
   // If it is not, then we have an error!
 
-  healthCheckerFunc : () => Promise<UtilEither<BestBlock.CardanoFrag>>;
+  healthCheckerFunc : () => Promise<UtilEither<CardanoFrag>>;
 
-  lastBlock : UtilEither<BestBlock.CardanoFrag>;
+  lastBlock : UtilEither<CardanoFrag>;
   lastTime : number;
   lastGoodBlockChange : number;
-  timeAndBlock : [number, UtilEither<BestBlock.CardanoFrag>];
+  timeAndBlock : [number, UtilEither<CardanoFrag>];
 
-  constructor( bestBlockFunc : () => Promise<UtilEither<BestBlock.CardanoFrag>> ) {
+  constructor( bestBlockFunc : () => Promise<UtilEither<CardanoFrag>> ) {
     this.healthCheckerFunc = bestBlockFunc;
     const currentTime = Date.now();
 
@@ -34,7 +34,7 @@ export class HealthChecker {
   }
 
   checkHealth = async ():Promise<void> =>  {
-    let block : UtilEither<BestBlock.CardanoFrag> = { kind: "error", errMsg: "function failed" };
+    let block : UtilEither<CardanoFrag> = { kind: "error", errMsg: "function failed" };
     try {
       block = await this.healthCheckerFunc();
     } catch {
