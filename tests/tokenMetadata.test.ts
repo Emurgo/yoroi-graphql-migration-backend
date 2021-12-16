@@ -21,8 +21,9 @@ describe("/multiAsset/metadata", function() {
         }
     });
     
-    console.log(result.data);
-    console.log(result.data.data[spaceBudzPolicyId][SpaceBud2589]);
+    expect(result.data).to.have.property("data");
+    expect(result.data.data).to.have.property(spaceBudzPolicyId);
+    expect(result.data.data[spaceBudzPolicyId]).to.have.property(SpaceBud2589);
     expect(result.data.data[spaceBudzPolicyId][SpaceBud2589]).to.be.eql({
         name: "SpaceBud #2589",
         imageUrl: "ipfs://QmTHaFdaj8hSjf3Xo9gFGxEvpgLX6CHCddbaGbzK4WbYz6",
