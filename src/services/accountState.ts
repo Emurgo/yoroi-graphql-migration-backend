@@ -7,40 +7,42 @@ import { Request, Response } from "express";
 const addrReqLimit:number = config.get("server.addressRequestLimit");
 
 const accountRewardsQuery = `
-  select stake_address.hash_raw as "stakeAddress"
+  with queried_addresses as (
+    select *
+    from stake_address
+    where encode(stake_address.hash_raw, 'hex') = any(($1)::varchar array)
+  )
+
+  select queried_addresses.hash_raw as "stakeAddress"
       , sum(coalesce("totalReward".spendable_amount,0) - coalesce("totalWithdrawal".amount,0)) as "remainingAmount"
       , sum(coalesce("totalReward".non_spendable_amount,0)) as "remainingNonSpendableAmount"
       , sum(coalesce("totalReward".spendable_amount,0) + coalesce("totalReward".non_spendable_amount,0)) as "reward"
       , sum(coalesce("totalWithdrawal".amount, 0)) as "withdrawal"
 
-  from stake_address
+  from queried_addresses
 
   left outer join (
     SELECT addr_id, sum(amount) as "amount"
     FROM withdrawal
-    join stake_address withdrawal_stake_address
+    join queried_addresses withdrawal_stake_address
     on withdrawal_stake_address.id = withdrawal.addr_id
-    where encode(withdrawal_stake_address.hash_raw, 'hex') = any(($1)::varchar array)
     GROUP BY
       addr_id
-  ) as "totalWithdrawal" on stake_address.id = "totalWithdrawal".addr_id
+  ) as "totalWithdrawal" on queried_addresses.id = "totalWithdrawal".addr_id
 
   left outer join (
     SELECT addr_id,
       sum(case when "current_epoch".value >= spendable_epoch then amount else 0 end) as "spendable_amount",
       sum(case when "current_epoch".value < spendable_epoch then amount else 0 end) as "non_spendable_amount"
     FROM reward
-    join stake_address reward_stake_address
+    join queried_addresses reward_stake_address
     on reward_stake_address.id = reward.addr_id
     cross join (select max (epoch_no) as value from block) as "current_epoch"
-    where encode(reward_stake_address.hash_raw, 'hex') = any(($1)::varchar array)
     GROUP BY
       addr_id
-  ) as "totalReward" on stake_address.id = "totalReward".addr_id
+  ) as "totalReward" on queried_addresses.id = "totalReward".addr_id
 
-  where encode(stake_address.hash_raw, 'hex') = any(($1)::varchar array)
-
-  group by stake_address.id`;
+  group by queried_addresses.id, queried_addresses.hash_raw`;
 
 interface RewardInfo {
   remainingAmount: string;

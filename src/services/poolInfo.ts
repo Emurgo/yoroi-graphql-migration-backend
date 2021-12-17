@@ -36,6 +36,20 @@ export const latestMetadataQuery = `
     order by pool_update.id desc limit 1;
 `;
 
+export const poolExistsQuery = `
+  select *
+  from pool_hash
+  where encode(pool_hash.hash_raw, 'hex') = $1
+`;
+
+export const poolMetadataQuery = `
+  select pool_offline_data.json
+  from pool_hash
+  join pool_offline_data
+    on pool_hash.id = pool_offline_data.pool_id
+  where encode(pool_hash.hash_raw, 'hex') = $1
+`;
+
 export const poolHistoryQuery = `
   select row_to_json(combined_certificates) as "jsonCert"
        , block.epoch_no
@@ -101,13 +115,14 @@ export const handlePoolInfo = (p: Pool) => async (req: Request, res: Response<Di
     if(hash.length !== 56){
       throw new Error(`Received invalid pool id: ${hash}`);
     }
-
-    const smashPoolResponse = await smashPoolLookUp(p, hash);
-    if (smashPoolResponse.metadataHash == null) {
+    const poolExists = (await p.query(poolExistsQuery, [hash])).rows.length > 0;
+    if (!poolExists) {
       ret[hash] = null;
       continue;
     }
-    const info = smashPoolResponse.smashInfo;
+
+    const dbInfo = await p.query(poolMetadataQuery, [hash]);
+    const info = dbInfo.rows[0] ?? "";
 
     const dbHistory = await p.query(poolHistoryQuery, [hash]);
     const history = dbHistory.rows.map( (row: any) => ({
