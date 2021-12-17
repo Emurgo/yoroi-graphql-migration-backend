@@ -3,11 +3,6 @@ import { errMsgs, UtilEither, getAddressesByType } from "../utils";
 import { TransactionFrag } from "../Transactions/types";
 
 import { mapTxRowsToTransactionFrags } from "../utils/mappers";
-import {
-  GeneralTransactionMetadata,
-  TransactionMetadatum,
-  BigNum,
-} from "@emurgo/cardano-serialization-lib-nodejs";
 
 import { Pool } from "pg";
 
