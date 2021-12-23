@@ -41,6 +41,7 @@ export const utxoForAddresses =
           tx_index: utxo.index,
           receiver: utxo.address,
           amount: utxo.value.toString(),
+          dataHash: utxo.data_hash,
           assets: extractAssets(utxo.assets),
           block_num: utxo.blockNumber,
         }));

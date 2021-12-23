@@ -50,7 +50,8 @@ export const mapTxRowsToTransactionFrags = (rows: any[]): TransactionFrag[] => {
           (obj: any): TransOutputFrag => ({
             address: obj.f1,
             amount: obj.f2.toString(),
-            assets: extractAssets(obj.f3),
+            dataHash: obj.f3,
+            assets: extractAssets(obj.f4),
           })
         )
       : [];
@@ -59,6 +60,7 @@ export const mapTxRowsToTransactionFrags = (rows: any[]): TransactionFrag[] => {
           (obj: any): TransOutputFrag => ({
             address: obj.f1,
             amount: obj.f2.toString(),
+            dataHash: null,
             assets: [] as Asset[],
           })
         )

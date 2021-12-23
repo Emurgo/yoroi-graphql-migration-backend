@@ -54,6 +54,7 @@ export interface TransInputFrag {
 export interface TransOutputFrag {
   address: string;
   amount: string;
+  dataHash: null | string;
   assets: null | Asset[];
 }
 
