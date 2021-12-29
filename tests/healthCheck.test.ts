@@ -14,7 +14,7 @@ describe("/importerhealthcheck", function() {
   it("returns", async function() {
     const result = await axios.get(endpoint+"v2/importerhealthcheck");
     expect(result.data).to.have.property("message");
-    expect(result.data.message).to.be.eql("Importer is OK");
+    expect(result.data.message).to.be.oneOf(["Importer is OK", "Importer seems OK. Not enough time has passed since last valid request."]);
   });
   it("fails for broken graphql api", async function () {
     const badFunc = async () : Promise<UtilEither<CardanoFrag>> => {

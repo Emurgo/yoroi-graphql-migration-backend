@@ -3,7 +3,9 @@ export const resultsForSingleHistory : any = [
 	"hash": "ee01627b2bfa5bd5a7dd9d2be7f9108ea0c0585c58216cb16d07803ae769b34f",
 	"fee": "180563",
 	"metadata": null,
+	"collateral_inputs": [],
 	"type": "byron",
+	"valid_contract": true,
 	"withdrawals": [],
 	"certificates": [],
 	"tx_ordinal": 0,
@@ -29,6 +31,7 @@ export const resultsForSingleHistory : any = [
 		"txHash": "6059617c8776df0e25b1f6bcfcba9059d478ce561ccd762642a937ae03252352",
 		"assets": []
 	}],
+	"script_size": 0,
 	"outputs": [{
 		"address": "DdzFFzCqrht33HAPd4PyqRAhmry5gsSgvZjh8dWdZPuHYchXPbP1W3Rw5A2zwgftbeU9rMu3znnpNib3oFGkmBy3LL8i8VTZhNG9qnwN",
 		"amount": "10868962739",
@@ -42,7 +45,9 @@ export const resultsForSingleHistory : any = [
 	"hash": "d5dff06dda8659afb095482b95c1f5bf0beba6e2a93f614532769a4a5a575793",
 	"fee": "388100",
 	"metadata": null,
+	"collateral_inputs": [],
 	"type": "byron",
+	"valid_contract": true,
 	"withdrawals": [],
 	"certificates": [],
 	"tx_ordinal": 0,
@@ -61,6 +66,7 @@ export const resultsForSingleHistory : any = [
 		"txHash": "ee01627b2bfa5bd5a7dd9d2be7f9108ea0c0585c58216cb16d07803ae769b34f",
 		"assets": []
 	}],
+	"script_size": 0,
 	"outputs": [{
 		"address": "DdzFFzCqrhsgyGxb5VC2yLdo4PFCaoKrLsPBYKz4y2Z2rPuKyXBfzCCd6XtoKqbaZ6ov4bP9X8Uz4qPmkaWrdXM8wcnMWmUYLig5tq43",
 		"amount": "10868574639",
@@ -70,7 +76,9 @@ export const resultsForSingleHistory : any = [
 	"hash": "b77647288bf6553726c93faa94685637ac2976c85bba3f3dfd4d011de24371cb",
 	"fee": "172257",
 	"metadata": null,
+	"collateral_inputs": [],
 	"type": "byron",
+	"valid_contract": true,
 	"withdrawals": [],
 	"certificates": [],
 	"tx_ordinal": 0,
@@ -89,6 +97,7 @@ export const resultsForSingleHistory : any = [
 		"txHash": "d5dff06dda8659afb095482b95c1f5bf0beba6e2a93f614532769a4a5a575793",
 		"assets": []
 	}],
+	"script_size": 0,
 	"outputs": [{
 		"address": "DdzFFzCqrht95mSU7FT1zP1PvwNJztuh2cABJhm4eXKRe4fCirGUcHScddRuWJCQqhwfKfYVLKtVain37QqRpi9WTXYP4SB424d7ZJei",
 		"amount": "9963402382",
@@ -102,7 +111,9 @@ export const resultsForSingleHistory : any = [
 	"hash": "62eb7d469b75b0f15c4b9e905346f5dac13ffa97539bb17cb3867ca74aa25a20",
 	"fee": "172257",
 	"metadata": null,
+	"collateral_inputs": [],
 	"type": "byron",
+	"valid_contract": true,
 	"withdrawals": [],
 	"certificates": [],
 	"tx_ordinal": 0,
@@ -121,6 +132,7 @@ export const resultsForSingleHistory : any = [
 		"txHash": "b77647288bf6553726c93faa94685637ac2976c85bba3f3dfd4d011de24371cb",
 		"assets": []
 	}],
+	"script_size": 0,
 	"outputs": [{
 		"address": "DdzFFzCqrhsfwUjx3pwhYdNAfZheVdHk91gidAHr46PbCADtBTLR2e3G4HRTHrgX5jPR91B2bAPBn3c4BdpFprefZnrbJbjfspk89AAa",
 		"amount": "9960230125",
@@ -134,7 +146,9 @@ export const resultsForSingleHistory : any = [
 	"hash": "753b8b70901835b6d0104df0622ab14e0596b112c49ada022fc2f8210ac73f1b",
 	"fee": "172257",
 	"metadata": null,
+	"collateral_inputs": [],
 	"type": "byron",
+	"valid_contract": true,
 	"withdrawals": [],
 	"certificates": [],
 	"tx_ordinal": 0,
@@ -153,6 +167,7 @@ export const resultsForSingleHistory : any = [
 		"txHash": "62eb7d469b75b0f15c4b9e905346f5dac13ffa97539bb17cb3867ca74aa25a20",
 		"assets": []
 	}],
+	"script_size": 0,
 	"outputs": [{
 		"address": "DdzFFzCqrht33HAPd4PyqRAhmry5gsSgvZjh8dWdZPuHYchXPbP1W3Rw5A2zwgftbeU9rMu3znnpNib3oFGkmBy3LL8i8VTZhNG9qnwN",
 		"amount": "5000000",
@@ -166,7 +181,9 @@ export const resultsForSingleHistory : any = [
 	"hash": "58e2be124e42ee00f586a603758c5a19de4035cbafd9292e91ff2479b417b975",
 	"fee": "424900",
 	"metadata": null,
+	"collateral_inputs": [],
 	"type": "byron",
+	"valid_contract": true,
 	"withdrawals": [],
 	"certificates": [],
 	"tx_ordinal": 0,
@@ -199,6 +216,7 @@ export const resultsForSingleHistory : any = [
 		"txHash": "b77647288bf6553726c93faa94685637ac2976c85bba3f3dfd4d011de24371cb",
 		"assets": []
 	}],
+	"script_size": 0,
 	"outputs": [{
 		"address": "DdzFFzCqrht4uNR56JAW2FAcUA2gcmXgBnR8HYuJp3vxYiQEEv7hcvHGxgL1LoHumTghVZFxcZwQbsJdwykz1Rzh91pmRTVUSrA1RhAk",
 		"amount": "912575100",
@@ -208,7 +226,9 @@ export const resultsForSingleHistory : any = [
 	"hash": "669055ba7da5d9d372f226219d151947cddf39a28c15339687db2bbd328ef8e0",
 	"fee": "172257",
 	"metadata": null,
+	"collateral_inputs": [],
 	"type": "byron",
+	"valid_contract": true,
 	"withdrawals": [],
 	"certificates": [],
 	"tx_ordinal": 1,
@@ -227,6 +247,7 @@ export const resultsForSingleHistory : any = [
 		"txHash": "753b8b70901835b6d0104df0622ab14e0596b112c49ada022fc2f8210ac73f1b",
 		"assets": []
 	}],
+	"script_size": 0,
 	"outputs": [{
 		"address": "DdzFFzCqrht33HAPd4PyqRAhmry5gsSgvZjh8dWdZPuHYchXPbP1W3Rw5A2zwgftbeU9rMu3znnpNib3oFGkmBy3LL8i8VTZhNG9qnwN",
 		"amount": "20000000",
@@ -240,7 +261,9 @@ export const resultsForSingleHistory : any = [
 	"hash": "c47689f318522f0e3059bd95a0373a32bea49a5ce1f77342becd40dba89b9eac",
 	"fee": "172257",
 	"metadata": null,
+	"collateral_inputs": [],
 	"type": "byron",
+	"valid_contract": true,
 	"withdrawals": [],
 	"certificates": [],
 	"tx_ordinal": 0,
@@ -259,6 +282,7 @@ export const resultsForSingleHistory : any = [
 		"txHash": "669055ba7da5d9d372f226219d151947cddf39a28c15339687db2bbd328ef8e0",
 		"assets": []
 	}],
+	"script_size": 0,
 	"outputs": [{
 		"address": "DdzFFzCqrhsr3rk8PtowTM92NKqtN7pB1SngzNnoRixjchAM78P2kJ9UUZUPmQMqYyZtKvmz694rwJkovEx5gUh5k86cLXGkVDxpRCDQ",
 		"amount": "9434713354",
@@ -272,7 +296,9 @@ export const resultsForSingleHistory : any = [
 	"hash": "ed74cca21c7a9d9704409dede6ec3f694b53690d800cd545b7322a7fc134cf73",
 	"fee": "406500",
 	"metadata": null,
+	"collateral_inputs": [],
 	"type": "byron",
+	"valid_contract": true,
 	"withdrawals": [],
 	"certificates": [],
 	"tx_ordinal": 1,
@@ -298,6 +324,7 @@ export const resultsForSingleHistory : any = [
 		"txHash": "669055ba7da5d9d372f226219d151947cddf39a28c15339687db2bbd328ef8e0",
 		"assets": []
 	}],
+	"script_size": 0,
 	"outputs": [{
 		"address": "DdzFFzCqrhskEdUSeeeSQJ3Q2TMdd6XCxfTxtXeEVMUxxyJztZWmMf1cuV81qwDDZefCyAY5HSrxKuBUR6fcFH9R6owUNKHK3Hk8yEhV",
 		"amount": "519593500",
@@ -307,7 +334,9 @@ export const resultsForSingleHistory : any = [
 	"hash": "f4d277d925217cd7ad8f17aefd1c389d25bb16ab9f03f0756ae0dea81d29fcad",
 	"fee": "171246",
 	"metadata": null,
+	"collateral_inputs": [],
 	"type": "byron",
+	"valid_contract": true,
 	"withdrawals": [],
 	"certificates": [],
 	"tx_ordinal": 1,
@@ -326,6 +355,7 @@ export const resultsForSingleHistory : any = [
 		"txHash": "c47689f318522f0e3059bd95a0373a32bea49a5ce1f77342becd40dba89b9eac",
 		"assets": []
 	}],
+	"script_size": 0,
 	"outputs": [{
 		"address": "DdzFFzCqrht33HAPd4PyqRAhmry5gsSgvZjh8dWdZPuHYchXPbP1W3Rw5A2zwgftbeU9rMu3znnpNib3oFGkmBy3LL8i8VTZhNG9qnwN",
 		"amount": "4700000000",
@@ -339,7 +369,9 @@ export const resultsForSingleHistory : any = [
 	"hash": "261a2dcabb4ea95559eae2ed6e7ec33af173c638a0ef0b96cfd177ba98ed3549",
 	"fee": "388100",
 	"metadata": null,
+	"collateral_inputs": [],
 	"type": "byron",
+	"valid_contract": true,
 	"withdrawals": [],
 	"certificates": [],
 	"tx_ordinal": 1,
@@ -358,6 +390,7 @@ export const resultsForSingleHistory : any = [
 		"txHash": "f4d277d925217cd7ad8f17aefd1c389d25bb16ab9f03f0756ae0dea81d29fcad",
 		"assets": []
 	}],
+	"script_size": 0,
 	"outputs": [{
 		"address": "DdzFFzCqrhsmYfanyJgLimDYBJd1QtnSUyEBckcZP6RqQbzY6zFVt16Gbrm5t17qeHrkceZ81ysZkgQKREex895e584ut3S24TR6d5fV",
 		"amount": "4699611900",
@@ -367,7 +400,9 @@ export const resultsForSingleHistory : any = [
 	"hash": "ccea6f32d0a6145efb07839f82fe6dc1f2adc0395b6806c84165828c3b01c416",
 	"fee": "172257",
 	"metadata": null,
+	"collateral_inputs": [],
 	"type": "byron",
+	"valid_contract": true,
 	"withdrawals": [],
 	"certificates": [],
 	"tx_ordinal": 0,
@@ -386,6 +421,7 @@ export const resultsForSingleHistory : any = [
 		"txHash": "fd20a38d26386c335851d34569f4f71369b7c5e1cfcac004a553c1bded3f7090",
 		"assets": []
 	}],
+	"script_size": 0,
 	"outputs": [{
 		"address": "Ae2tdPwUPEZHZvjQkgDHfAKMHPM1tEWMBshGessSds85UNDR6Vm6QPtaMMM",
 		"amount": "99964980",
@@ -399,7 +435,9 @@ export const resultsForSingleHistory : any = [
 	"hash": "523085191ef5f10cda710cad4a5b31b9efea8679ce513a37e32d78393a9644df",
 	"fee": "171070",
 	"metadata": null,
+	"collateral_inputs": [],
 	"type": "byron",
+	"valid_contract": true,
 	"withdrawals": [],
 	"certificates": [],
 	"tx_ordinal": 0,
@@ -418,6 +456,7 @@ export const resultsForSingleHistory : any = [
 		"txHash": "f4d277d925217cd7ad8f17aefd1c389d25bb16ab9f03f0756ae0dea81d29fcad",
 		"assets": []
 	}],
+	"script_size": 0,
 	"outputs": [{
 		"address": "DdzFFzCqrht33HAPd4PyqRAhmry5gsSgvZjh8dWdZPuHYchXPbP1W3Rw5A2zwgftbeU9rMu3znnpNib3oFGkmBy3LL8i8VTZhNG9qnwN",
 		"amount": "4500000000",
@@ -431,7 +470,9 @@ export const resultsForSingleHistory : any = [
 	"hash": "08a863c1862e9847c3e6925a9ecf0af1867bae86dc026f967ed58e602e051c7b",
 	"fee": "388100",
 	"metadata": null,
+	"collateral_inputs": [],
 	"type": "byron",
+	"valid_contract": true,
 	"withdrawals": [],
 	"certificates": [],
 	"tx_ordinal": 1,
@@ -450,6 +491,7 @@ export const resultsForSingleHistory : any = [
 		"txHash": "523085191ef5f10cda710cad4a5b31b9efea8679ce513a37e32d78393a9644df",
 		"assets": []
 	}],
+	"script_size": 0,
 	"outputs": [{
 		"address": "DdzFFzCqrhsxMRRT12KZVou1bWqZ4FmrUSpQNdE3iwkR8ktx4n55Qn2jrrqZekebEoMQxGybQpVit2fbWyramWnSejKnkdFpYTDatP9M",
 		"amount": "4499611900",
@@ -459,7 +501,9 @@ export const resultsForSingleHistory : any = [
 	"hash": "e62b55540020502cdf9033448a2f874cb1d8663fea5420b257d2b6ae4ce2a678",
 	"fee": "172257",
 	"metadata": null,
+	"collateral_inputs": [],
 	"type": "byron",
+	"valid_contract": true,
 	"withdrawals": [],
 	"certificates": [],
 	"tx_ordinal": 1,
@@ -478,6 +522,7 @@ export const resultsForSingleHistory : any = [
 		"txHash": "ccea6f32d0a6145efb07839f82fe6dc1f2adc0395b6806c84165828c3b01c416",
 		"assets": []
 	}],
+	"script_size": 0,
 	"outputs": [{
 		"address": "DdzFFzCqrhsob4yY1MwSqmMLSeL7RRkbpkoZNx3kHfSRyqUpTshcHAmrepn1fexMZg3vPc4QqT1apxmYrTUbE22pGSgLa9CTpb6V5fMy",
 		"amount": "216923377677",

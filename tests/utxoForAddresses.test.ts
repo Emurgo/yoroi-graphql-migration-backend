@@ -1,7 +1,5 @@
 import axios from "axios";
 import { expect, should } from "chai";
-import { encode, toWords, } from "bech32";
-import { Prefixes } from "../src/utils/cip5";
 
 import { config, } from "./config";
 
@@ -9,10 +7,7 @@ const endpoint = config.apiUrl;
 const s = should();
 
 const add1 = "DdzFFzCqrht4wFnWC5TJA5UUVE54JC9xZWq589iKyCrWa6hek3KKevyaXzQt6FsdunbkZGzBFQhwZi1MDpijwRoC7kj1MkEPh2Uu5Ssz";
-
-
-const enterpriseAddresses = encode(Prefixes.PAYMENT_KEY_HASH, toWords(Buffer.from("5c619e192407b2e972f04f0dda7c52aa8013d45ee7ba69d57041cad0", "hex")));
-
+const enterpriseAddress = "addr1w8ydgw5twuk724uh4jcmjsflkerwj9wvgeneuku577w9a4s7avmxg";
 const addresses = 
     [ "DdzFFzCqrht4wFnWC5TJA5UUVE54JC9xZWq589iKyCrWa6hek3KKevyaXzQt6FsdunbkZGzBFQhwZi1MDpijwRoC7kj1MkEPh2Uu5Ssz",
       "DdzFFzCqrhtBBX4VvncQ6Zxn8UHawaqSB4jf9EELRBuWUT9gZTmCDWCNTVMotEdof1g26qbrDc8qcHZvtntxR4FaBN1iKxQ5ttjZSZoj",
@@ -40,14 +35,14 @@ describe("/txs/utxoForAddresses", function() {
     expect(result.data[0].block_num).to.be.equal(322087);
     expect(result.data[0].tx_index).to.be.equal(1);
   });
-  it("enterprise addresses returns something non-trivial", async function() {
-    const postData = { addresses: [enterpriseAddresses] };
+  it("enterprise address returns something non-trivial", async function() {
+    const postData = { addresses: [enterpriseAddress] };
     const result = await axios.post(endpoint+"txs/utxoForAddresses", postData);
     expect(result.data[0]).to.have.property("amount");
     expect(result.data[0]).to.have.property("block_num");
     expect(result.data[0]).to.have.property("tx_index");
-    expect(result.data[0].amount).to.be.equal("4798568257");
-    expect(result.data[0].block_num).to.be.equal(4490529);
+    expect(result.data[0].amount).to.be.equal("2068920");
+    expect(result.data[0].block_num).to.be.equal(6429690);
     expect(result.data[0].tx_index).to.be.equal(1);
   });
 });

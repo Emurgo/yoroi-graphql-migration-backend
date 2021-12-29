@@ -32,7 +32,8 @@ function createGetMultiAssetTxMintMetadataQuery(assets: PolicyIdAssetMapType) {
     .map((policyIdHex: string) => {
       const assetNames = assets?.[policyIdHex] ?? [];
       const query = assetNames
-        .map((a, idx) => `( ma.name = ($${idx * 2 + 1})::bytea
+        .map((a, idx) => 
+            `(encode(ma.name, 'hex') = ($${idx * 2 + 1})::varchar
           and encode(ma.policy, 'hex') = ($${idx * 2 + 2})::varchar )`)
         .join(" or ");
       return query;
