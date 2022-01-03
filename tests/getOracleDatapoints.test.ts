@@ -8,7 +8,7 @@ const testableUri = endpoint + "oracles/getDatapoints";
 const oracleAddress = [
   "addr1q85yx2w7ragn5sx6umgmtjpc3865s9sg59sz4rrh6f90kgwfwlzu3w8ttacqg89mkdgwshwnplj5c5n9f8dhp0h55q2q7qm63t",
 ];
-const block = 5746926;
+const blockNum = 5746926;
 const oracleAddresses = [
   "addr1q85yx2w7ragn5sx6umgmtjpc3865s9sg59sz4rrh6f90kgwfwlzu3w8ttacqg89mkdgwshwnplj5c5n9f8dhp0h55q2q7qm63t",
   "addr1v8w6wfzljnzdrwq6patkas35pgjzc3xlggpz70kaldsetcsrw3ep4",
@@ -47,7 +47,7 @@ describe("/oracles/getDatapoints", function () {
       url: testableUri,
       data: {
         addresses: oracleAddresses,
-        block: block,
+        blockNum: blockNum,
         count: count,
       },
     });
@@ -130,7 +130,7 @@ describe("/oracles/getDatapoints", function () {
       url: testableUri,
       data: {
         addresses: oracleAddresses,
-        block: block,
+        blockNum: blockNum,
         ticker: ticker,
         source: source,
         count: count,

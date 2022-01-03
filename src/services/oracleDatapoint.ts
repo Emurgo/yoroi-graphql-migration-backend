@@ -46,7 +46,7 @@ const queryMetadataOracle = `
             ELSE true
           END
           AND CASE
-            WHEN $3::INTEGER IS NOT NULL THEN block_no >= $3 IS NOT NULL
+            WHEN $3::INTEGER IS NOT NULL THEN block_no >= $3
             ELSE true
           END
         GROUP BY
@@ -172,7 +172,7 @@ const queryMetadataOracleSource = `
           AND txm.key = 1968
           AND (txm.json->$2) IS NOT NULL
           AND CASE
-            WHEN $3::INTEGER IS NOT NULL THEN block_no >= $3 IS NOT NULL
+            WHEN $3::INTEGER IS NOT NULL THEN block_no >= $3
             ELSE true
           END
           AND source->>'source' = $4
@@ -276,7 +276,7 @@ export const handleOracleDatapoint =
   async (req: Request, res: Response): Promise<void> => {
     const addresses = req.body.addresses; // list of trusted oracles
     const ticker = req.body.ticker; // data point
-    const block = req.body.block; // block to which we should find the nearest data, in case of a draw we display newer
+    const blockNum = req.body.blockNum; // block to which we should find the nearest data, in case of a draw we display more recent block
     const source = req.body.source; // payload source
     const count = req.body.count; // number of total closest/most recent results, not per oracle. If you want per oracle results, query a single oracle address
 
@@ -289,14 +289,14 @@ export const handleOracleDatapoint =
     const metadataOracle = await p.query(queryMetadataOracle, [
       addresses, // mandatory, list of trusted oracles
       ticker, // optional. If not set, fetch all available tickers. If set, fetch only that ticker
-      block, // optional. If not set, fetch latest `count` data and order desc. If set, find `count` nearest values around that block
+      blockNum, // optional. If not set, fetch latest `count` data and order desc. If set, find `count` nearest values around that block
       count, // optional, default 1, max 10
     ]);
 
     const metadataOracleSource = await p.query(queryMetadataOracleSource, [
       addresses, // mandatory, list of trusted oracles,
       ticker, // mandatory. When filtering with source, tickers are mandatory
-      block, // optional. If not set, fetch latest `count` data and order desc. If set, find `count` nearest values around that block
+      blockNum, // optional. If not set, fetch latest `count` data and order desc. If set, find `count` nearest values around that block
       source, // mandatory. Source of the data
       count, // optional, default 1, max 10
     ]);
