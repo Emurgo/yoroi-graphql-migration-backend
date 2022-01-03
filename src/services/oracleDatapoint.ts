@@ -100,7 +100,7 @@ const queryMetadataOracle = `
             ELSE true
           END
           AND CASE
-            WHEN $3::INTEGER IS NOT NULL THEN block_no < $3 IS NOT NULL
+            WHEN $3::INTEGER IS NOT NULL THEN block_no < $3
             ELSE true
           END
         GROUP BY
@@ -223,7 +223,7 @@ const queryMetadataOracleSource = `
           AND txm.key = 1968
           AND (txm.json->$2) IS NOT NULL
           AND CASE
-            WHEN $3::INTEGER IS NOT NULL THEN block_no < $3 IS NOT NULL
+            WHEN $3::INTEGER IS NOT NULL THEN block_no < $3
             ELSE true
           END
           AND source->>'source' = $4
