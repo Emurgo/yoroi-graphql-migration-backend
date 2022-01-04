@@ -694,3 +694,95 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   }
   ```
 </details>
+<details>
+  <summary>/oracles/getDatapoints</summary>
+  This endpoint is used to return specific data (data point) of a specified oracle.
+
+  There are two usages of this endpoint - with and without source.
+  This is because when calling with source, ticker becomes mandatory.
+
+  1. without specifying source:
+
+  Input
+
+  ```js
+  {
+    addresses: Array<string>, // mandatory, bech32 addresses of trusted oracles
+    ticker?: string,  // optional. If not set, fetch all available tickers. If set, fetch only that ticker
+    blockNum?: number, // optional. If not set, fetch latest `count` data and order desc.
+    // If set, find `count` nearest (absolute) values around that block
+    // e.g. with block_no = 100, count = 3 and data at blocks 85,90,100,115,135, returned data will be for blocks:
+    // 100 (absolute distance 0), 90 (absolute distance 10) and 115 (absolute distance 15 - same as block 85, but more recent)
+    // i.e. nearest blocks to the block specified
+    // in case of a draw we display the more recent block
+    count?: number, // optional, default 1, max 10
+  }
+  ```
+
+  Output
+
+  ```js
+  [addresses: string]: undefined | {
+    blockDistance: number | null,
+    blockNumber: number,
+    txHash: string,
+    txIndex: number,
+    payload: any, // if a ticker is specified, then array of JSON with data,
+                 // if not specified then all tickers are returned in form of [ticker: string]: Array<any>
+  }
+  ```
+
+  2. with source (and thus also ticker) specified:
+
+  Input
+
+  ```js
+  {
+    addresses: Array<string>, // mandatory, bech32 addresses of trusted oracles
+    ticker: string,  // mandatory. When filtering with source, tickers are mandatory
+    blockNum?: number, // optional. If not set, fetch latest `count` data and order desc.
+    // If set, find `count` nearest (absolute) values around that block
+    // e.g. with block_no = 100, count = 3 and data at blocks 85,90,100,115,135, returned data will be for blocks:
+    // 100 (absolute distance 0), 90 (absolute distance 10) and 115 (absolute distance 15 - same as block 85, but more recent)
+    // i.e. nearest blocks to the block specified
+    // in case of a draw we display the more recent block
+    source: string, // mandatory. Source of the data
+    count?: number, // optional, default 1, max 10
+  }
+  ```
+
+  Output
+
+  ```js
+  [addresses: string]: undefined | {
+    blockDistance: number | null,
+    blockNumber: number,
+    txHash: string,
+    txIndex: number,
+    payload: any, // JSON with data
+  }
+  ```
+</details>
+<details>
+  <summary>/oracles/getTickers</summary>
+  This endpoint is used to return all available tickers of a specified array of oracles.
+
+  Input
+
+  ```js
+  {
+    addresses: Array<string>, // bech32 addresses of trusted oracles
+  }
+  ```
+
+  Output
+
+  ```js
+  [addresses: string]: undefined | {
+    Array<{
+      ticker: string,
+      latestBlock: number,
+    }>
+  }
+  ```
+</details>

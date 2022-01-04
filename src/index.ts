@@ -54,6 +54,9 @@ import { handleGetCardanoWalletPools } from "./services/cardanoWallet";
 import { handleMessageBoard } from "./services/messageBoard";
 import { handleMessageDirect } from "./services/messageDirect";
 
+import { handleOracleDatapoint } from "./services/oracleDatapoint";
+import { handleOracleTicker } from "./services/oracleTicker";
+
 import { mapTransactionFragsToResponse } from "./utils/mappers";
 
 const pool = new Pool({
@@ -344,6 +347,16 @@ const routes: Route[] = [
     path: "/messages/getMessageDirect",
     method: "post",
     handler: handleMessageDirect(pool),
+  },
+  {
+    path: "/oracles/getDatapoints",
+    method: "post",
+    handler: handleOracleDatapoint(pool),
+  },
+  {
+    path: "/oracles/getTickers",
+    method: "post",
+    handler: handleOracleTicker(pool),
   },
   {
     path: "/pool/cardanoWallet",
