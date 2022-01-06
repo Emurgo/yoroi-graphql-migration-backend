@@ -677,6 +677,8 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
     }>>;
     message?: string;
   }
+  ```
+</details>
 <details>
   <summary>multiAsset/supply</summary>
   This endpoint is used to get current supplies of given multi assets
