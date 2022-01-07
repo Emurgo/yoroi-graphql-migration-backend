@@ -11,6 +11,8 @@ export default {
   },
   server: {
     addressRequestLimit: 50,
+    // make limit as 500 as it works well upto 500 for mock txs
+    transactionRequestLimit: 500,
     apiResponseLimit: 50,
     priceFeed: process.env.priceURL || "http://localhost:8090/v1/getPrice",
     tokenInfoFeed:
@@ -25,5 +27,5 @@ export default {
     txsHashesRequestLimit: 150,
   },
   blockfrostProjectKey: process.env.BLOCKFROST || "",
-  safeBlockDifference: process.env.SAFE_BLOCK_DIFFERENCE || "10"
+  safeBlockDifference: process.env.SAFE_BLOCK_DIFFERENCE || "10",
 };

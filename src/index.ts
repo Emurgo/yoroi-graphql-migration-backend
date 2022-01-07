@@ -43,7 +43,7 @@ import { createValidUtxosView } from "./Transactions/valid_utxos_view";
 import { createTransactionUtilityFunctions } from "./Transactions/userDefinedFunctions";
 import {poolDelegationHistory} from "./services/poolHistory";
 import {handleGetCardanoWalletPools} from "./services/cardanoWallet";
-
+import { utxoForTransaction } from "./services/utxoForTransaction";
 
 import { mapTransactionFragsToResponse } from "./utils/mappers";
 
@@ -324,6 +324,10 @@ const routes : Route[] = [
 , { path: "/txs/utxoForAddresses"
   , method: "post"
   , handler: utxoForAddresses(pool)
+},
+{ path: "/txs/utxoForTransactions"
+  , method: "post"
+  , handler: utxoForTransaction(pool)
 }
 , { path: "/txs/utxoSumForAddresses"
   , method: "post"

@@ -89,6 +89,33 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   ```
 </details>
 <details>
+  <summary>txs/utxoForTransactions</summary>
+  Input
+
+  Up to 500 transaction in the request
+
+  ```js
+  { 
+    txHash: string; 
+    index: number 
+  }
+  ```
+
+  Output
+
+  ```js
+  Array<{
+    utxo_id: string, // concat tx_hash and tx_index
+    tx_hash: string,
+    tx_index: number,
+    block_num: number, // NOTE: not slot_no
+    receiver: string,
+    amount: string,
+    assets: Asset[],
+  }>
+  ```
+</details>
+<details>
   <summary>account/registrationHistory</summary>
   Input
 
