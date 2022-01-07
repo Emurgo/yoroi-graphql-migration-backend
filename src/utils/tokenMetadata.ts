@@ -28,13 +28,18 @@ function hex_to_ascii(str1: string) {
 }
 
 function createGetMultiAssetTxMintMetadataQuery(assets: PolicyIdAssetMapType) {
+  // each asset (policy + assetName pair) gets passed as a SQL argument
+  // so we need to give each one of these an argument number in postgres
+  // note: postgres has a max of 65535 (so 32K pairs)
+  // but it's unlikely somebody passes 32K pairs in a single request to the backend
+  let index = 1;
   const whereConditions = Object.keys(assets)
     .map((policyIdHex: string) => {
       const assetNames = assets?.[policyIdHex] ?? [];
       const query = assetNames
-        .map((a, idx) => 
-            `(encode(ma.name, 'hex') = ($${idx * 2 + 1})::varchar
-          and encode(ma.policy, 'hex') = ($${idx * 2 + 2})::varchar )`)
+        .map((_) => 
+            `(encode(ma.name, 'hex') = ($${index++})::varchar
+          and encode(ma.policy, 'hex') = ($${index++})::varchar )`)
         .join(" or ");
       return query;
     })
