@@ -15,6 +15,7 @@ import {
   GeneralTransactionMetadata,
   TransactionMetadatum,
   BigNum,
+  MetadataMap,
 } from "@emurgo/cardano-serialization-lib-nodejs";
 
 const MAX_INT = "2147483647";
@@ -133,14 +134,22 @@ function buildMetadataObj(
     const keyWasm = BigNum.from_str(key);
     // the cbor inserted into SQL is not the full metadata for the transaction
     // instead, each row is a CBOR map with a single entry <transaction_metadatum_label, transaction_metadatum>
-    const singletonMap = TransactionMetadatum.from_bytes(
-      Buffer.from(
-        // need to cutoff the \\x prefix added by SQL
-        metadataMap[key].substring(2),
-        "hex"
-      )
-    );
-    const map = singletonMap.as_map();
+    let singletonMap;
+    let map;
+    try {
+      singletonMap = TransactionMetadatum.from_bytes(
+        Buffer.from(
+          // need to cutoff the \\x prefix added by SQL
+          metadataMap[key].substring(2),
+          "hex"
+        )
+      );
+      map = singletonMap.as_map();
+    } catch {
+      map = MetadataMap.new();
+      map.insert_str('error', TransactionMetadatum.new_text('failed to deserialize'));
+    }
+
     const keys = map.keys();
     for (let i = 0; i < keys.len(); i++) {
       const cborKey = keys.get(i);
@@ -150,7 +159,9 @@ function buildMetadataObj(
       cborKey.free();
     }
     keyWasm.free();
-    singletonMap.free();
+    if (singletonMap) {
+      singletonMap.free();
+    }
     map.free();
     keys.free();
   }
