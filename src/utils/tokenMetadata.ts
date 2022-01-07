@@ -32,7 +32,7 @@ function createGetMultiAssetTxMintMetadataQuery(assets: PolicyIdAssetMapType) {
   // so we need to give each one of these an argument number in postgres
   // note: postgres has a max of 65535 (so 32K pairs)
   // but it's unlikely somebody passes 32K pairs in a single request to the backend
-  let index = 1;
+  let index = 1; // recall: SQL arguments start at 1 (not 0)
   const whereConditions = Object.keys(assets)
     .map((policyIdHex: string) => {
       const assetNames = assets?.[policyIdHex] ?? [];
