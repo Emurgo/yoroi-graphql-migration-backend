@@ -147,7 +147,10 @@ function buildMetadataObj(
       map = singletonMap.as_map();
     } catch {
       map = MetadataMap.new();
-      map.insert_str('error', TransactionMetadatum.new_text('failed to deserialize'));
+      map.insert_str(
+        "error",
+        TransactionMetadatum.new_text("failed to deserialize")
+      );
     }
 
     const keys = map.keys();
