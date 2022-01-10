@@ -35,7 +35,6 @@
     "mocha": "^8.2.0",
     "pg": "^8.4.2",
     "pm2": "^4.5.0",
-    "prettier": "^2.5.1",
     "semver-compare": "^1.0.0",
     "ts-node": "^9.0.0",
     "tsc-watch": "^4.2.9",
@@ -61,6 +60,7 @@
     "eslint-config-airbnb-typescript": "^9.0.0",
     "eslint-plugin-import": "^2.22.1",
     "husky": "^4.3.0",
+    "prettier": "^2.5.1",
     "ramda": "^0.27.1"
   },
   "engines": {
