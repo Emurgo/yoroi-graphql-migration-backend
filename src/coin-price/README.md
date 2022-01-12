@@ -1,0 +1,3 @@
+This directory contains codes that implement the service part of the coin price data. See yoroi-front/docs/specs/code/COIN_PRICE.md for more details.
+
+Development private data key is `c8fc9467abae3c3396854ed25c59cc1d9a8ef3db9772f4cb0f074181ba4cad57eaa923bc58cbf6aff0aa34541e015d6cb6cf74b48d35f05f0ec4a907df64bad20000000000000000000000000000000000000000000000000000000000000000` (corresponding to `pubKeyData: '43d0c0e05acfd2608dd392ad7add6b8a41a3d182387f3ee17f1e9b165c2431680000000000000000000000000000000000000000000000000000000000000000'` in `/config/develop.js`).

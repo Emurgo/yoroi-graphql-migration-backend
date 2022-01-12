@@ -59,6 +59,8 @@ import { handleOracleTicker } from "./services/oracleTicker";
 
 import { mapTransactionFragsToResponse } from "./utils/mappers";
 
+import installCoinPriceHandlers from "./coin-price/handler";
+
 const pool = new Pool({
   user: config.get("db.user"),
   host: config.get("db.host"),
@@ -402,6 +404,7 @@ const routes: Route[] = [
 ];
 
 applyRoutes(routes, router);
+installCoinPriceHandlers(router, pool, function () {});
 router.use(middleware.logErrors);
 router.use(middleware.errorHandler);
 

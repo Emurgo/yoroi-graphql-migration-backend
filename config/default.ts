@@ -16,5 +16,10 @@ export default {
     txsHashesRequestLimit: 150,
   },
   safeBlockDifference: process.env.SAFE_BLOCK_DIFFERENCE || "10",
-  usingQueueEndpoint: process.env.USE_SIGNED_TX_QUEUE || "false"
+  usingQueueEndpoint: process.env.USE_SIGNED_TX_QUEUE || "false",
+  coinPrice: {
+    pubKeyData: "0e011fe7149bff8e3802168261aec6da54febee37da6a41d6179fa545868421e",
+    currentPriceHttpCacheControlMaxAge: 60, // which is the price data refresh interval
+    logLevel: "info",
+  }
 };
