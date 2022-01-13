@@ -1,9 +1,8 @@
 import Logger from "bunyan";
 import config from "config";
 import CardanoWasm from "@emurgo/cardano-serialization-lib-nodejs"
-import { verify, serializeTicker } from "./sign";
 import constants from "./constants";
-import { getCurrentPrice, getHistoricalPrice, insertPriceData } from "./model";
+import { getCurrentPrice, getHistoricalPrice } from "./model";
 
 import type { Request, Response } from 'express';
 import type { Pool } from 'pg';
@@ -96,46 +95,6 @@ async function historicalPrice(
   }
 }
 
-async function uploadPrice(
-  db: Pool,
-  logger: Logger,
-  log: LogFunc,
-  req: Request,
-  res: Response,
-): Promise<void> {
-
-  if (!validateTicker(req.body.ticker)) {
-    const result = { error: 'invalid price data' };
-    log(result, 400, req);
-    res.status(400);
-    res.send(result);
-    return;
-  }
-
-  try {
-    await insertPriceData(db, req.body.ticker);
-    const result = { error: null };
-    log(result, 200, req);
-    res.send(result);
-  } catch (error) {
-    const result = { error: error.message };
-    log(result, 500, req);
-    res.status(500);
-    res.send(result);
-  }
-}
-
-const publicKey = CardanoWasm.PublicKey.from_bytes(
-  Buffer.from(config.get("coinPrice.pubKeyData") as string, "hex")
-);
-
-function validateTicker(ticker: Ticker): boolean {
-  if (!ticker.signature) {
-    return false;
-  }
-  return verify(ticker, serializeTicker, ticker.signature, publicKey);
-}
-
 const logger = Logger.createLogger({
   name: "coin-price-handler",
   level: config.get("coinPrice.logLevel"),
@@ -146,8 +105,5 @@ export default function installHandlers(server: any, db: Pool, logRequest: LogFu
     currentPrice.bind(null, db, logger, logRequest));
   server.get('/price/:from/:timestamps', 
     historicalPrice.bind(null, db, logger, logRequest));
-
-  server.post('/price',
-    uploadPrice.bind(null, db, logger, logRequest));
 }
 
