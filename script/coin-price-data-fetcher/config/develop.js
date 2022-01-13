@@ -1,0 +1,26 @@
+module.exports = {
+  fetcherProviders: [
+    //'cryptocompare',
+    //'coinlayer',
+    //'coinmarketcap',
+    //'coinapi',
+    //'coinpaprika',
+    //'nomics',
+    'cryptonator',
+    //'shrimpy',
+    //'cryptoapis',
+    // 'badMockApi',
+  ],
+  monitorProviders: [
+    // 'cryptocompare',
+    // 'coinlayer',
+    // 'coinmarketcap',
+    // 'coinapi',
+    // 'coinpaprika',
+    // 'nomics',
+    // 'cryptonator',
+    'shrimpy',
+    // 'cryptoapis',
+    // 'badMockApi',
+  ],
+};
