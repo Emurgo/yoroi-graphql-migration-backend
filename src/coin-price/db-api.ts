@@ -1,5 +1,5 @@
 import format from 'pg-format';
-import type { Pool } from 'pg';
+import type { Pool, Client } from 'pg';
 import type { Ticker } from './types';
 
 export function createTickersTable(db: Pool) {
@@ -27,7 +27,7 @@ function rowToTicker(row: any): Ticker {
   };
 }
 
-export async function getLatestTicker(db: Pool, fromCurrency: string) : Promise<Ticker> {
+export async function getLatestTicker(db: Pool | Client, fromCurrency: string) : Promise<Ticker> {
   return (await db.query({
     text: 'SELECT * from tickers WHERE "from"=$1 ORDER BY time DESC LIMIT 1',
     values: [fromCurrency]
@@ -53,13 +53,13 @@ export async function getTickers(db: Pool, fromCurrency: string, timestamps: Arr
   })).rows.map(rowToTicker);
 }
 
-export async function insertTicker(db: Pool, ticker: Ticker): Promise<void> {
+export async function insertTicker(db: Pool | Client, ticker: Ticker): Promise<void> {
   await db.query({
     text: 'INSERT INTO tickers("from", time, signature, prices) VALUES ($1, $2, $3, $4)',
     values: [
       ticker.from,
       Math.floor(ticker.timestamp/1000),
-      new Buffer(ticker.signature || '00'/* to please flow */, 'hex'),
+      Buffer.from(ticker.signature || '00'/* to please flow */, 'hex'),
       JSON.stringify(ticker.prices)]
   });  
 }

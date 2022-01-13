@@ -18,8 +18,14 @@ export default {
   safeBlockDifference: process.env.SAFE_BLOCK_DIFFERENCE || "10",
   usingQueueEndpoint: process.env.USE_SIGNED_TX_QUEUE || "false",
   coinPrice: {
-    pubKeyData: "0e011fe7149bff8e3802168261aec6da54febee37da6a41d6179fa545868421e",
+    pubKeyData: process.env.COIN_PRICE_PUB_KEY,
     currentPriceHttpCacheControlMaxAge: 60, // which is the price data refresh interval
     logLevel: "info",
+    s3: {
+      region: process.env.PRICE_DATA_S3_REGION,
+      bucketName: process.env.PRICE_DATA_S3_BUCKET_NAME,
+      accessKeyId: process.env.PRICE_DATA_S3_ACCESS_KEY_ID,
+      secretAccessKey: process.env.PRICE_DATA_S3_SECRET_ACCESS_KEY,
+    },
   }
 };

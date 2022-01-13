@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@emurgo/cardano-serialization-lib-nodejs": "^9.1.0",
+    "aws-sdk": "^2.1056.0",
     "axios": "^0.21.1",
     "bech32": "^1.1.4",
     "bunyan": "^1.8.15",
