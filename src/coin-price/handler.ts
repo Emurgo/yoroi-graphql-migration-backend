@@ -1,29 +1,23 @@
 import Logger from "bunyan";
 import config from "config";
-import CardanoWasm from "@emurgo/cardano-serialization-lib-nodejs"
 import constants from "./constants";
 import { getCurrentPrice, getHistoricalPrice } from "./model";
 
-import type { Request, Response } from 'express';
-import type { Pool } from 'pg';
-import type { Ticker } from './types';
-
-type LogFunc = (resultOrError: any, statusCode: any, req: Request) => void;
+import type { Request, Response } from "express";
+import type { Pool } from "pg";
 
 async function currentPrice(
   db: Pool,
   logger: Logger,
-  log: LogFunc,
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<void> {
   if (!constants.fromCurrencies.includes(req.params.from)) {
-    const result = { error: 'no price data for '+req.params.from };
-    log(result, 404, req);
+    const result = { error: "no price data for " + req.params.from };
     res.status(404);
     res.send(result);
     return;
-  } 
+  }
   try {
     const ticker = await getCurrentPrice(db, req.params.from, logger);
 
@@ -33,13 +27,13 @@ async function currentPrice(
       result.pubKeyData = config.get("coinPrice.pubKeyData");
       result.pubKeyDataSignature = config.get("coinPrice.pubKeyDataSignature");
     }
-    log(result, 200, req);
-    res.setHeader('cache-control',
-      `max-age=${config.get("coinPrice.currentPriceHttpCacheControlMaxAge")}`);
+    res.setHeader(
+      "cache-control",
+      `max-age=${config.get("coinPrice.currentPriceHttpCacheControlMaxAge")}`
+    );
     res.send(result);
   } catch (error) {
     const result = { error: error.message };
-    log(result, 500, req);
     res.status(500);
     res.send(result);
   }
@@ -48,33 +42,31 @@ async function currentPrice(
 async function historicalPrice(
   db: Pool,
   logger: Logger,
-  log: LogFunc,
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<void> {
   if (!constants.fromCurrencies.includes(req.params.from)) {
-    const result = { error: 'no price data for '+req.params.from };
-    log(result, 404, req);
+    const result = { error: "no price data for " + req.params.from };
     res.status(404);
     res.send(result);
     return;
-  } 
+  }
 
   if (!req.params.timestamps.match(/^\d+(,\d+)*$/)) {
-    const result = { error: 'invalid timestamps format' };
-    log(result, 400, req);
+    const result = { error: "invalid timestamps format" };
     res.status(400);
     res.send(result);
     return;
   }
 
-  const timestamps =  req.params.timestamps.split(',').map(Number);
+  const timestamps = req.params.timestamps.split(",").map(Number);
 
   for (const time of timestamps) {
-    if (time < constants.historicalPriceStartTimestampMs ||
-      time > Date.now()+constants.historicalPriceTimeSkewAllowance) {
+    if (
+      time < constants.historicalPriceStartTimestampMs ||
+      time > Date.now() + constants.historicalPriceTimeSkewAllowance
+    ) {
       const result = { error: `timestamp ${time} out of range` };
-      log(result, 404,req);
       res.status(404);
       res.send(result);
       return;
@@ -82,13 +74,16 @@ async function historicalPrice(
   }
 
   try {
-    const tickers = await getHistoricalPrice(db, req.params.from, timestamps, logger);
+    const tickers = await getHistoricalPrice(
+      db,
+      req.params.from,
+      timestamps,
+      logger
+    );
     const result = { error: null, tickers };
-    log(result, 200, req);
     res.send(result);
   } catch (error) {
     const result = { error: error.message };
-    log(result, 500, req);
     res.status(500);
     res.send(result);
     logger.error(error);
@@ -100,10 +95,16 @@ const logger = Logger.createLogger({
   level: config.get("coinPrice.logLevel"),
 });
 
-export default function installHandlers(server: any, db: Pool, logRequest: LogFunc): void {
-  server.get('/price/:from/current', 
-    currentPrice.bind(null, db, logger, logRequest));
-  server.get('/price/:from/:timestamps', 
-    historicalPrice.bind(null, db, logger, logRequest));
+export default function installHandlers(
+  server: any,
+  db: Pool,
+): void {
+  server.get(
+    "/price/:from/current",
+    currentPrice.bind(null, db, logger)
+  );
+  server.get(
+    "/price/:from/:timestamps",
+    historicalPrice.bind(null, db, logger)
+  );
 }
-

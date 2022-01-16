@@ -404,7 +404,7 @@ const routes: Route[] = [
 ];
 
 applyRoutes(routes, router);
-installCoinPriceHandlers(router, pool, function () {});
+installCoinPriceHandlers(router, pool);
 router.use(middleware.logErrors);
 router.use(middleware.errorHandler);
 

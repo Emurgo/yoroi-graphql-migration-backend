@@ -1,11 +1,15 @@
 import CardanoWasm from "@emurgo/cardano-serialization-lib-nodejs";
-import type { Ticker } from './types';
+import type { Ticker } from "./types";
 
 export function serializeTicker(ticker: Ticker): Buffer {
-  return Buffer.from(ticker.from +
-    ticker.timestamp +
-    Object.keys(ticker.prices).sort().map(to => to + ticker.prices[to]).join(''),
-    'utf8'
+  return Buffer.from(
+    ticker.from +
+      ticker.timestamp +
+      Object.keys(ticker.prices)
+        .sort()
+        .map((to) => to + ticker.prices[to])
+        .join(""),
+    "utf8"
   );
 }
 
@@ -28,4 +32,3 @@ export function verify(
     CardanoWasm.Ed25519Signature.from_bytes(Buffer.from(signatureHex, "hex"))
   );
 }
-

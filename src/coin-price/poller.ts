@@ -6,7 +6,7 @@ import Logger from "bunyan";
 import { Client } from "pg";
 import { getLatestTicker, insertTicker } from "./db-api";
 
-AWS.config.update({region: config.get("coinPrice.s3.region")});
+AWS.config.update({ region: config.get("coinPrice.s3.region") });
 
 const S3 = new AWS.S3({
   accessKeyId: config.get("coinPrice.s3.accessKeyId"),
@@ -20,7 +20,7 @@ const logger = Logger.createLogger({
   level: config.get("coinPrice.logLevel"),
 });
 
-const CURRENCY = 'ADA';
+const CURRENCY = "ADA";
 
 function toObjectKey(currency: string, timestamp: number): string {
   return `prices-${currency}-${timestamp}.json`;
@@ -34,12 +34,16 @@ async function getTickersFromS3Since(
   currency: string,
   dataCallback: (ticker: Buffer) => Promise<void>,
   errorCallback: () => Promise<void>,
-  successCallback: () => Promise<void>,
+  successCallback: () => Promise<void>
 ): Promise<void> {
   let continuationToken = undefined;
-  
+
   for (;;) {
-    logger.debug('fetching price data from S3 since', timestamp, continuationToken);
+    logger.debug(
+      "fetching price data from S3 since",
+      timestamp,
+      continuationToken
+    );
     const listParams: any = {
       Bucket,
       ContinuationToken: continuationToken,
@@ -48,8 +52,8 @@ async function getTickersFromS3Since(
     let resp;
     for (let i = 0; i < RETRY_COUNT; i++) {
       try {
-        // TypeScript can't get `util.promisify` straight
-        // @ts-expect-error
+        // eslint-disable-next-line
+        // @ts-expect-error: TypeScript can't get `util.promisify` straight
         resp = await util.promisify(S3.listObjectsV2.bind(S3))(listParams);
         break;
       } catch (error) {
@@ -57,7 +61,7 @@ async function getTickersFromS3Since(
       }
     }
     if (!resp) {
-      logger.error('getting object list failed');
+      logger.error("getting object list failed");
       await errorCallback();
       return;
     }
@@ -69,8 +73,8 @@ async function getTickersFromS3Since(
       let resp;
       for (let i = 0; i < RETRY_COUNT; i++) {
         try {
-          // TypeScript can't get `util.promisify` straight
-          // @ts-expect-error
+          // eslint-disable-next-line
+          // @ts-expect-error: TypeScript can't get `util.promisify` straight
           resp = await util.promisify(S3.getObject.bind(S3))({ Bucket, Key });
           break;
         } catch (error) {
@@ -78,7 +82,7 @@ async function getTickersFromS3Since(
         }
       }
       if (!resp || !(resp.Body instanceof Buffer)) {
-        logger.error('getting object failed');
+        logger.error("getting object failed");
         await errorCallback();
         return;
       }
@@ -102,35 +106,35 @@ export async function start() {
     password: config.get("db.password"),
     port: config.get("db.port"),
   });
-  await  client.connect();
+  await client.connect();
 
   const latestTicker = await getLatestTicker(client, CURRENCY);
 
-  logger.info('start from timestamp', latestTicker?.timestamp);
+  logger.info("start from timestamp", latestTicker?.timestamp);
 
-  await client.query('BEGIN');
+  await client.query("BEGIN");
 
   await getTickersFromS3Since(
     latestTicker?.timestamp,
     CURRENCY,
-    async buffer => {
-      const obj = JSON.parse(buffer.toString('binary'));
-      logger.debug('got ticker', obj);
+    async (buffer) => {
+      const obj = JSON.parse(buffer.toString("binary"));
+      logger.debug("got ticker", obj);
       const ticker = {
         from: obj.from,
         timestamp: obj.timestamp,
         signature: obj.signature,
         prices: obj.prices,
       };
-      logger.info('insert ticker for', ticker.timestamp);
+      logger.info("insert ticker for", ticker.timestamp);
       await insertTicker(client, ticker);
     },
     async () => {
-      await client.query('ROLLBACK');
+      await client.query("ROLLBACK");
     },
     async () => {
-      await client.query('COMMIT');
-    },
+      await client.query("COMMIT");
+    }
   );
 
   client.end();
