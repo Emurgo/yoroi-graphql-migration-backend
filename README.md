@@ -96,8 +96,10 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
 
   ```js
   { 
-    txHash: string; 
-    index: number 
+    transactions: Array<{
+        txHash: string,
+        index: number
+    }>
   }
   ```
 
