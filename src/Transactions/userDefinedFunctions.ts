@@ -97,6 +97,7 @@ BEGIN
         SELECT json_agg(
             ("address"
             , "value"
+            , "txDataHash"
             , (
                 SELECT json_agg(ROW(encode("policy", 'hex'), encode("name", 'hex'), "quantity"))
                 FROM ma_tx_out
