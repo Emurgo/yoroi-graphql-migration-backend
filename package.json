@@ -7,6 +7,7 @@
     "postinstall": "tsc",
     "start": "pm2 start pm2.yaml",
     "stop": "pm2 stop pm2.yaml",
+    "start-poller": "pm2 start ./dist/coin-price/poller.js --cron '* * * * *'",
     "dev": "tsc-watch --onSuccess \"node ./dist/index.js\"",
     "eslint": "eslint src tests",
     "test": "mocha -r ts-node/register tests/**/*.test.ts --slow 0",

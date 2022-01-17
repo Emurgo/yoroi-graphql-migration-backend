@@ -149,7 +149,12 @@ export async function start() {
     }
   );
 
-  client.end();
+  await client.end();
 }
 
-start();
+try {
+  start();
+} catch(error) {
+  logger.error('poller error', error);
+  process.exit(1);
+}
