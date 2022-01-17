@@ -42,6 +42,8 @@ import { handleGetTxIO } from "./services/txIO";
 import { handleTipStatusGet, handleTipStatusPost } from "./services/tipStatus";
 import { handleGetTransactions } from "./services/transactions";
 
+import { handlePolicyIdExists } from "./services/policyIdExists";
+
 import { HealthChecker } from "./HealthChecker";
 
 import { createCertificatesView } from "./Transactions/certificates";
@@ -377,6 +379,11 @@ const routes: Route[] = [
     path: "/tx/status",
     method: "post",
     handler: handleTxStatus(pool),
+  },
+  {
+    path: "/multiAsset/policyIdExists",
+    method: "post",
+    handler: handlePolicyIdExists(pool),
   },
   {
     path: "/v2/importerhealthcheck",
