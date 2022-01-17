@@ -32,34 +32,34 @@ export const handleTxStatus =
 
     const result = await pool.query(txStatusQuery, [txHashes]);
 
-  const response: any = {};
-  const depth: {[key: string]: number} = {};
+    const response: any = {};
+    const depth: { [key: string]: number } = {};
 
     for (const item of result.rows) {
       depth[item.tx_id] = item.depth;
     }
 
-  response.depth = depth;
+    response.depth = depth;
 
-  if (config.get("usingQueueEndpoint") === "true") {
-    try {
-      const result = await axios({
-        method: "post",
-        url: `${signedTxQueueEndpoint}api/getTxsStatus`,
-        data: {
-          txHashes: txHashes
+    if (config.get("usingQueueEndpoint") === "true") {
+      try {
+        const result = await axios({
+          method: "post",
+          url: `${signedTxQueueEndpoint}api/getTxsStatus`,
+          data: {
+            txHashes: txHashes,
+          },
+        });
+
+        const submissionStatus: { [key: string]: string } = {};
+        for (const status of result.data) {
+          submissionStatus[status.id] = status.status;
         }
-      });
-
-      const submissionStatus: {[key: string]: string} = {};
-      for (const status of result.data) {
-        submissionStatus[status.id] = status.status;
+        response.submissionStatus = submissionStatus;
+      } finally {
+        // ignore errors
       }
-      response.submissionStatus = submissionStatus;
-    } finally {
-      // ignore errors
     }
-  }
 
-  res.send(response);
-};
+    res.send(response);
+  };
