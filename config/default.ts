@@ -18,7 +18,6 @@ export default {
   safeBlockDifference: process.env.SAFE_BLOCK_DIFFERENCE || "10",
   usingQueueEndpoint: process.env.USE_SIGNED_TX_QUEUE || "false",
   coinPrice: {
-    pubKeyData: process.env.COIN_PRICE_PUB_KEY,
     currentPriceHttpCacheControlMaxAge: 60, // which is the price data refresh interval
     logLevel: "info",
     s3: {
