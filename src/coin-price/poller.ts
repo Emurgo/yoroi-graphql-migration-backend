@@ -4,7 +4,11 @@ import config from "config";
 import AWS from "aws-sdk";
 import Logger from "bunyan";
 import { Client } from "pg";
-import { getLatestTicker, insertTicker } from "./db-api";
+import {
+  createTickersTable,
+  getLatestTicker,
+  insertTicker
+} from "./db-api";
 
 AWS.config.update({ region: config.get("coinPrice.s3.region") });
 
@@ -108,9 +112,17 @@ export async function start() {
   });
   await client.connect();
 
+  try {
+    await createTickersTable(client);
+    logger.info("created table");
+  } catch {
+    logger.info("table exists");
+  }
+
   const latestTicker = await getLatestTicker(client, CURRENCY);
 
   logger.info("start from timestamp", latestTicker?.timestamp);
+
 
   await client.query("BEGIN");
 

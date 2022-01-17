@@ -1,7 +1,7 @@
 import type { Pool, Client } from "pg";
 import type { Ticker } from "./types";
 
-export function createTickersTable(db: Pool) {
+export function createTickersTable(db: Pool | Client) {
   return db.query(`
     CREATE TABLE tickers(
      "from"  varchar(10) NOT NULL,
