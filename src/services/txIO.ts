@@ -46,7 +46,8 @@ export const handleGetTxIO =
         (obj: any): TransOutputFrag => ({
           address: obj.f1,
           amount: obj.f2.toString(),
-          assets: extractAssets(obj.f3),
+          dataHash: obj.f3,
+          assets: extractAssets(obj.f4),
         })
       ),
     });
