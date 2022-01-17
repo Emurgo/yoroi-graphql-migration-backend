@@ -32,4 +32,6 @@ module.exports  = {
 
   exchangeRateCachePath: '/tmp/exchange-rates.json',
   exchangeRateCacheTime: 60*60*1000, // 1 hour
+
+  fetcherProviders: JSON.parse(process.env.PRICE_PROVIDERS || 'null'),
 }

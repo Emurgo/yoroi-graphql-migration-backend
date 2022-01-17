@@ -7,8 +7,8 @@
     "flow": "flow",
     "postinstall": "npm run flow-remove-types",
     "flow-remove-types": "flow-remove-types -d ./flow-files/config --all --pretty config/ && flow-remove-types -d ./flow-files/src --all --pretty src/",
-    "start-fetcher": "NODE_ENV=${NODE_ENV:-develop} node ./flow-files/src/index.js",
-    "start-monitor": "NODE_ENV=${NODE_ENV:-develop} node ./flow-files/src/index.js monitor",
+    "start-fetcher": "node ./flow-files/src/index.js",
+    "start-monitor": "node ./flow-files/src/index.js monitor",
     "test": "npm run flow-remove-types && jest ./flow-files/src"
   },
   "author": "",
