@@ -119,6 +119,16 @@ const cryptoapis: ApiFunc = async (fetch, apiKey) => {
   }));
 };
 
+// Provides ADA-all
+const coinbase: ApiFunc = async (fetch, _apiKey) => {
+  const response = await fetch('https://api.coinbase.com/v2/exchange-rates?currency=ADA');
+  if (!response.data || !response.data.rates) {
+    throw new ErrorResponse();
+  }
+  return ['BTC', 'ETH', 'USD', 'EUR', 'CNY', 'KRW', 'JPY'].map(to => (
+    { from: 'ADA', to, price: Number(response.data.rates[to]) }
+  ));
+};
 // A mock API that always fails, for testing
 const badMockApi: ApiFunc = async (_fetch, _apiKey) => {
   throw new Error('bad mock API fails');
@@ -136,6 +146,7 @@ module.exports = {
     cryptonator,
     shrimpy,
     cryptoapis,
+    coinbase,
     badMockApi,
   },
 };
