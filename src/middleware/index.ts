@@ -3,6 +3,10 @@ import cors from "cors";
 import parser from "body-parser";
 import compression from "compression";
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import responseTime from "response-time";
+
 export const handleCors = (router: Router): Router =>
   router.use(cors({ credentials: true, origin: true }));
 
@@ -13,6 +17,12 @@ export const handleBodyRequestParsing = (router: Router): void => {
 
 export const handleCompression = (router: Router): void => {
   router.use(compression());
+};
+
+export const handleTiming = (router: Router): void => {
+  router.use(responseTime((req: Request, res: Response, time: number) => {
+    console.log(`[CALLTIME] millis=${time} url=${req.url} body=${JSON.stringify(req.body)}`);
+  }));
 };
 
 export const logErrors = (
