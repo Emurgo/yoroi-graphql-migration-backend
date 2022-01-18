@@ -21,7 +21,7 @@ export const logErrors = (
   res: Response,
   next: NextFunction
 ): void => {
-  const errStr = `ERROR url: ${req.url}\n      stack: ${err.stack}\n      message: ${err.message}`;
+  const errStr = `ERROR url: ${req.url}\n      stack: ${err.stack}\n      message: ${err.message}\n      request: ${JSON.stringify(req.body)}`;
   console.log(errStr);
   next(err);
 };
