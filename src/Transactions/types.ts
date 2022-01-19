@@ -168,7 +168,15 @@ export const rowToCertificate = (row: any): Certificate | null => {
         cost: row.poolParamsCost.toString(),
         margin: row.poolParamsMargin,
         rewardAccount: row.poolParamsRewardAccount,
-        poolOwners: row.poolParamsOwners,
+        // The owners property of the pool parameter is a set of stake key hashes
+        // of the owners in CDDL and cardano-serialization-lib. But in the DB they
+        // are a set of stake addresses which are "a single header byte identifying
+        // their type and the network, followed by 28 bytes of payload identifying
+        // either a stake key hash or a script hash" (CIP19).
+        // So we remove the header byte.
+        poolOwners: row.poolParamsOwners.map((stakeAddr: string) =>
+          stakeAddr.slice(2)
+        ),
         relays: poolRelays,
         poolMetadata:
           row.poolParamsMetaDataUrl === null
