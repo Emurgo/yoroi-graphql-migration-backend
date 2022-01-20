@@ -10,28 +10,29 @@ FROM tx
 WHERE encode(tx.hash, 'hex') = any(($1)::varchar array);
 `;
 
-export const handleTxStatus = (pool: Pool) => async (req: Request, res: Response) => {
-  if(!req.body || !req.body.txHashes) {
-    throw new Error("error, no tx txHashes informed.");
-  }
-  if (!Array.isArray(req.body.txHashes)) {
-    throw new Error("'txHashes' should be an array.");
-  }
-  const txHashes: string[] = req.body.txHashes;
-  if (txHashes.length > 100) {
-    throw new Error("Max limit of 100 tx txHashes exceeded.");
-  }
-  if (txHashes.length === 0) {
-    throw new Error("error, at least 1 tx id should be informed.");
-  }
+export const handleTxStatus =
+  (pool: Pool) => async (req: Request, res: Response) => {
+    if (!req.body || !req.body.txHashes) {
+      throw new Error("error, no tx txHashes informed.");
+    }
+    if (!Array.isArray(req.body.txHashes)) {
+      throw new Error("'txHashes' should be an array.");
+    }
+    const txHashes: string[] = req.body.txHashes;
+    if (txHashes.length > 100) {
+      throw new Error("Max limit of 100 tx txHashes exceeded.");
+    }
+    if (txHashes.length === 0) {
+      throw new Error("error, at least 1 tx id should be informed.");
+    }
 
-  const result = await pool.query(txStatusQuery, [txHashes]);
+    const result = await pool.query(txStatusQuery, [txHashes]);
 
-  const depth: {[key: string]: number} = {};
+    const depth: { [key: string]: number } = {};
 
-  for (const item of result.rows) {
-    depth[item.tx_id] = item.depth;
-  }
+    for (const item of result.rows) {
+      depth[item.tx_id] = item.depth;
+    }
 
-  res.send({ depth });
-};
+    res.send({ depth });
+  };

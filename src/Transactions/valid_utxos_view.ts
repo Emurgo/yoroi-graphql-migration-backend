@@ -1,4 +1,4 @@
-import { Pool, } from "pg";
+import { Pool } from "pg";
 
 export const createViewSql = `
 drop view if exists valid_utxos_view;
@@ -40,7 +40,7 @@ WHERE tx.valid_contract -- utxos only from valid txs
       AND tx_out.index = tx_in.tx_out_index)`;
 
 export const createValidUtxosView = (pool: Pool): void => {
-  if(process.env.NODE_TYPE !== "slave"){
+  if (process.env.NODE_TYPE !== "slave") {
     pool.query(createViewSql);
   }
 };
