@@ -22,8 +22,8 @@
     }
   },
   "dependencies": {
-    "@emurgo/cardano-serialization-lib-nodejs": "^4.2.0",
     "axios": "^0.21.4",
+    "@emurgo/cardano-serialization-lib-nodejs": "^9.1.0",
     "bech32": "^1.1.4",
     "cardano-wallet": "^1.2.2",
     "chai": "^4.2.0",
@@ -32,6 +32,7 @@
     "cors": "^2.8.5",
     "express": "^5.0.0-alpha.8",
     "lodash": "^4.17.21",
+    "hash-wasm": "^4.9.0",
     "mocha": "^8.2.0",
     "pg": "^8.4.2",
     "pm2": "^5.1.2",

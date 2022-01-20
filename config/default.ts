@@ -20,6 +20,8 @@ export default {
     txSubmissionEndpoint:
       process.env.TX_SUBMISSION_ENDPOINT ||
       "https://cardano-mainnet.blockfrost.io/api/v0/tx/submit",
+    signedTxQueueEndpoint:
+      process.env.SIGNED_TX_QUEUE_ENDPOINT || "http://localhost:3030/",
     smashEndpoint:
       process.env.SMASH_ENDPOINT ||
       "https://smash.yoroiwallet.com/api/v1/metadata/",
@@ -28,4 +30,5 @@ export default {
   },
   blockfrostProjectKey: process.env.BLOCKFROST || "",
   safeBlockDifference: process.env.SAFE_BLOCK_DIFFERENCE || "10",
+  usingQueueEndpoint: process.env.USE_SIGNED_TX_QUEUE || "false",
 };

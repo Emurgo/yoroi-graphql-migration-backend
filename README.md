@@ -593,7 +593,10 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   Output
 
   ```js
-  []
+  {
+    // this is calculated based on the submitted `signedTx`, and will be an exact match of the transaction ID on the blockchain once the transaction is confirmed
+    txId: string
+  }
   ```
 </details>
 <details>
@@ -612,8 +615,11 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
 
   ```
   {
-    "depth": {
+    depth: {
       "<txHash>": number
+    },
+    submissionStatus?: {
+      "<txHash>": "WAITING" | "FAILED" | "MAX_RETRY_REACHED" | "SUCCEESS"
     }
   }
   ```
