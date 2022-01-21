@@ -36,14 +36,13 @@ function createGetMultiAssetTxMintMetadataQuery(assets: PolicyIdAssetMapType) {
   const whereConditions = Object.keys(assets)
     .map((policyIdHex: string) => {
       const assetNames = assets?.[policyIdHex] ?? [];
+      const policyID = `( encode(ma.policy, 'hex') = ($${index++})::varchar and`;
       const query = assetNames
-        .map(
-          (_) =>
-            `(encode(ma.name, 'hex') = ($${index++})::varchar
-          and encode(ma.policy, 'hex') = ($${index++})::varchar )`
-        )
+        .map((_) => `encode(ma.name, 'hex') = ($${index++})::varchar`)
         .join(" or ");
-      return query;
+      const addPolicyId = `${policyID} (${query}) )`;
+
+      return addPolicyId;
     })
     .join(" or ");
 
@@ -66,14 +65,13 @@ export async function getMultiAssetTxMintMetadata(
   assets: PolicyIdAssetMapType
 ): Promise<Record<string, MultiAssetTxMintMetadataType[]>> {
   const query = createGetMultiAssetTxMintMetadataQuery(assets);
-  const params = Object.keys(assets)
-    .map((policyIdHex: string) => {
-      const assetNames = assets?.[policyIdHex] ?? [];
-      return assetNames
-        .map((assetName) => [assetName, policyIdHex])
-        .reduce((prev, curr) => prev.concat(curr), []);
-    })
-    .reduce((prev, curr) => prev.concat(curr), []);
+
+  const params = Object.keys(assets).reduce<string[]>(
+    (acc, currentPolicyIdHex) => {
+      return acc.concat([currentPolicyIdHex, ...assets[currentPolicyIdHex]]);
+    },
+    []
+  );
 
   const ret: { [key: string]: MultiAssetTxMintMetadataType[] } = {};
   const results = await pool.query(query, params);
