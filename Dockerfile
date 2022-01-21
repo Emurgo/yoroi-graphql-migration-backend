@@ -16,5 +16,5 @@ RUN npm install
 # Bundle app source
 
 EXPOSE 8082
-CMD [ "node", "./dist/index.js" ]
+CMD npm start
 
