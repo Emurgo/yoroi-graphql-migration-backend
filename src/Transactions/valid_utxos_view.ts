@@ -10,6 +10,7 @@ SELECT
   , encode(tx.hash,'hex') as hash
   , tx_out.index
   , tx_out.value
+  , tx_out.data_hash
   , block.block_no as "blockNumber"
   , (
     select json_agg(ROW (encode("multi_asset"."policy", 'hex'), encode("multi_asset"."name", 'hex'), "quantity"))
