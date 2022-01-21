@@ -782,3 +782,27 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   }
   ```
 </details>
+<details>
+  <summary>/multiAsset/policyIdExists</summary>
+  This endpoint is used to check if given policyIds already exist on chain.
+
+  Number of ids need to be in [1, 100]
+
+  Input
+
+  ```js
+  {
+    policyIds: Array<string>, // hex encoded policyIds that will be checked
+  }
+  ```
+
+  Output
+
+  ```js
+  {
+    policyIdResults: Array<{
+      [policyId: string]: boolean
+    }>
+  }
+  ```
+</details>
