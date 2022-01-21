@@ -51,20 +51,17 @@ export const utxoForTransaction =
       FROM valid_utxos_view
       WHERE ${whereConditions}`;
 
-    
-    
-      const result = await pool.query(utxoForTransactionQuery, params);
-      
-      const utxos = result.rows.map((utxo) => ({
-        utxo_id: `${utxo.hash}:${utxo.index}`,
-        tx_hash: utxo.hash,
-        tx_index: utxo.index,
-        receiver: utxo.address,
-        amount: utxo.value.toString(),
-        assets: extractAssets(utxo.assets),
-        block_num: utxo.blockNumber,
-      }));
-  
+    const result = await pool.query(utxoForTransactionQuery, params);
+
+    const utxos = result.rows.map((utxo) => ({
+      utxo_id: `${utxo.hash}:${utxo.index}`,
+      tx_hash: utxo.hash,
+      tx_index: utxo.index,
+      receiver: utxo.address,
+      amount: utxo.value.toString(),
+      assets: extractAssets(utxo.assets),
+      block_num: utxo.blockNumber,
+    }));
 
     res.send(utxos);
   };
