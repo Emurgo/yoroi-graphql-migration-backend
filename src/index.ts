@@ -81,6 +81,7 @@ const middlewares = [
   middleware.handleCors,
   middleware.handleBodyRequestParsing,
   middleware.handleCompression,
+  middleware.handleTiming,
 ];
 
 applyMiddleware(middlewares, router);
