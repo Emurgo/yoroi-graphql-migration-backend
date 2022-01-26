@@ -90,10 +90,7 @@ export const handleTipStatusPost =
     ] = await Promise.all([
       getBestAndSafeBlocks(pool),
       pool.query(bestBlockFromReferenceQuery, [bestBlocks]),
-      pool.query(safeBlockFromReferenceQuery, [
-        bestBlocks,
-        SAFE_BLOCK_DEPTH,
-      ]),
+      pool.query(safeBlockFromReferenceQuery, [bestBlocks, SAFE_BLOCK_DEPTH]),
     ]);
 
     if (bestBlockFromReferenceResult.rowCount === 0) {

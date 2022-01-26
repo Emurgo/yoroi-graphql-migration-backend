@@ -68,7 +68,9 @@ const submit = async (req: Request, res: Response) => {
       (err) => {
         try {
           const { status, data } = err.response || {};
-          LOGGING_MSG_HOLDER[1] = `ERR: ${JSON.stringify(err)}, ERR_RESP: ${JSON.stringify({ status, data })}`;
+          LOGGING_MSG_HOLDER[1] = `ERR: ${JSON.stringify(
+            err
+          )}, ERR_RESP: ${JSON.stringify({ status, data })}`;
         } catch (e) {
           LOGGING_MSG_HOLDER[1] = `ERR_ERR: ${err}`;
         }
