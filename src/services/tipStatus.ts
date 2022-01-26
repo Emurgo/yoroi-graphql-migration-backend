@@ -3,11 +3,12 @@ import config from "config";
 import { Pool } from "pg";
 import { Request, Response } from "express";
 
-const safeBlockDifference = parseInt(config.get("safeBlockDifference"));
+const SAFE_BLOCK_DEPTH = parseInt(config.get("safeBlockDifference"));
 
 const bestBlockQuery = `
   SELECT epoch_no AS "epoch",
     epoch_slot_no AS "slot",
+    slot_no AS "globalSlot",
     encode(hash, 'hex') as hash,
     block_no AS height
   FROM BLOCK
@@ -16,6 +17,7 @@ const bestBlockQuery = `
 
 const safeBlockQuery = `SELECT epoch_no AS "epoch",
   epoch_slot_no AS "slot",
+  slot_no AS "globalSlot",
   encode(hash, 'hex') as hash,
   block_no AS height
 FROM BLOCK
@@ -47,14 +49,12 @@ const getBestAndSafeBlocks = async (
 }> => {
   const [bestBlockResult, safeBlockResult] = await Promise.all([
     pool.query(bestBlockQuery),
-    pool.query(safeBlockQuery, [safeBlockDifference]),
+    pool.query(safeBlockQuery, [SAFE_BLOCK_DEPTH]),
   ]);
 
   return {
-    safeBlock:
-      safeBlockResult.rowCount > 0 ? safeBlockResult.rows[0].hash : undefined,
-    bestBlock:
-      bestBlockResult.rowCount > 0 ? bestBlockResult.rows[0].hash : undefined,
+    bestBlock: bestBlockResult.rows[0],
+    safeBlock: safeBlockResult.rows[0],
   };
 };
 
@@ -92,7 +92,7 @@ export const handleTipStatusPost =
       pool.query(bestBlockFromReferenceQuery, [bestBlocks]),
       pool.query(safeBlockFromReferenceQuery, [
         bestBlocks,
-        safeBlockDifference,
+        SAFE_BLOCK_DEPTH,
       ]),
     ]);
 
