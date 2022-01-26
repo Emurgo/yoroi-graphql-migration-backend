@@ -187,6 +187,7 @@ const askTransactionSqlQuery = `
        , (select json_agg((
                     "address", 
                     "value",
+                    "data_hash",
                    (select json_agg(ROW(encode("ma"."policy", 'hex'), encode("ma"."name", 'hex'), "quantity"))
                         FROM ma_tx_out
                         inner join multi_asset ma on ma_tx_out.ident = ma.id
@@ -321,11 +322,17 @@ export const askTransactionHistory = async (
       ? row.outAddrValPairs.map((obj: any): TransOutputFrag => ({
             address: obj.f1,
             amount: obj.f2.toString(),
-            assets: extractAssets(obj.f3)
+            dataHash: obj.f3.toString(),
+            assets: extractAssets(obj.f4)
         }))
       : [];
     const withdrawals : TransOutputFrag[] = row.withdrawals 
-      ? row.withdrawals.map( ( obj:any ): TransOutputFrag => ({ address: obj.f1, amount: obj.f2.toString(), assets: [] as Asset[] }))
+      ? row.withdrawals.map( ( obj:any ): TransOutputFrag => ({
+        address: obj.f1,
+        amount: obj.f2.toString(),
+        dataHash: null,
+        assets: [] as Asset[],
+      }))
       : [];
     const certificates = row.certificates !== null
       ? row.certificates
