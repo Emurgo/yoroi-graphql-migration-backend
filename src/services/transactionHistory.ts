@@ -202,7 +202,7 @@ const askTransactionSqlQuery = `
        , (select json_agg((
                     "address", 
                     "value",
-                    "data_hash",
+                    "txDataHash",
                    (select json_agg(ROW(encode("ma"."policy", 'hex'), encode("ma"."name", 'hex'), "quantity"))
                         FROM ma_tx_out
                         inner join multi_asset ma on ma_tx_out.ident = ma.id
