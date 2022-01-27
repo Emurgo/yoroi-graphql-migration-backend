@@ -56,7 +56,7 @@ export const handleTxStatus =
           submissionStatus[status.id] = status.status;
         }
         response.submissionStatus = submissionStatus;
-      } finally {
+      } catch {
         // ignore errors
       }
     }
