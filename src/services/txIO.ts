@@ -91,16 +91,12 @@ export const handleGetTxOutput =
         return;
       }
 
-      console.log(">>> ", JSON.stringify(result.rows[0]));
-
       const obj = result.rows[0].out;
 
       if (obj == null) {
         res.status(400).send("Output index out of bounds");
         return;
       }
-
-      console.log(">>> ", JSON.stringify(obj));
 
       res.send({
         output: {
