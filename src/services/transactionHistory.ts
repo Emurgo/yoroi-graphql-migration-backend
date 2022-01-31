@@ -338,7 +338,7 @@ export const askTransactionHistory = async (
           (obj: any): TransOutputFrag => ({
             address: obj.f1,
             amount: obj.f2.toString(),
-            dataHash: obj.f3.toString(),
+            dataHash: obj.f3?.toString() ?? null,
             assets: extractAssets(obj.f4),
           })
         )
