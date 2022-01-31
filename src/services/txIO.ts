@@ -21,7 +21,7 @@ const QUERY_OUT = `
 export const handleGetTxIO =
   (pool: Pool) =>
   async (req: Request, res: Response): Promise<void> => {
-    const tx_hash = (req.params.tx_hash||"").trim();
+    const tx_hash = (req.params.tx_hash || "").trim();
     if (tx_hash.length <= 0) {
       res.status(400).send(`missing tx_hash on request path: [${tx_hash}]`);
       return;
@@ -72,38 +72,40 @@ export const handleGetTxIO =
 
 export const handleGetTxOutput =
   (pool: Pool) =>
-    async (req: Request, res: Response): Promise<void> => {
-      const tx_hash = (req.params.tx_hash||"").trim();
-      const output_index = parseInt(req.params.index);
-      if (tx_hash.length <= 0) {
-        res.status(400).send(`missing tx_hash on request path: [${tx_hash}]`);
-        return;
-      }
-      if (output_index == null || !(output_index >= 0)) {
-        res.status(400).send(`missing or incorrect index on request path: [${output_index}]`);
-        return;
-      }
+  async (req: Request, res: Response): Promise<void> => {
+    const tx_hash = (req.params.tx_hash || "").trim();
+    const output_index = parseInt(req.params.index);
+    if (tx_hash.length <= 0) {
+      res.status(400).send(`missing tx_hash on request path: [${tx_hash}]`);
+      return;
+    }
+    if (output_index == null || !(output_index >= 0)) {
+      res
+        .status(400)
+        .send(`missing or incorrect index on request path: [${output_index}]`);
+      return;
+    }
 
-      const result = await pool.query(QUERY_OUT, [tx_hash, output_index]);
+    const result = await pool.query(QUERY_OUT, [tx_hash, output_index]);
 
-      if (result.rowCount === 0) {
-        res.status(404).send("Transaction not found");
-        return;
-      }
+    if (result.rowCount === 0) {
+      res.status(404).send("Transaction not found");
+      return;
+    }
 
-      const obj = result.rows[0].out;
+    const obj = result.rows[0].out;
 
-      if (obj == null) {
-        res.status(400).send("Output index out of bounds");
-        return;
-      }
+    if (obj == null) {
+      res.status(400).send("Output index out of bounds");
+      return;
+    }
 
-      res.send({
-        output: {
-          address: obj.f1,
-          amount: obj.f2.toString(),
-          dataHash: obj.f3,
-          assets: extractAssets(obj.f4),
-        },
-      });
-    };
+    res.send({
+      output: {
+        address: obj.f1,
+        amount: obj.f2.toString(),
+        dataHash: obj.f3,
+        assets: extractAssets(obj.f4),
+      },
+    });
+  };

@@ -339,7 +339,11 @@ const routes: Route[] = [
   },
   { path: "/v2/txs/history", method: "post", handler: txHistory },
   { path: "/txs/io/:tx_hash", method: "get", handler: handleGetTxIO(pool) },
-  { path: "/txs/io/:tx_hash/o/:index", method: "get", handler: handleGetTxOutput(pool) },
+  {
+    path: "/txs/io/:tx_hash/o/:index",
+    method: "get",
+    handler: handleGetTxOutput(pool),
+  },
   { path: "/v2/txs/get", method: "post", handler: handleGetTransactions(pool) },
   { path: "/txs/signed", method: "post", handler: handleSignedTx },
   {
