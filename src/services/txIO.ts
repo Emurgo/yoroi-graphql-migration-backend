@@ -9,13 +9,13 @@ const QUERY_IO = `
     collateral_in_addr_val_pairs(tx.hash),
     out_addr_val_pairs(tx.id, tx.hash)
   from tx
-  where encode(tx.hash, 'hex') = $1
+  where tx.hash = decode($1, 'hex')
   limit 1;`;
 
 const QUERY_OUT = `
-  select out_addr_val_pairs(tx.id, tx.hash)->$2 as "out"
+  select out_addr_val_pairs(tx.id, tx.hash)->$2::int as "out"
   from tx
-  where encode(tx.hash, 'hex') = $1
+  where tx.hash = decode($1, 'hex')
   limit 1;`;
 
 export const handleGetTxIO =
@@ -91,12 +91,16 @@ export const handleGetTxOutput =
         return;
       }
 
-      const obj = result.rows[0].out || [];
+      console.log(">>> ", JSON.stringify(result.rows[0]));
+
+      const obj = result.rows[0].out;
 
       if (obj == null) {
         res.status(400).send("Output index out of bounds");
         return;
       }
+
+      console.log(">>> ", JSON.stringify(obj));
 
       res.send({
         output: {
