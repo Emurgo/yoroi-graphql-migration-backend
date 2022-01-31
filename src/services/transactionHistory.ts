@@ -1,14 +1,19 @@
-import { errMsgs, UtilEither, extractAssets, getAddressesByType } from "../utils";
+import {
+  errMsgs,
+  UtilEither,
+  extractAssets,
+  getAddressesByType,
+} from "../utils";
 
 import {
-    rowToCertificate,
-    BlockEra,
-    BlockFrag,
-    Certificate,
-    TransInputFrag,
-    TransOutputFrag,
-    TransactionFrag,
-    Asset
+  rowToCertificate,
+  BlockEra,
+  BlockFrag,
+  Certificate,
+  TransInputFrag,
+  TransOutputFrag,
+  TransactionFrag,
+  Asset,
 } from "../Transactions/types";
 
 import {
@@ -36,7 +41,7 @@ const askTransactionSqlQuery = `
     hashes as (
       select distinct hash
       from (
-            ${/* 1.1) Get all inputs for the transaction */""}
+            ${/* 1.1) Get all inputs for the transaction */ ""}
 
             select tx.hash as hash
             FROM tx
@@ -44,11 +49,13 @@ const askTransactionSqlQuery = `
             JOIN tx_in 
               ON tx_in.tx_in_id = tx.id
 
-            ${/**
+            ${
+              /**
               note: input table doesn't contain addresses directly
               so to check for all inputs that use address X
               we have to check the address for all outputs that occur in the input table
-            **/""}
+            **/ ""
+            }
             JOIN tx_out source_tx_out 
               ON tx_in.tx_out_id = source_tx_out.tx_id 
              AND tx_in.tx_out_index::smallint = source_tx_out.index::smallint
@@ -61,7 +68,7 @@ const askTransactionSqlQuery = `
 
           UNION
 
-          ${/* 1.2) Get all collateral inputs for the transaction */""}
+          ${/* 1.2) Get all collateral inputs for the transaction */ ""}
 
           select tx.hash as hash
             FROM tx
@@ -69,11 +76,13 @@ const askTransactionSqlQuery = `
             JOIN collateral_tx_in 
               ON collateral_tx_in.tx_in_id = tx.id
 
-            ${/**
+            ${
+              /**
               note: input table doesn't contain addresses directly
               so to check for all inputs that use address X
               we have to check the address for all outputs that occur in the input table
-            **/""}
+            **/ ""
+            }
             JOIN tx_out source_tx_out 
               ON collateral_tx_in.tx_out_id = source_tx_out.tx_id 
             AND collateral_tx_in.tx_out_index::smallint = source_tx_out.index::smallint
@@ -85,7 +94,7 @@ const askTransactionSqlQuery = `
               OR source_tx_out.payment_cred = ANY(($6)::bytea array)
 
           UNION
-            ${/* 2) Get all outputs for the transaction */""}
+            ${/* 2) Get all outputs for the transaction */ ""}
             select tx.hash as hash
             from tx
 
@@ -96,7 +105,7 @@ const askTransactionSqlQuery = `
               or tx_out.payment_cred = ANY(($6)::bytea array)
 
           UNION
-            ${/* 3) Get all certificates for the transaction */""}
+            ${/* 3) Get all certificates for the transaction */ ""}
             select tx.hash as hash
             from tx 
 
@@ -106,20 +115,26 @@ const askTransactionSqlQuery = `
               (
                 certs."formalType" in ('CertRegKey', 'CertDeregKey','CertDelegate')
                 and certs."stakeCred" = any(
-                  ${/* stakeCred is encoded as a string, so we have to convert from a byte array to a hex string */""}
+                  ${
+                    /* stakeCred is encoded as a string, so we have to convert from a byte array to a hex string */ ""
+                  }
                   (SELECT array_agg(encode(addr, 'hex')) from UNNEST($7::bytea array) as addr)::varchar array
                 )
               ) or (
-                ${/* note: PoolRetirement only contains pool key hash, so no way to map it to an address */""}
+                ${
+                  /* note: PoolRetirement only contains pool key hash, so no way to map it to an address */ ""
+                }
                 certs."formalType" in ('CertRegPool')
                 and certs."poolParamsRewardAccount" = any(
-                  ${/* poolParamsRewardAccount is encoded as a string, so we have to convert from a byte array to a hex string */""}
+                  ${
+                    /* poolParamsRewardAccount is encoded as a string, so we have to convert from a byte array to a hex string */ ""
+                  }
                   (SELECT array_agg(encode(addr, 'hex')) from UNNEST($7::bytea array) as addr)::varchar array
                 )
               )
 
           UNION
-            ${/* 4) Get all withdrawals for the transaction */""}
+            ${/* 4) Get all withdrawals for the transaction */ ""}
 
             select tx.hash as hash
             from tx
@@ -218,14 +233,16 @@ const askTransactionSqlQuery = `
     on tx.id = pool_metadata_ref.registered_tx_id 
 
   where 
-        ${/* is within untilBlock (inclusive) */""}
+        ${/* is within untilBlock (inclusive) */ ""}
         block.block_no <= $2
         and (
-          ${/* Either: */""}
-          ${/* 1) comes in block strict after the "after" field */""}
+          ${/* Either: */ ""}
+          ${/* 1) comes in block strict after the "after" field */ ""}
           block.block_no > $3
             or
-          ${/* 2) Is in the same block as the "after" field, but is tx that appears afterwards */""}
+          ${
+            /* 2) Is in the same block as the "after" field, but is tx that appears afterwards */ ""
+          }
           (block.block_no = $3 and tx.block_index > $4)
         ) 
 
@@ -237,7 +254,7 @@ const MAX_INT = "2147483647";
 
 function buildMetadataObj(
   metadataMap: null | Record<string, string>
-): (null | string) {
+): null | string {
   if (metadataMap == null) return null;
   const metadataWasm = GeneralTransactionMetadata.new();
   for (const key of Object.keys(metadataMap)) {
@@ -256,10 +273,7 @@ function buildMetadataObj(
     for (let i = 0; i < keys.len(); i++) {
       const cborKey = keys.get(i);
       const datumWasm = map.get(cborKey);
-      metadataWasm.insert(
-        keyWasm,
-        datumWasm
-      );
+      metadataWasm.insert(keyWasm, datumWasm);
       datumWasm.free();
       cborKey.free();
     }
@@ -275,106 +289,112 @@ function buildMetadataObj(
 }
 
 export const askTransactionHistory = async (
-  pool: Pool
-  , limit: number
-  , addresses: string[]
-  , after: {
-    blockNumber: number,
-    txIndex: number,
-  }
-  , untilNum: number
+  pool: Pool,
+  limit: number,
+  addresses: string[],
+  after: {
+    blockNumber: number;
+    txIndex: number;
+  },
+  untilNum: number
 ): Promise<UtilEither<TransactionFrag[]>> => {
   const addressTypes = getAddressesByType(addresses);
   const ret = await pool.query(askTransactionSqlQuery, [
-      [
-        ...addressTypes.legacyAddr,
-        ...addressTypes.bech32,
-      ]
-    , untilNum
-    , after.blockNumber
-    , after.txIndex
-    , limit
-    , addressTypes.paymentCreds
-    , addressTypes.stakingKeys
+    [...addressTypes.legacyAddr, ...addressTypes.bech32],
+    untilNum,
+    after.blockNumber,
+    after.txIndex,
+    limit,
+    addressTypes.paymentCreds,
+    addressTypes.stakingKeys,
   ]);
-  const txs = ret.rows.map( (row: any):TransactionFrag => {
-    const inputs = row.inAddrValPairs 
-      ? row.inAddrValPairs.map((obj: any): TransInputFrag => ({
+  const txs = ret.rows.map((row: any): TransactionFrag => {
+    const inputs = row.inAddrValPairs
+      ? row.inAddrValPairs.map(
+          (obj: any): TransInputFrag => ({
             address: obj.f1,
             amount: obj.f2.toString(),
             id: obj.f3.concat(obj.f4.toString()),
             index: obj.f4,
             txHash: obj.f3,
-            assets: extractAssets(obj.f5)
-      }))
-      : []; 
-    const collateralInputs = row.collateralInAddrValPairs 
-      ? row.collateralInAddrValPairs.map((obj: any): TransInputFrag => ({
-            address: obj.f1,
-            amount: obj.f2.toString(),
-            id: obj.f3.concat(obj.f4.toString()),
-            index: obj.f4,
-            txHash: obj.f3,
-            assets: extractAssets(obj.f5)
-      }))
+            assets: extractAssets(obj.f5),
+          })
+        )
       : [];
-    const outputs = row.outAddrValPairs 
-      ? row.outAddrValPairs.map((obj: any): TransOutputFrag => ({
+    const collateralInputs = row.collateralInAddrValPairs
+      ? row.collateralInAddrValPairs.map(
+          (obj: any): TransInputFrag => ({
+            address: obj.f1,
+            amount: obj.f2.toString(),
+            id: obj.f3.concat(obj.f4.toString()),
+            index: obj.f4,
+            txHash: obj.f3,
+            assets: extractAssets(obj.f5),
+          })
+        )
+      : [];
+    const outputs = row.outAddrValPairs
+      ? row.outAddrValPairs.map(
+          (obj: any): TransOutputFrag => ({
             address: obj.f1,
             amount: obj.f2.toString(),
             dataHash: obj.f3.toString(),
-            assets: extractAssets(obj.f4)
-        }))
+            assets: extractAssets(obj.f4),
+          })
+        )
       : [];
-    const withdrawals : TransOutputFrag[] = row.withdrawals 
-      ? row.withdrawals.map( ( obj:any ): TransOutputFrag => ({
-        address: obj.f1,
-        amount: obj.f2.toString(),
-        dataHash: null,
-        assets: [] as Asset[],
-      }))
+    const withdrawals: TransOutputFrag[] = row.withdrawals
+      ? row.withdrawals.map(
+          (obj: any): TransOutputFrag => ({
+            address: obj.f1,
+            amount: obj.f2.toString(),
+            dataHash: null,
+            assets: [] as Asset[],
+          })
+        )
       : [];
-    const certificates = row.certificates !== null
-      ? row.certificates
-        .map(rowToCertificate) 
-        .filter( (i:Certificate|null) => i !== null)
-      : [];
-    const blockFrag : BlockFrag = { number: row.blockNumber
-      , hash: row.blockHash.toString("hex")
-      , epochNo: row.blockEpochNo
-      , slotNo: row.blockSlotInEpoch };
-    return { hash: row.hash.toString("hex")
-      , block: blockFrag
-      , validContract: row.valid_contract
-      , scriptSize: row.script_size
-      , fee: row.fee.toString()
-      , metadata: buildMetadataObj(row.metadata)
-      , includedAt: row.includedAt
-      , inputs: inputs
-      , collateralInputs: collateralInputs
-      , outputs: outputs
-      , ttl: MAX_INT // https://github.com/input-output-hk/cardano-db-sync/issues/212
-      , blockEra: row.blockEra === "byron" ? BlockEra.Byron : BlockEra.Shelley
-      , txIndex: row.txIndex
-      , withdrawals: withdrawals
-      , certificates: certificates
+    const certificates =
+      row.certificates !== null
+        ? row.certificates
+            .map(rowToCertificate)
+            .filter((i: Certificate | null) => i !== null)
+        : [];
+    const blockFrag: BlockFrag = {
+      number: row.blockNumber,
+      hash: row.blockHash.toString("hex"),
+      epochNo: row.blockEpochNo,
+      slotNo: row.blockSlotInEpoch,
+    };
+    return {
+      hash: row.hash.toString("hex"),
+      block: blockFrag,
+      validContract: row.valid_contract,
+      scriptSize: row.script_size,
+      fee: row.fee.toString(),
+      metadata: buildMetadataObj(row.metadata),
+      includedAt: row.includedAt,
+      inputs: inputs,
+      collateralInputs: collateralInputs,
+      outputs: outputs,
+      ttl: MAX_INT, // https://github.com/input-output-hk/cardano-db-sync/issues/212
+      blockEra: row.blockEra === "byron" ? BlockEra.Byron : BlockEra.Shelley,
+      txIndex: row.txIndex,
+      withdrawals: withdrawals,
+      certificates: certificates,
     };
   });
-            
 
-  return { kind: "ok", value: txs } ;
+  return { kind: "ok", value: txs };
   //if('data' in ret && 'data' in ret.data && 'transactions' in ret.data.data)
   //    return {'kind':'ok', value:ret.data.data.transactions};
   //else
   //    return {'kind':'error', errMsg:'TxsHistory, could not understand graphql response'};
-
-
 };
 
 export interface BlockNumByTxHashFrag {
   block: BlockByTxHashFrag;
   hash: string;
-  blockIndex: number, // this is actually the index of the transaction in the block
+  blockIndex: number; // this is actually the index of the transaction in the block
 }
 interface BlockByTxHashFrag {
   hash: string;
@@ -388,27 +408,29 @@ const askBlockNumByTxHashQuery = `
   WHERE "tx"."hash"=decode($1, 'hex')
 `;
 
-export const askBlockNumByTxHash = async (pool: Pool, hash : string | undefined): Promise<UtilEither<BlockNumByTxHashFrag>> => {
-    if(!hash)
-        return {kind:"error", errMsg: errMsgs.noValue};
+export const askBlockNumByTxHash = async (
+  pool: Pool,
+  hash: string | undefined
+): Promise<UtilEither<BlockNumByTxHashFrag>> => {
+  if (!hash) return { kind: "error", errMsg: errMsgs.noValue };
 
-    try {
-        const res = await pool.query(askBlockNumByTxHashQuery, [hash]);
-        return {
-            kind:"ok",
-            value: {
-                block: {
-                    hash: res.rows[0].blockHash.toString("hex"),
-                    number: res.rows[0].blockNumber,
-                },
-                hash: res.rows[0].hash.toString("hex"),
-                blockIndex: res.rows[0].blockIndex
-            }
-        };
-    } catch (err: any) {
-        const errString = err.stack + "";
-        return {kind:"error", errMsg: "askBlockNumByTxHash error: " + errString};
-    }
+  try {
+    const res = await pool.query(askBlockNumByTxHashQuery, [hash]);
+    return {
+      kind: "ok",
+      value: {
+        block: {
+          hash: res.rows[0].blockHash.toString("hex"),
+          number: res.rows[0].blockNumber,
+        },
+        hash: res.rows[0].hash.toString("hex"),
+        blockIndex: res.rows[0].blockIndex,
+      },
+    };
+  } catch (err: any) {
+    const errString = err.stack + "";
+    return { kind: "error", errMsg: "askBlockNumByTxHash error: " + errString };
+  }
 };
 
 const askBlockNumByHashQuery = `
@@ -417,20 +439,22 @@ const askBlockNumByHashQuery = `
   WHERE "block"."hash"=decode($1, 'hex')
 `;
 
-export const askBlockNumByHash = async (pool: Pool, hash : string): Promise<UtilEither<number>> => {
-    if(!hash)
-        return {kind:"error", errMsg: errMsgs.noValue};
+export const askBlockNumByHash = async (
+  pool: Pool,
+  hash: string
+): Promise<UtilEither<number>> => {
+  if (!hash) return { kind: "error", errMsg: errMsgs.noValue };
 
-    try {
-        const res = await pool.query(askBlockNumByHashQuery, [hash]);
-        if(res.rows.length === 0)
-          return {kind:"error", errMsg: errMsgs.noValue};
-        return {
-            kind:"ok",
-            value: res.rows[0].blockNumber
-        };
-    } catch (err: any) {
-        const errString = err.stack + "";
-        return {kind:"error", errMsg: "askBlockNumByHash error: " + errString};
-    }
+  try {
+    const res = await pool.query(askBlockNumByHashQuery, [hash]);
+    if (res.rows.length === 0)
+      return { kind: "error", errMsg: errMsgs.noValue };
+    return {
+      kind: "ok",
+      value: res.rows[0].blockNumber,
+    };
+  } catch (err: any) {
+    const errString = err.stack + "";
+    return { kind: "error", errMsg: "askBlockNumByHash error: " + errString };
+  }
 };

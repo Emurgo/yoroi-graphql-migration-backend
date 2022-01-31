@@ -20,9 +20,15 @@ export const handleCompression = (router: Router): void => {
 };
 
 export const handleTiming = (router: Router): void => {
-  router.use(responseTime((req: Request, res: Response, time: number) => {
-    console.log(`[CALLTIME] millis=${time} url=${req.url} body=${JSON.stringify(req.body)}`);
-  }));
+  router.use(
+    responseTime((req: Request, res: Response, time: number) => {
+      console.log(
+        `[CALLTIME] millis=${time} url=${req.url} body=${JSON.stringify(
+          req.body
+        )}`
+      );
+    })
+  );
 };
 
 export const logErrors = (
@@ -31,7 +37,9 @@ export const logErrors = (
   res: Response,
   next: NextFunction
 ): void => {
-  const errStr = `ERROR url: ${req.url}\n      stack: ${err.stack}\n      message: ${err.message}\n      request: ${JSON.stringify(req.body)}`;
+  const errStr = `ERROR url: ${req.url}\n      stack: ${
+    err.stack
+  }\n      message: ${err.message}\n      request: ${JSON.stringify(req.body)}`;
   console.log(errStr);
   next(err);
 };
