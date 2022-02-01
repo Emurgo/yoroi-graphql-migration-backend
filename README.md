@@ -755,7 +755,7 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
 
   Output
 
-  ```js
+  ```
   {
     inputs: Array<{ // these will be ordered by the input transaction id asc
       address: string,
@@ -779,6 +779,27 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
       dataHash: string,
       assets: Asset[]
     }>,
+  }
+  ```
+</details>
+<details>
+  <summary>txs/io/:tx_hash/o/:index</summary>
+  This endpoint is used to get a single output with the given index of a transaction with the given hash
+
+  Input
+
+  None (GET request)
+
+  Output
+
+  ```
+  {
+    output: {
+      address: string,
+      amount: string,
+      dataHash: string,
+      assets: Asset[]
+    },
   }
   ```
 </details>
