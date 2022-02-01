@@ -282,7 +282,12 @@ const getStatus = async (req: Request, res: Response) => {
       }
     }
   }
-  res.send({ isServerOk: true, isMaintenance: false, serverTime: Date.now() });
+  res.send({
+    isServerOk: true,
+    isMaintenance: false,
+    serverTime: Date.now(),
+    version: process.env.npm_package_version
+  });
 };
 
 const getFundInfo = async (req: Request, res: Response) => {
