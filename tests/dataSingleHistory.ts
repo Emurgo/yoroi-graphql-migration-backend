@@ -35,11 +35,13 @@ export const resultsForSingleHistory : any = [
 	"outputs": [{
 		"address": "DdzFFzCqrht33HAPd4PyqRAhmry5gsSgvZjh8dWdZPuHYchXPbP1W3Rw5A2zwgftbeU9rMu3znnpNib3oFGkmBy3LL8i8VTZhNG9qnwN",
 		"amount": "10868962739",
-		"assets": []
+		"assets": [],
+		"dataHash": null
 	}, {
 		"address": "DdzFFzCqrht15bxnkbVBVGWg2Vd5aKMtCE3DhMPMJvCLBVUDpbHdVqVSTAEgFFFeRx7fQtYrfTsUwsnJDnmU2BtZjdtsHPgGz6aA6M77",
 		"amount": "13094227237",
-		"assets": []
+		"assets": [],
+		"dataHash": null
 	}]
 }, {
 	"hash": "d5dff06dda8659afb095482b95c1f5bf0beba6e2a93f614532769a4a5a575793",
@@ -70,7 +72,8 @@ export const resultsForSingleHistory : any = [
 	"outputs": [{
 		"address": "DdzFFzCqrhsgyGxb5VC2yLdo4PFCaoKrLsPBYKz4y2Z2rPuKyXBfzCCd6XtoKqbaZ6ov4bP9X8Uz4qPmkaWrdXM8wcnMWmUYLig5tq43",
 		"amount": "10868574639",
-		"assets": []
+		"assets": [],
+		"dataHash": null
 	}]
 }, {
 	"hash": "b77647288bf6553726c93faa94685637ac2976c85bba3f3dfd4d011de24371cb",
@@ -101,11 +104,13 @@ export const resultsForSingleHistory : any = [
 	"outputs": [{
 		"address": "DdzFFzCqrht95mSU7FT1zP1PvwNJztuh2cABJhm4eXKRe4fCirGUcHScddRuWJCQqhwfKfYVLKtVain37QqRpi9WTXYP4SB424d7ZJei",
 		"amount": "9963402382",
-		"assets": []
+		"assets": [],
+		"dataHash": null
 	}, {
 		"address": "DdzFFzCqrht33HAPd4PyqRAhmry5gsSgvZjh8dWdZPuHYchXPbP1W3Rw5A2zwgftbeU9rMu3znnpNib3oFGkmBy3LL8i8VTZhNG9qnwN",
 		"amount": "905000000",
-		"assets": []
+		"assets": [],
+		"dataHash": null
 	}]
 }, {
 	"hash": "62eb7d469b75b0f15c4b9e905346f5dac13ffa97539bb17cb3867ca74aa25a20",
@@ -136,11 +141,13 @@ export const resultsForSingleHistory : any = [
 	"outputs": [{
 		"address": "DdzFFzCqrhsfwUjx3pwhYdNAfZheVdHk91gidAHr46PbCADtBTLR2e3G4HRTHrgX5jPR91B2bAPBn3c4BdpFprefZnrbJbjfspk89AAa",
 		"amount": "9960230125",
-		"assets": []
+		"assets": [],
+		"dataHash": null
 	}, {
 		"address": "DdzFFzCqrht33HAPd4PyqRAhmry5gsSgvZjh8dWdZPuHYchXPbP1W3Rw5A2zwgftbeU9rMu3znnpNib3oFGkmBy3LL8i8VTZhNG9qnwN",
 		"amount": "3000000",
-		"assets": []
+		"assets": [],
+		"dataHash": null
 	}]
 }, {
 	"hash": "753b8b70901835b6d0104df0622ab14e0596b112c49ada022fc2f8210ac73f1b",
@@ -171,11 +178,13 @@ export const resultsForSingleHistory : any = [
 	"outputs": [{
 		"address": "DdzFFzCqrht33HAPd4PyqRAhmry5gsSgvZjh8dWdZPuHYchXPbP1W3Rw5A2zwgftbeU9rMu3znnpNib3oFGkmBy3LL8i8VTZhNG9qnwN",
 		"amount": "5000000",
-		"assets": []
+		"assets": [],
+		"dataHash": null
 	}, {
 		"address": "DdzFFzCqrht6yojFqwgbyv9kbmMpBjPeiCMMZo5cHc3UBpL7ZF4VUvqbyrM1Xjoj8yB9MuQPzAsCtezwjCDSdiMpNY8Vjq4FzuS8dAu6",
 		"amount": "9955057868",
-		"assets": []
+		"assets": [],
+		"dataHash": null
 	}]
 }, {
 	"hash": "58e2be124e42ee00f586a603758c5a19de4035cbafd9292e91ff2479b417b975",
@@ -220,7 +229,8 @@ export const resultsForSingleHistory : any = [
 	"outputs": [{
 		"address": "DdzFFzCqrht4uNR56JAW2FAcUA2gcmXgBnR8HYuJp3vxYiQEEv7hcvHGxgL1LoHumTghVZFxcZwQbsJdwykz1Rzh91pmRTVUSrA1RhAk",
 		"amount": "912575100",
-		"assets": []
+		"assets": [],
+		"dataHash": null
 	}]
 }, {
 	"hash": "669055ba7da5d9d372f226219d151947cddf39a28c15339687db2bbd328ef8e0",
@@ -251,11 +261,13 @@ export const resultsForSingleHistory : any = [
 	"outputs": [{
 		"address": "DdzFFzCqrht33HAPd4PyqRAhmry5gsSgvZjh8dWdZPuHYchXPbP1W3Rw5A2zwgftbeU9rMu3znnpNib3oFGkmBy3LL8i8VTZhNG9qnwN",
 		"amount": "20000000",
-		"assets": []
+		"assets": [],
+		"dataHash": null
 	}, {
 		"address": "DdzFFzCqrhsqHotwgHNKx4iTEdrkaQrqFX6br5Ch6goqZK3sdrEz7qXtgckRxgfshhqzFpeYGUCYTajuqwGnnLt1AVGseTx7Z4C31SBF",
 		"amount": "9934885611",
-		"assets": []
+		"assets": [],
+		"dataHash": null
 	}]
 }, {
 	"hash": "c47689f318522f0e3059bd95a0373a32bea49a5ce1f77342becd40dba89b9eac",
@@ -286,11 +298,13 @@ export const resultsForSingleHistory : any = [
 	"outputs": [{
 		"address": "DdzFFzCqrhsr3rk8PtowTM92NKqtN7pB1SngzNnoRixjchAM78P2kJ9UUZUPmQMqYyZtKvmz694rwJkovEx5gUh5k86cLXGkVDxpRCDQ",
 		"amount": "9434713354",
-		"assets": []
+		"assets": [],
+		"dataHash": null
 	}, {
 		"address": "DdzFFzCqrht33HAPd4PyqRAhmry5gsSgvZjh8dWdZPuHYchXPbP1W3Rw5A2zwgftbeU9rMu3znnpNib3oFGkmBy3LL8i8VTZhNG9qnwN",
 		"amount": "500000000",
-		"assets": []
+		"assets": [],
+		"dataHash": null
 	}]
 }, {
 	"hash": "ed74cca21c7a9d9704409dede6ec3f694b53690d800cd545b7322a7fc134cf73",
@@ -328,7 +342,8 @@ export const resultsForSingleHistory : any = [
 	"outputs": [{
 		"address": "DdzFFzCqrhskEdUSeeeSQJ3Q2TMdd6XCxfTxtXeEVMUxxyJztZWmMf1cuV81qwDDZefCyAY5HSrxKuBUR6fcFH9R6owUNKHK3Hk8yEhV",
 		"amount": "519593500",
-		"assets": []
+		"assets": [],
+		"dataHash": null
 	}]
 }, {
 	"hash": "f4d277d925217cd7ad8f17aefd1c389d25bb16ab9f03f0756ae0dea81d29fcad",
@@ -359,11 +374,13 @@ export const resultsForSingleHistory : any = [
 	"outputs": [{
 		"address": "DdzFFzCqrht33HAPd4PyqRAhmry5gsSgvZjh8dWdZPuHYchXPbP1W3Rw5A2zwgftbeU9rMu3znnpNib3oFGkmBy3LL8i8VTZhNG9qnwN",
 		"amount": "4700000000",
-		"assets": []
+		"assets": [],
+		"dataHash": null
 	}, {
 		"address": "DdzFFzCqrhsksJxdqiVRGY5kZbzKJmMW9qKcZMVZ95oYaDrCHEEk1fxV4QbkoNDu24WY1ZKCUnuizc8SWaVPkEwv66eTtUdsyVRBkgD7",
 		"amount": "4734542108",
-		"assets": []
+		"assets": [],
+		"dataHash": null
 	}]
 }, {
 	"hash": "261a2dcabb4ea95559eae2ed6e7ec33af173c638a0ef0b96cfd177ba98ed3549",
@@ -394,7 +411,8 @@ export const resultsForSingleHistory : any = [
 	"outputs": [{
 		"address": "DdzFFzCqrhsmYfanyJgLimDYBJd1QtnSUyEBckcZP6RqQbzY6zFVt16Gbrm5t17qeHrkceZ81ysZkgQKREex895e584ut3S24TR6d5fV",
 		"amount": "4699611900",
-		"assets": []
+		"assets": [],
+		"dataHash": null
 	}]
 }, {
 	"hash": "ccea6f32d0a6145efb07839f82fe6dc1f2adc0395b6806c84165828c3b01c416",
@@ -425,11 +443,13 @@ export const resultsForSingleHistory : any = [
 	"outputs": [{
 		"address": "Ae2tdPwUPEZHZvjQkgDHfAKMHPM1tEWMBshGessSds85UNDR6Vm6QPtaMMM",
 		"amount": "99964980",
-		"assets": []
+		"assets": [],
+		"dataHash": null
 	}, {
 		"address": "DdzFFzCqrhsnUbJho1ERJsuZxkevYTofBFMuQo5Uaxmb2dHUQX7TzK4C9gN5Yc5Hc4ok4o4wj1krZrgvQWGfd4BgpYFRQUQBgLzZxFi6",
 		"amount": "220260549934",
-		"assets": []
+		"assets": [],
+		"dataHash": null
 	}]
 }, {
 	"hash": "523085191ef5f10cda710cad4a5b31b9efea8679ce513a37e32d78393a9644df",
@@ -460,11 +480,13 @@ export const resultsForSingleHistory : any = [
 	"outputs": [{
 		"address": "DdzFFzCqrht33HAPd4PyqRAhmry5gsSgvZjh8dWdZPuHYchXPbP1W3Rw5A2zwgftbeU9rMu3znnpNib3oFGkmBy3LL8i8VTZhNG9qnwN",
 		"amount": "4500000000",
-		"assets": []
+		"assets": [],
+		"dataHash": null
 	}, {
 		"address": "DdzFFzCqrhstPo9XnHZjnzjEmWC8ZNe6TdrFfmFnDaBNsnemp3gv12dW8QVb6F41j7uudhDEgqDtVkYSGNPkSE8EPGJEJ1tGL6PDnD8F",
 		"amount": "234371038",
-		"assets": []
+		"assets": [],
+		"dataHash": null
 	}]
 }, {
 	"hash": "08a863c1862e9847c3e6925a9ecf0af1867bae86dc026f967ed58e602e051c7b",
@@ -495,7 +517,8 @@ export const resultsForSingleHistory : any = [
 	"outputs": [{
 		"address": "DdzFFzCqrhsxMRRT12KZVou1bWqZ4FmrUSpQNdE3iwkR8ktx4n55Qn2jrrqZekebEoMQxGybQpVit2fbWyramWnSejKnkdFpYTDatP9M",
 		"amount": "4499611900",
-		"assets": []
+		"assets": [],
+		"dataHash": null
 	}]
 }, {
 	"hash": "e62b55540020502cdf9033448a2f874cb1d8663fea5420b257d2b6ae4ce2a678",
@@ -526,10 +549,12 @@ export const resultsForSingleHistory : any = [
 	"outputs": [{
 		"address": "DdzFFzCqrhsob4yY1MwSqmMLSeL7RRkbpkoZNx3kHfSRyqUpTshcHAmrepn1fexMZg3vPc4QqT1apxmYrTUbE22pGSgLa9CTpb6V5fMy",
 		"amount": "216923377677",
-		"assets": []
+		"assets": [],
+		"dataHash": null
 	}, {
 		"address": "DdzFFzCqrhsgbuvsd8VvEtucKCqTjCwyXH1f4c8xjY822JryHjcRYxTHKSiR3m8gAX3dszRuYmXFviALt5H6okAhnWFaPoNzu4P7Th2L",
 		"amount": "3337000000",
-		"assets": []
+		"assets": [],
+		"dataHash": null
 	}]
 }];
