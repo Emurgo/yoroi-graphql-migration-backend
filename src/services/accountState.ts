@@ -4,7 +4,7 @@ import config from "config";
 import { Pool } from "pg";
 import { Request, Response } from "express";
 
-const addrReqLimit:number = config.get("server.addressRequestLimit");
+const addrReqLimit: number = config.get("server.addressRequestLimit");
 
 const accountRewardsQuery = `
   with queried_addresses as (
@@ -54,43 +54,56 @@ interface RewardInfo {
 }
 
 interface Dictionary<T> {
-    [key: string]: T;
+  [key: string]: T;
 }
 
-const getAccountStateFromDB = async (pool: Pool, addresses: string[]): Promise<Dictionary<RewardInfo|null>> => {
-  const ret : Dictionary<RewardInfo|null> = {};
+const getAccountStateFromDB = async (
+  pool: Pool,
+  addresses: string[]
+): Promise<Dictionary<RewardInfo | null>> => {
+  const ret: Dictionary<RewardInfo | null> = {};
   const rewards = await pool.query(accountRewardsQuery, [addresses]);
-  for(const row of rewards.rows) {
+  for (const row of rewards.rows) {
     ret[row.stakeAddress.toString("hex")] = {
-        remainingAmount: row.remainingAmount
-      , remainingNonSpendableAmount: row.remainingNonSpendableAmount
-      , rewards: row.reward
-      , withdrawals: row.withdrawal
-      , poolOperator: null //not implemented
-      , isRewardsOff: true
+      remainingAmount: row.remainingAmount,
+      remainingNonSpendableAmount: row.remainingNonSpendableAmount,
+      rewards: row.reward,
+      withdrawals: row.withdrawal,
+      poolOperator: null, //not implemented
+      isRewardsOff: true,
     };
   }
-  for( const addr of addresses)
-    if (!(addr in ret))
-      ret[addr] = null;
+  for (const addr of addresses) if (!(addr in ret)) ret[addr] = null;
   return ret;
 };
 
-export const handleGetAccountState = (pool: Pool) => async (req: Request, res:Response<Dictionary<RewardInfo | null>>): Promise<void> => {
-  if(!req.body || !req.body.addresses) {
-    throw new Error("no addresses.");
-    return;
-  } 
-  const verifiedAddrs = validateAddressesReq(addrReqLimit, req.body.addresses);
-  switch(verifiedAddrs.kind){
-  case "ok": {
-    const accountState = await getAccountStateFromDB(pool, verifiedAddrs.value);
-    res.send(accountState); 
-    return;
-  }
-  case "error":
-    throw new Error(verifiedAddrs.errMsg);
-    return;
-  default: return assertNever(verifiedAddrs);
-  }
-};
+export const handleGetAccountState =
+  (pool: Pool) =>
+  async (
+    req: Request,
+    res: Response<Dictionary<RewardInfo | null>>
+  ): Promise<void> => {
+    if (!req.body || !req.body.addresses) {
+      throw new Error("no addresses.");
+      return;
+    }
+    const verifiedAddrs = validateAddressesReq(
+      addrReqLimit,
+      req.body.addresses
+    );
+    switch (verifiedAddrs.kind) {
+      case "ok": {
+        const accountState = await getAccountStateFromDB(
+          pool,
+          verifiedAddrs.value
+        );
+        res.send(accountState);
+        return;
+      }
+      case "error":
+        throw new Error(verifiedAddrs.errMsg);
+        return;
+      default:
+        return assertNever(verifiedAddrs);
+    }
+  };

@@ -17,4 +17,3 @@ RUN npm install
 
 EXPOSE 8082
 CMD [ "node", "./dist/index.js" ]
-

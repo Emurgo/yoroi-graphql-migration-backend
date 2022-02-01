@@ -1,4 +1,4 @@
-import { Pool, } from "pg";
+import { Pool } from "pg";
 
 export const createViewSql = `
 drop view if exists combined_certificates;
@@ -223,7 +223,7 @@ where treasury.type = 'treasury'
 group by addr.registered_tx_id;`;
 
 export const createCertificatesView = (pool: Pool): void => {
-  if(process.env.NODE_TYPE !== "slave"){
+  if (process.env.NODE_TYPE !== "slave") {
     pool.query(createViewSql);
   }
 };

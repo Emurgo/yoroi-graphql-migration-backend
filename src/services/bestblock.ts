@@ -1,13 +1,16 @@
 import { Pool } from "pg";
 
-import { UtilEither} from "../utils";
+import { UtilEither } from "../utils";
 
 import { CardanoFrag } from "../Transactions/types";
 
-export const askBestBlock = async (pool: Pool) : Promise<UtilEither<CardanoFrag>> => {
+export const askBestBlock = async (
+  pool: Pool
+): Promise<UtilEither<CardanoFrag>> => {
   const query = `
   SELECT epoch_no AS "epoch",
     epoch_slot_no AS "slot",
+    slot_no AS "globalSlot",
     encode(hash, 'hex') as hash,
     block_no AS height
   FROM BLOCK
@@ -15,7 +18,6 @@ export const askBestBlock = async (pool: Pool) : Promise<UtilEither<CardanoFrag>
   LIMIT 1;
 `;
 
-const bestBlock = await pool.query(query);
-return { kind: "ok", value: bestBlock.rows[0] };
+  const bestBlock = await pool.query(query);
+  return { kind: "ok", value: bestBlock.rows[0] };
 };
-

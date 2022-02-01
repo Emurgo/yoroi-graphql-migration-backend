@@ -1,10 +1,15 @@
-import { assertNever, Dictionary, HEX_REGEXP, validateAddressesReq } from "../utils";
+import {
+  assertNever,
+  Dictionary,
+  HEX_REGEXP,
+  validateAddressesReq,
+} from "../utils";
 
 import config from "config";
 import { Pool } from "pg";
 import { Request, Response } from "express";
 
-const addrReqLimit:number = config.get("server.addressRequestLimit");
+const addrReqLimit: number = config.get("server.addressRequestLimit");
 
 const regHistoryQuery = `
   select block.slot_no as "slotNo"
@@ -30,51 +35,61 @@ const regHistoryQuery = `
 `;
 
 interface Pointer {
-    slot: number;
-    txIndex: number;
-    certIndex: number;
-    certType: "StakeRegistration"|"StakeDeregistration";
+  slot: number;
+  txIndex: number;
+  certIndex: number;
+  certType: "StakeRegistration" | "StakeDeregistration";
 }
 
-
-const askRegHistory = async (pool: Pool, addresses: string[]): Promise<Dictionary<Pointer[]>> => {
-
-  const stakeCred = addresses.filter((s:string)=>HEX_REGEXP.test(s)).map((s:string) => `\\x${s}`);
+const askRegHistory = async (
+  pool: Pool,
+  addresses: string[]
+): Promise<Dictionary<Pointer[]>> => {
+  const stakeCred = addresses
+    .filter((s: string) => HEX_REGEXP.test(s))
+    .map((s: string) => `\\x${s}`);
   const history = await pool.query(regHistoryQuery, [stakeCred]);
-  const ret : Dictionary<Pointer[]> = {};
-  for(const addr of addresses) {
+  const ret: Dictionary<Pointer[]> = {};
+  for (const addr of addresses) {
     // default value
     ret[addr] = [];
   }
-  for(const addr of addresses) {
-    const pointers = history.rows.filter( (r:any) => r.stakeCred.toString("hex") === addr)
-      .map( (r:any) => ({ slot: r.slotNo
-        , txIndex: r.txIndex
-        , certIndex: r.certIndex 
-        , certType: r.certType}));
+  for (const addr of addresses) {
+    const pointers = history.rows
+      .filter((r: any) => r.stakeCred.toString("hex") === addr)
+      .map((r: any) => ({
+        slot: r.slotNo,
+        txIndex: r.txIndex,
+        certIndex: r.certIndex,
+        certType: r.certType,
+      }));
 
     ret[addr] = pointers;
   }
   return ret;
 };
 
-export const handleGetRegHistory = (pool: Pool) => async (req: Request, res:Response<Dictionary<Pointer[]>>): Promise<void> => {
-  if(!req.body || !req.body.addresses) {
-    throw new Error("no addresses.");
-    return;
-  } 
-  const verifiedAddrs = validateAddressesReq(addrReqLimit, req.body.addresses);
-  switch(verifiedAddrs.kind){
-  case "ok": {
-    const history = await askRegHistory(pool, verifiedAddrs.value);
-    res.send(history); 
-    return;
-  }
-  case "error":
-    throw new Error(verifiedAddrs.errMsg);
-    return;
-  default: return assertNever(verifiedAddrs);
-  }
-  
-
-};
+export const handleGetRegHistory =
+  (pool: Pool) =>
+  async (req: Request, res: Response<Dictionary<Pointer[]>>): Promise<void> => {
+    if (!req.body || !req.body.addresses) {
+      throw new Error("no addresses.");
+      return;
+    }
+    const verifiedAddrs = validateAddressesReq(
+      addrReqLimit,
+      req.body.addresses
+    );
+    switch (verifiedAddrs.kind) {
+      case "ok": {
+        const history = await askRegHistory(pool, verifiedAddrs.value);
+        res.send(history);
+        return;
+      }
+      case "error":
+        throw new Error(verifiedAddrs.errMsg);
+        return;
+      default:
+        return assertNever(verifiedAddrs);
+    }
+  };
