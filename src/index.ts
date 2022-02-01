@@ -286,7 +286,7 @@ const getStatus = async (req: Request, res: Response) => {
     isServerOk: true,
     isMaintenance: false,
     serverTime: Date.now(),
-    version: process.env.npm_package_version
+    version: process.env.version
   });
 };
 
