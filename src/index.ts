@@ -58,7 +58,7 @@ import { handleOracleDatapoint } from "./services/oracleDatapoint";
 import { handleOracleTicker } from "./services/oracleTicker";
 
 import { mapTransactionFragsToResponse } from "./utils/mappers";
-import newrelic from "newrelic";
+require("newrelic");
 
 const pool = new Pool({
   user: config.get("db.user"),
