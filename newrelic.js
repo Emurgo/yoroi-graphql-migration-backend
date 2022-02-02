@@ -13,6 +13,7 @@ exports.config = {
   /**
    * Your New Relic license key.
    */
+  slow_sql : { enabled: true }, transaction_tracer: { enabled: true, record_sql: 'raw' },
   license_key: process.env.NEWRELIC_LICENSE,
   /**
    * This setting controls distributed tracing.
