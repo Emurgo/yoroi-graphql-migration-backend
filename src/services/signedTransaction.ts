@@ -42,45 +42,13 @@ const submit = async (req: Request, res: Response) => {
   const LOGGING_MSG_HOLDER: [null | string, null | string] = [null, null];
   try {
     const endpointResponse: any = await axios({
-      method: "post",
-      url: submissionEndpoint,
-      data: buffer,
-      headers: contentTypeHeaders,
-    }).then(
-      (r) => {
-        try {
-          const { status, statusText, data } = r || {};
-          LOGGING_MSG_HOLDER[0] = `FULL: ${JSON.stringify({
-            status,
-            statusText,
-            data,
-          })}`;
-        } catch (e) {
-          try {
-            LOGGING_MSG_HOLDER[0] = `FULL_ERR: ${r} | ${e}`;
-          } catch (ee) {
-            LOGGING_MSG_HOLDER[0] = `FULL_ERR_ERR: ${ee}`;
-          }
-        }
-        return r;
-      },
-      (err) => {
-        try {
-          const { status, data } = err.response || {};
-          LOGGING_MSG_HOLDER[1] = `ERR: ${JSON.stringify(
-            err
-          )}, ERR_RESP: ${JSON.stringify({ status, data })}`;
-        } catch (e) {
-          LOGGING_MSG_HOLDER[1] = `ERR_ERR: ${err}`;
-        }
-      }
-    );
-    if (endpointResponse?.status === 202) {
-      if (endpointResponse.data.Left) {
-        const msg = `Transaction was rejected: ${endpointResponse.data.Left}`;
-        console.log("signedTransaction request body: " + req.body.signedTx);
-        throw Error(msg);
-      }
+      method: "post"
+      , url: submissionEndpoint
+      , data: buffer
+      , headers: contentTypeHeaders
+    });
+
+    if (endpointResponse.status === 200) {
       res.send([]);
       return;
     } else {
