@@ -59,6 +59,25 @@ import { utxoForTransaction } from "./services/utxoForTransaction";
 
 import { mapTransactionFragsToResponse } from "./utils/mappers";
 
+import promBundle = require("express-prom-bundle");
+// for config see: https://www.npmjs.com/package/express-prometheus-middleware
+const metricsMiddleware = promBundle({
+  includeStatusCode: true,
+  includeMethod: true,
+  includePath: true,
+  metricType: "summary",
+  // TODO: consider do we need these?
+  // promClient: {
+  //   collectDefaultMetrics: {}
+  // },
+  customLabels: {
+    app: "cardano-backend",
+    version: process.env.version
+  },
+  maxAgeSeconds: 30,
+  ageBuckets: 1,
+});
+
 const pool = new Pool({
   user: config.get("db.user"),
   host: config.get("db.host"),
@@ -448,7 +467,7 @@ const routes: Route[] = [
     handler: getFundInfo,
   },
 ];
-
+router.use(metricsMiddleware);
 applyRoutes(routes, router);
 router.use(middleware.logErrors);
 router.use(middleware.errorHandler);
