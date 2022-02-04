@@ -1,5 +1,6 @@
 // @flow
 // This module defines the API providers.
+const utils = require('./utils');
 import type { PairRate } from './types';
 
 class ErrorResponse extends Error {
@@ -46,7 +47,7 @@ const coinmarketcap: ApiFunc = async (fetch, apiKey) => {
 
 // Provides ADA-USD, ADA-BTC, ADA-ETH
 const coinapi: ApiFunc = async (fetch, apiKey) => {
-  return Promise.all(['USD', 'BTC', 'ETH'].map(async (to) => {
+  return utils.PromiseAll(['USD', 'BTC', 'ETH'].map(to => async () => {
     const response = await fetch(`https://rest.coinapi.io/v1/exchangerate/ADA/${to}`,
       { 'X-CoinAPI-Key': apiKey });
     return { from: 'ADA', to, price: response.rate };
@@ -79,7 +80,7 @@ const nomics: ApiFunc = async (fetch, apiKey) => {
 // Provides ADA-all except CNY
 const cryptonator: ApiFunc = async (fetch, apiKey) => {
   // cryptonator doesn't have CNY or KRW
-  return Promise.all(['usd', 'jpy', 'eur', 'btc', 'eth'].map(async (to) => {
+  return utils.PromiseAll(['usd', 'jpy', 'eur', 'btc', 'eth'].map(to => async () => {
     const response = await fetch(`https://api.cryptonator.com/api/ticker/ada-${to}`);
     if (response.success !== true) {
       throw new ErrorResponse();
@@ -112,7 +113,7 @@ const cryptoapis: ApiFunc = async (fetch, apiKey) => {
     EUR: '5b1ea92e584bf5002013061a',
     ETH: '5b755dacd5dd99000b3d92b2',
   }
-  return Promise.all(['BTC', 'ETH', 'USD'].map(async (to) => {
+  return utils.PromiseAll(['BTC', 'ETH', 'USD'].map(to => async () => {
     const response = await fetch(`https://api.cryptoapis.io/v1/exchange-rates/${ids.ADA}/${ids[to]}`, 
       { 'X-API-Key': apiKey });
     return { from: 'ADA', to, price: response.payload.weightedAveragePrice }

@@ -7,6 +7,7 @@ const logger = require('./logger');
 const sign = require('./sign');
 const uploader = require('./uploader');
 const monitor = require('./monitor');
+const utils = require('./utils');
 
 import type { Ticker } from './types';
 
@@ -22,9 +23,12 @@ async function main() {
 
   await exchangeRate.start();
 
-  const providers = (mode === 'monitor') ? config.monitorProviders : config.fetcherProviders;  
-  const multiSourceData = (await Promise.all(providers.map(apiName =>
-   fetcher.queryAndNormalize(apiName)))).filter(data => data !== null);
+  const providers = (mode === 'monitor') ? config.monitorProviders : config.fetcherProviders;
+  const multiSourceData = (
+    await utils.PromiseAll(
+      providers.map(apiName => () => fetcher.queryAndNormalize(apiName))
+    )
+  ).filter(data => data !== null);
   logger.info('fetched data', multiSourceData);
 
   const ticker: Ticker = {
