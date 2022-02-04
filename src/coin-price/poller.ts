@@ -24,8 +24,11 @@ const logger = Logger.createLogger({
   level: config.get("coinPrice.logLevel"),
 });
 
-const CURRENCY = "ADA";
+const CURRENCIES = ["ADA", "ERG"];
 
+function toPrefix(currency: string): string {
+  return `prices-${currency}`;
+}
 function toObjectKey(currency: string, timestamp: number): string {
   return `prices-${currency}-${timestamp}.json`;
 }
@@ -38,7 +41,8 @@ async function getTickersFromS3Since(
   currency: string,
   dataCallback: (ticker: Buffer) => Promise<void>,
   errorCallback: () => Promise<void>,
-  successCallback: () => Promise<void>
+  successCallback: () => Promise<void>,
+  logger: Logger,
 ): Promise<void> {
   let continuationToken = undefined;
 
@@ -51,6 +55,7 @@ async function getTickersFromS3Since(
     const listParams: any = {
       Bucket,
       ContinuationToken: continuationToken,
+      Prefix: toPrefix(currency),
       StartAfter: timestamp ? toObjectKey(currency, timestamp) : undefined,
     };
     let resp;
@@ -119,42 +124,46 @@ export async function start() {
     logger.info("table exists");
   }
 
-  const latestTicker = await getLatestTicker(client, CURRENCY);
+  for (const currency of CURRENCIES) {
+    const curlogger = logger.child({ currency });
+    const latestTicker = await getLatestTicker(client, currency);
 
-  logger.info("start from timestamp", latestTicker?.timestamp);
+    curlogger.info("start from timestamp", latestTicker?.timestamp);
 
 
-  await client.query("BEGIN");
+    await client.query("BEGIN");
 
-  await getTickersFromS3Since(
-    latestTicker?.timestamp,
-    CURRENCY,
-    async (buffer) => {
-      const obj = JSON.parse(buffer.toString("binary"));
-      logger.debug("got ticker", obj);
-      const ticker = {
-        from: obj.from,
-        timestamp: obj.timestamp,
-        signature: obj.signature,
-        prices: obj.prices,
-      };
-      logger.info("insert ticker for", ticker.timestamp);
-      await insertTicker(client, ticker);
-    },
-    async () => {
-      await client.query("ROLLBACK");
-    },
-    async () => {
-      await client.query("COMMIT");
-    }
-  );
-
+    await getTickersFromS3Since(
+      latestTicker?.timestamp,
+      currency,
+      async (buffer) => {
+        const obj = JSON.parse(buffer.toString("binary"));
+        curlogger.debug("got ticker", obj);
+        const ticker = {
+          from: obj.from,
+          timestamp: obj.timestamp,
+          signature: obj.signature,
+          prices: obj.prices,
+        };
+        curlogger.info("insert ticker for", ticker.timestamp);
+        await insertTicker(client, ticker);
+      },
+      async () => {
+        await client.query("ROLLBACK");
+      },
+      async () => {
+        curlogger.info("commit");
+        await client.query("COMMIT");
+      },
+      curlogger,
+    );
+  }
   await client.end();
 }
 
 try {
   start();
 } catch(error) {
-  logger.error('poller error', error);
+  logger.error("poller error", error);
   process.exit(1);
 }

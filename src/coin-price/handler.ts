@@ -13,7 +13,7 @@ async function currentPrice(
   res: Response
 ): Promise<void> {
   if (!constants.fromCurrencies.includes(req.params.from)) {
-    const result = { error: "no price data for " + req.params.from };
+    const result = { error: "unsupported currency " + req.params.from };
     res.status(404);
     res.send(result);
     return;
@@ -46,7 +46,7 @@ async function historicalPrice(
   res: Response
 ): Promise<void> {
   if (!constants.fromCurrencies.includes(req.params.from)) {
-    const result = { error: "no price data for " + req.params.from };
+    const result = { error: "unsupported currency " + req.params.from };
     res.status(404);
     res.send(result);
     return;

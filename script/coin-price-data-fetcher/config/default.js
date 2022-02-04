@@ -1,6 +1,6 @@
 module.exports  = {
-  sourceCurrency: 'ADA',
-  targetFiatCurrencies: ['USD', 'JPY', 'EUR', 'CNY', 'KRW'],
+  sourceCurrencies: ['ADA', 'ERG'],
+  targetFiatCurrencies: ['USD', 'JPY', 'EUR', 'CNY', 'KRW', 'BRL'],
   targetCryptoCurrencies: ['ETH', 'BTC'],
   logger: {
     level: 'info'

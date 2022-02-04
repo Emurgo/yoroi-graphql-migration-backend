@@ -47,7 +47,7 @@ async function start(): Promise<void> {
 
 
       const response = await fetch(
-        `https://openexchangerates.org/api/latest.json?app_id=${config.apiKeys.openexchangerates}&base=USD&symbols=EUR,CNY,JPY,KRW`,
+        `https://openexchangerates.org/api/latest.json?app_id=${config.apiKeys.openexchangerates}&base=USD&symbols=EUR,CNY,JPY,KRW,BRL`,
         {},
         config.fetchTimeout,
         'fetch timeout'

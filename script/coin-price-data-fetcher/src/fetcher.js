@@ -52,37 +52,38 @@ function normalizeQueryResult(queryResult: Array<PairRate>): Array<PairRate> {
     return queryResult.find(pair => (pair.from === from) && (pair.to === to));
   }
   const result = [];
-  const adaUsd = findPair('ADA', 'USD');
-  if (!adaUsd) {
-    throw new Error('missing ADA-USD rate');
-  }
-  result.push(adaUsd);
+  for (const from of config.sourceCurrencies) {
+    const sourceToUsd = findPair(from, 'USD');
+    if (!sourceToUsd) {
+      throw new Error(`missing ${from}-USD rate`);
+    }
+    result.push(sourceToUsd);
 
-  for (const fiat of config.targetFiatCurrencies.filter(s => s !== 'USD')) {
-    const pair = findPair('ADA', fiat);
-    if (pair) {
-      result.push(pair);
-    } else {
-      const price = adaUsd.price * exchangeRate.getFromUsd(fiat);
-      result.push({ from: 'ADA', to: fiat, price });
+    for (const fiat of config.targetFiatCurrencies.filter(s => s !== 'USD')) {
+      const pair = findPair(from, fiat);
+      if (pair) {
+        result.push(pair);
+      } else {
+        const price = sourceToUsd.price * exchangeRate.getFromUsd(fiat);
+        result.push({ from, to: fiat, price });
+      }
+    }
+
+    for (const crypto of config.targetCryptoCurrencies) {
+      const pair = findPair(from, crypto);
+      if (pair) {
+        result.push(pair);
+        continue;
+      } 
+
+      const cryptoUsd = findPair(crypto, 'USD');
+      if (!cryptoUsd) {
+        throw new Error(`missing ${crypto} rate`);
+      }
+      const price = sourceToUsd.price/cryptoUsd.price;
+      result.push({ from, to: crypto, price });
     }
   }
-
-  for (const crypto of config.targetCryptoCurrencies) {
-    const pair = findPair('ADA', crypto);
-    if (pair) {
-      result.push(pair);
-      continue;
-    } 
-
-    const cryptoUsd = findPair(crypto, 'USD');
-    if (!cryptoUsd) {
-      throw new Error(`missing ${crypto} rate`);
-    }
-    const price = adaUsd.price/cryptoUsd.price;
-    result.push({ from: 'ADA', to: crypto, price });
-  }
-
   return result;
 }
 

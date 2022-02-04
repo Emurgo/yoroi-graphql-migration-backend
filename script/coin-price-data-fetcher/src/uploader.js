@@ -24,13 +24,17 @@ async function upload(ticker: Ticker): Promise<void> {
   };
   for (let i = 0; i < RETRY_COUNT; i++) {
     let resp;
-    try {
-      resp = await util.promisify(S3.upload.bind(S3))(uploadParams);
-    } catch (error) {
-      logger.error('upload failed:', error);
-      continue;
+    if (config.dryRun) {
+      logger.info('dry run:', uploadParams);
+    } else {
+      try {
+        resp = await util.promisify(S3.upload.bind(S3))(uploadParams);
+      } catch (error) {
+        logger.error('upload failed:', error);
+        continue;
+      }
+      logger.info('price data uploaded:', resp);
     }
-    logger.info('price data uploaded:', resp);
     break;
   }
 }
