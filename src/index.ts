@@ -66,6 +66,7 @@ const metricsMiddleware = promBundle({
   includeMethod: true,
   includePath: true,
   metricType: "summary",
+  percentiles: [0.5, 0.9, 0.99],
   // TODO: consider do we need these?
   // promClient: {
   //   collectDefaultMetrics: {}
@@ -74,9 +75,10 @@ const metricsMiddleware = promBundle({
     app: "cardano-backend",
     version: process.env.version
   },
-  maxAgeSeconds: 30,
-  ageBuckets: 1,
+  // maxAgeSeconds: 120,
+  // ageBuckets: 2,
 });
+
 
 const pool = new Pool({
   user: config.get("db.user"),
