@@ -89,6 +89,7 @@ Sentry.init({
       // alternatively, you can specify the routes you want to trace:
       // router: someRouter,
     }),
+    new Tracing.Integrations.Postgres(),
   ],
 
   // We recommend adjusting this value in production, or using tracesSampler
