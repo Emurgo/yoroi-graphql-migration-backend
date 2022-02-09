@@ -12,15 +12,13 @@ export const handlePolicyIdExists =
     }
 
     const policyIds: string[] = req.body.policyIds;
+    const fingerprints: string[] = req.body.fingerprints;
 
     if (policyIds.length > 100) {
       throw new Error("Max limit of 100 policyIds exceeded.");
     }
-    if (policyIds.length === 0) {
-      throw new Error("error, at least 1 policyId should be informed.");
-    }
 
-    const result = await pool.query(query, [policyIds]);
+    const policyIdDbResult = await pool.query(policyIdQuery, [policyIds]);
 
     const policyIdResults: { [key: string]: boolean } = {};
 
@@ -28,15 +26,48 @@ export const handlePolicyIdExists =
       policyIdResults[policyId] = false;
     });
 
-    result.rows.forEach((row: any) => {
+    policyIdDbResult.rows.forEach((row: any) => {
       policyIdResults[row.policy_hex] = true;
     });
 
-    res.send({
+    const response: any = {
       policyIdResults,
-    });
+    };
+
+    if (req.body.fingerprints) {
+      if (!Array.isArray(req.body.fingerprints)) {
+        throw new Error("'fingerprints should be an array.");
+      }
+
+      if (fingerprints.length > 100) {
+        throw new Error("Max limit of 100 fingerprints exceeded.");
+      }
+
+      const fingerprintDbResult = await pool.query(fingerprintQuery, [
+        fingerprints,
+      ]);
+
+      const fingerprintResults: { [key: string]: boolean } = {};
+
+      fingerprints.forEach((fingerprint: string) => {
+        fingerprintResults[fingerprint] = false;
+      });
+
+      fingerprintDbResult.rows.forEach((row: any) => {
+        fingerprintResults[row.fingerprint] = true;
+      });
+
+      response.fingerprintResults = fingerprintResults;
+    }
+
+    res.send(response);
   };
 
-const query = `
+const policyIdQuery = `
   SELECT encode(policy, 'hex') as policy_hex FROM multi_asset
   WHERE encode(policy, 'hex') = ANY($1);`;
+
+const fingerprintQuery = `
+  SELECT fingerprint FROM multi_asset
+  WHERE fingerprint = ANY($1);
+`;

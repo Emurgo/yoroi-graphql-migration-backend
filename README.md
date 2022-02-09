@@ -813,15 +813,18 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
 </details>
 <details>
   <summary>/multiAsset/policyIdExists</summary>
-  This endpoint is used to check if given policyIds already exist on chain.
+  This endpoint is used to check if given policyIds and (optionally) fingerprints already exist on chain.
 
-  Number of ids need to be in [1, 100]
+  Number of policyIds need to be in [0, 100]
+
+  Number of fingerprints need to be in [0, 100]
 
   Input
 
   ```js
   {
-    policyIds: Array<string>, // hex encoded policyIds that will be checked
+    policyIds: Array<string>, // hex encoded policyIds that will be checked,
+    fingerprints?: Array<string>, // fingerprints that will be checked,
   }
   ```
 
@@ -831,6 +834,9 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   {
     policyIdResults: Array<{
       [policyId: string]: boolean
+    }>,
+    fingerprintResults?: Array<{
+      [fingerprint: string]: boolean
     }>
   }
   ```
