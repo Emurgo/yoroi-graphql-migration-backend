@@ -1,6 +1,6 @@
 {
   "name": "yoroi-cardano-backend",
-  "version": "2.3.0-rc.7",
+  "version": "2.3.0-rc.8",
   "description": "Wrapped for cardano-db-sync and cardano-graphql with endpoints useful for light wallets",
   "main": "src/index.ts",
   "scripts": {

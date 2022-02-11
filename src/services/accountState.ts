@@ -35,7 +35,7 @@ const accountRewardsQuery = `
     join stake_address reward_stake_address
     on reward_stake_address.id = reward.addr_id
     cross join (select max (epoch_no) as value from block) as "current_epoch"
-    where reward_stake_address in (select * from filterAddresses)
+    where reward_stake_address.hash_raw in (select * from filterAddresses)
     GROUP BY
       addr_id
   ) as "totalReward" on stake_address.id = "totalReward".addr_id
