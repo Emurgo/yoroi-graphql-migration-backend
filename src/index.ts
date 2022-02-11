@@ -102,7 +102,6 @@ Sentry.init({
 router.use(Sentry.Handlers.requestHandler());
 router.use(Sentry.Handlers.tracingHandler());
 
-
 const middlewares = [
   middleware.handleCors,
   middleware.handleBodyRequestParsing,
