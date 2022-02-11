@@ -60,6 +60,8 @@ import { handleOracleDatapoint } from "./services/oracleDatapoint";
 import { handleOracleTicker } from "./services/oracleTicker";
 
 import { mapTransactionFragsToResponse } from "./utils/mappers";
+import * as Sentry from "@sentry/node";
+import * as Tracing from "@sentry/tracing";
 
 const pool = new Pool({
   user: config.get("db.user"),
@@ -76,6 +78,30 @@ createTransactionUtilityFunctions(pool);
 const healthChecker = new HealthChecker(() => askBestBlock(pool));
 
 const router = express();
+
+Sentry.init({
+  dsn: process.env.DSNExpress,
+  integrations: [
+    // enable HTTP calls tracing
+    new Sentry.Integrations.Http({ tracing: true }),
+    // enable Express.js middleware tracing
+    new Tracing.Integrations.Express({
+      // to trace all requests to the default router
+      router,
+      // alternatively, you can specify the routes you want to trace:
+      // router: someRouter,
+    }),
+    new Tracing.Integrations.Postgres(),
+  ],
+
+  // We recommend adjusting this value in production, or using tracesSampler
+  // for finer control
+  tracesSampleRate: 1.0,
+});
+
+router.use(Sentry.Handlers.requestHandler());
+router.use(Sentry.Handlers.tracingHandler());
+
 
 const middlewares = [
   middleware.handleCors,
@@ -416,6 +442,7 @@ const routes: Route[] = [
 applyRoutes(routes, router);
 router.use(middleware.logErrors);
 router.use(middleware.errorHandler);
+router.use(Sentry.Handlers.errorHandler());
 
 const server = http.createServer(router);
 
