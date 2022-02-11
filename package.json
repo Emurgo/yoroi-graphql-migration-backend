@@ -1,6 +1,6 @@
 {
   "name": "yoroi-cardano-backend",
-  "version": "2.3.0-rc.6",
+  "version": "2.3.0-rc.9",
   "description": "Wrapped for cardano-db-sync and cardano-graphql with endpoints useful for light wallets",
   "main": "src/index.ts",
   "scripts": {
@@ -37,7 +37,6 @@
     "mocha": "^8.2.0",
     "pg": "^8.4.2",
     "pm2": "^4.5.0",
-    "response-time": "2.3.2",
     "semver-compare": "^1.0.0",
     "ts-node": "^9.0.0",
     "tsc-watch": "^4.2.9",
