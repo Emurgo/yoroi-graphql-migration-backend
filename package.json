@@ -35,7 +35,6 @@
     "mocha": "^8.2.0",
     "pg": "^8.4.2",
     "pm2": "^4.5.0",
-    "response-time": "2.3.2",
     "semver-compare": "^1.0.0",
     "ts-node": "^9.0.0",
     "tsc-watch": "^4.2.9",
