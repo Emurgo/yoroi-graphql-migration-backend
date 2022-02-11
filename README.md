@@ -84,6 +84,7 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
     block_num: number, // NOTE: not slot_no
     receiver: string,
     amount: string,
+    dataHash: string,
     assets: Asset[],
   }>
   ```
@@ -335,6 +336,7 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
     outputs: Array<{ //these will be ordered by transaction index asc.
       address: string,
       amount: string,
+      dataHash: string,
       assets: Asset[]
     }>,
     withdrawals: Array<{| address: string, // hex
@@ -440,6 +442,7 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
       outputs: Array<{ //these will be ordered by transaction index asc.
         address: string,
         amount: string,
+        dataHash: string,
         assets: Asset[]
       }>,
       withdrawals: Array<{| address: string, // hex
@@ -668,7 +671,7 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
 
   Output
 
-  ```js
+  ```
   {
     inputs: Array<{ // these will be ordered by the input transaction id asc
       address: string,
@@ -689,8 +692,30 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
     outputs: Array<{ //these will be ordered by transaction index asc.
       address: string,
       amount: string,
+      dataHash: string,
       assets: Asset[]
     }>,
+  }
+  ```
+</details>
+<details>
+  <summary>txs/io/:tx_hash/o/:index</summary>
+  This endpoint is used to get a single output with the given index of a transaction with the given hash
+
+  Input
+
+  None (GET request)
+
+  Output
+
+  ```
+  {
+    output: {
+      address: string,
+      amount: string,
+      dataHash: string,
+      assets: Asset[]
+    },
   }
   ```
 </details>
@@ -782,6 +807,36 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
     Array<{
       ticker: string,
       latestBlock: number,
+    }>
+  }
+  ```
+</details>
+<details>
+  <summary>/multiAsset/policyIdExists</summary>
+  This endpoint is used to check if given policyIds and (optionally) fingerprints already exist on chain.
+
+  Number of policyIds need to be in [0, 100]
+
+  Number of fingerprints need to be in [0, 100]
+
+  Input
+
+  ```js
+  {
+    policyIds: Array<string>, // hex encoded policyIds that will be checked,
+    fingerprints?: Array<string>, // fingerprints that will be checked,
+  }
+  ```
+
+  Output
+
+  ```js
+  {
+    policyIdResults: Array<{
+      [policyId: string]: boolean
+    }>,
+    fingerprintResults?: Array<{
+      [fingerprint: string]: boolean
     }>
   }
   ```
