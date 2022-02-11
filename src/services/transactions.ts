@@ -27,7 +27,9 @@ SELECT tx.hash
     , out_addr_val_pairs(tx.id, tx.hash) as "outAddrValPairs"
 FROM tx
     INNER JOIN block on tx.block_id = block.id
-WHERE encode(tx.hash, 'hex') = ANY(($1)::varchar array);
+    WHERE tx.hash in (
+      select decode(n, 'hex') from unnest(($1)::varchar array) as n
+    );
 `;
 
 export const handleGetTransactions =

@@ -35,7 +35,7 @@ const queryMessageDirect = `
         SELECT MAX(registered_tx_id)
         FROM pool_owner po
           JOIN pool_hash ph ON (po.pool_hash_id = ph.id)
-        WHERE encode(ph.hash_raw, 'hex') = $1
+        WHERE ph.hash_raw = decode($1, 'hex')
       )
   )
   SELECT b.block_no AS "blockNumber",

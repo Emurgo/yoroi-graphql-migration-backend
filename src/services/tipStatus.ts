@@ -28,14 +28,18 @@ LIMIT 1;
 
 const bestBlockFromReferenceQuery = `SELECT encode(hash, 'hex') as "hash", block_no as "blockNumber"
     FROM block
-    WHERE encode(hash, 'hex') = any(($1)::varchar array)
+    WHERE hash in (
+        select decode(n, 'hex') from unnest(($1)::varchar array) as n
+      )
       AND block_no IS NOT NULL
     ORDER BY block_no DESC
     LIMIT 1`;
 
 const safeBlockFromReferenceQuery = `SELECT encode(hash, 'hex') as "hash", block_no as "blockNumber"
   FROM block
-  WHERE encode(hash, 'hex') = any(($1)::varchar array)
+  WHERE hash in (
+      select decode(n, 'hex') from unnest(($1)::varchar array) as n
+    )
     AND block_no IS NOT NULL
     AND block_no <= (SELECT MAX(block_no) FROM block) - ($2)::int
   ORDER BY block_no DESC
