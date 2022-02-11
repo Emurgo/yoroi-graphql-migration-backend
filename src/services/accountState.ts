@@ -6,6 +6,9 @@ import { Request, Response } from "express";
 const addrReqLimit: number = config.get("server.addressRequestLimit");
 
 const accountRewardsQuery = `
+  with filterAddresses as (
+    select decode(n, 'hex') from unnest(($1)::varchar array) as n
+  )
   select stake_address.hash_raw as "stakeAddress"
       , sum(coalesce("totalReward".spendable_amount,0) - coalesce("totalWithdrawal".amount,0)) as "remainingAmount"
       , sum(coalesce("totalReward".non_spendable_amount,0)) as "remainingNonSpendableAmount"
@@ -19,7 +22,7 @@ const accountRewardsQuery = `
     FROM withdrawal
     join stake_address withdrawal_stake_address
     on withdrawal_stake_address.id = withdrawal.addr_id
-    where encode(withdrawal_stake_address.hash_raw, 'hex') = any(($1)::varchar array)
+    where withdrawal_stake_address.hash_raw in (select * from filterAddresses)
     GROUP BY
       addr_id
   ) as "totalWithdrawal" on stake_address.id = "totalWithdrawal".addr_id
@@ -32,12 +35,12 @@ const accountRewardsQuery = `
     join stake_address reward_stake_address
     on reward_stake_address.id = reward.addr_id
     cross join (select max (epoch_no) as value from block) as "current_epoch"
-    where encode(reward_stake_address.hash_raw, 'hex') = any(($1)::varchar array)
+    where reward_stake_address in (select * from filterAddresses)
     GROUP BY
       addr_id
   ) as "totalReward" on stake_address.id = "totalReward".addr_id
 
-  where encode(stake_address.hash_raw, 'hex') = any(($1)::varchar array)
+  where stake_address.hash_raw in (select * from filterAddresses)
 
   group by stake_address.id`;
 
