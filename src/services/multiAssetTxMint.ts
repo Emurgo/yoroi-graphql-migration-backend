@@ -58,7 +58,7 @@ function createGetMultiAssetTxMintMetadataQuery(assets: Asset[]) {
   const whereConditions = assets
     .map(
       (a, idx) => `( ma.name = ($${idx * 2 + 1})::bytea
-      and encode(ma.policy, 'hex') = ($${idx * 2 + 2})::varchar )`
+      and ma.policy = decode(($${idx * 2 + 2})::varchar, 'hex') )`
     )
     .join(" or ");
 

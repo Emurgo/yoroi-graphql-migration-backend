@@ -11,7 +11,9 @@ SELECT encode(tx.hash, 'hex') tx_id,
 FROM tx
     INNER JOIN block on tx.block_id = block.id
     CROSS JOIN (SELECT MAX(block_no) block_no FROM block) as highest_block
-WHERE encode(tx.hash, 'hex') = any(($1)::varchar array);
+WHERE tx.hash in (
+  select decode(n, 'hex') from unnest(($1)::varchar array) as n
+);
 `;
 
 export const handleTxStatus =
