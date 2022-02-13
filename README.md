@@ -841,3 +841,30 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   }
   ```
 </details>
+<details>
+  <summary>/multiAsset/metadata</summary>
+  Retrieves on-chain metadata for assets.
+
+  Input
+
+  ```js
+  {
+    assets: Array<{
+      name: string,
+      policy: string,
+    }>
+  }
+  ```
+
+  Output
+
+  ```js
+  {
+    // the key in this case is a combination of policy and name, separated by a dot: "policy"."name"
+    [asset: string]: {
+      key: string, // the metadata label key. e.g. 721 in case of NFTs
+      metadata: any
+    }
+  }
+  ```
+</details>
