@@ -19,12 +19,12 @@ describe("/getPrice", function () {
     });
     expect(result.data).to.have.property(tickerADA);
     const currentAda = result.data[tickerADA];
-    expect(currentAda).to.have.property("PRICE");
-    expect(currentAda).to.have.property("LASTUPDATE");
-    expect(currentAda).to.have.property("CHANGEPCT24HOUR");
-    expect(currentAda.PRICE).to.be.greaterThan(0);
-    expect(currentAda.LASTUPDATE).to.be.greaterThan(0);
-    expect(currentAda.CHANGEPCT24HOUR).not.to.be.eq(0);
+    expect(currentAda).to.have.property("price");
+    expect(currentAda).to.have.property("lastUpdate");
+    expect(currentAda).to.have.property("changePercent24h");
+    expect(Number.parseFloat(currentAda.price)).to.be.greaterThan(0);
+    expect(currentAda.lastUpdate).to.be.greaterThan(0);
+    expect(Number.parseFloat(currentAda.changePercent24h)).not.to.be.eq(0);
   });
 
   it("should get ADA history", async () => {
@@ -44,7 +44,7 @@ describe("/getPrice", function () {
       (hourlyAda.length - 1 - hourlySample) * 60 * 60;
     expect(hourlyAda[hourlySample].time).to.be.eq(timestampHour);
     expect(hourlyAda[hourlySample]).to.have.property("price");
-    expect(hourlyAda[hourlySample].price).to.be.greaterThan(0);
+    expect(Number.parseFloat(hourlyAda[hourlySample].price)).to.be.greaterThan(0);
 
     expect(result.data[tickerADA]).to.have.property("historyDaily");
     const dailyAda = result.data[tickerADA].historyDaily;
@@ -57,7 +57,7 @@ describe("/getPrice", function () {
       (dailyAda.length - 1 - dailySample) * 24 * 60 * 60;
     expect(dailyAda[dailySample].time).to.be.eq(timestampDay);
     expect(dailyAda[dailySample]).to.have.property("price");
-    expect(dailyAda[dailySample].price).to.be.greaterThan(0);
+    expect(Number.parseFloat(dailyAda[dailySample].price)).to.be.greaterThan(0);
   });
 
   it("should not crash on invalid token", async () => {
