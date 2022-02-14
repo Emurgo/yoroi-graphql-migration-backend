@@ -15,79 +15,52 @@ FROM multi_asset asset
 WHERE asset.fingerprint = $1::text`;
 
 const getLambda = (): AWS.Lambda => {
-  const lambdaEndpoint = config.get("aws.lambdaEndpoint") as string;
-  if (lambdaEndpoint) {
-    return new AWS.Lambda({
-      endpoint: lambdaEndpoint,
-      region: config.get("aws.region"),
-      credentials: {
-        accessKeyId: config.get("aws.accessKeyId"),
-        secretAccessKey: config.get("aws.secretAccessKey"),
-      }
-    });
-  } else {
-    return new AWS.Lambda({
-      region: config.get("aws.region"),
-      credentials: {
-        accessKeyId: config.get("aws.accessKeyId"),
-        secretAccessKey: config.get("aws.secretAccessKey"),
-      }
-    });
-  }
+  return new AWS.Lambda({
+    region: config.get("aws.region"),
+    credentials: {
+      accessKeyId: config.get("aws.accessKeyId"),
+      secretAccessKey: config.get("aws.secretAccessKey"),
+    }
+  });
 };
 
-type NftValidationData = {
-  smallVariantFile?: string
-  largeVariantFile?: string
-  contentsOnImage?: string[]
-  category?: string
-  validated: boolean
-}
-
-const getNftValidationData = async (lambda: AWS.Lambda, fingerprint: string): Promise<NftValidationData> => {
-  const lambdaResponse = await lambda.invoke({
-    FunctionName: "YoroiContentValidator",
+const verifyExistingAnalysis = async (
+  lambda: AWS.Lambda,
+  fingerprint: string
+) => {
+  const response = await lambda.invoke({
+    FunctionName: config.get("aws.lambda.nftValidator"),
     InvocationType: "RequestResponse",
     Payload: JSON.stringify({
       action: "Verify",
-      fingerprint: fingerprint
+      fingerprint: fingerprint,
     })
   }).promise();
 
-  if (lambdaResponse.StatusCode === 200) {
-    const lambdaResponseObj: NftValidationData = JSON.parse(lambdaResponse.Payload?.toString("utf-8") ?? "{}");
-    return lambdaResponseObj; 
-  }
+  if (response.FunctionError) throw new Error(response.FunctionError);
+  if (!response.Payload) throw new Error("unexpected error");
 
-  throw new Error("unexpected error");
+  return JSON.parse(response.Payload.toString());
 };
 
-const sendNftForValidation = (
+const sendNftForAnalysis = async (
   lambda: AWS.Lambda,
   fingerprint: string,
   metadatImage: string
-): void => {
-  lambda.invoke({
-    FunctionName: "YoroiContentValidator",
+): Promise<void> => {
+  const response = await lambda.invoke({
+    FunctionName: config.get("aws.lambda.nftValidator"),
     InvocationType: "Event",
     Payload: JSON.stringify({
       action: "Validate",
-      nfts: [
-        {
-          assetFingerprint: fingerprint,
-          metadata: {
-            image: metadatImage
-          }
-        }
-      ]
+      fingerprint: fingerprint,
+      metadata: {
+        image: metadatImage
+      }
     })
-  }, (err, data) => {
-    if (err) {
-      console.error(err);
-    } else {
-      console.info(data);
-    }
-  });
+  }).promise();
+
+  if (response.FunctionError) throw new Error(response.FunctionError);
 };
 
 export const handleValidateNft = (pool: Pool) => async (req: Request, res: Response) => {
@@ -99,10 +72,9 @@ export const handleValidateNft = (pool: Pool) => async (req: Request, res: Respo
   }
 
   const lambda = getLambda();
-  const nftValidationData = await getNftValidationData(lambda, fingerprint);
-  if (nftValidationData.validated) {
-    return res.status(200)
-      .send(nftValidationData);
+  const existingAnalysis = await verifyExistingAnalysis(lambda, fingerprint);
+  if (existingAnalysis !== "NOT_FOUND") {
+    return res.status(200).send(existingAnalysis);
   }
 
   const result = await pool.query(query, [fingerprint]);
@@ -148,7 +120,7 @@ export const handleValidateNft = (pool: Pool) => async (req: Request, res: Respo
       .send();  
   }
 
-  sendNftForValidation(lambda, fingerprint, metadata.image);
+  await sendNftForAnalysis(lambda, fingerprint, metadata.image);
 
   return res.status(202)
     .send();

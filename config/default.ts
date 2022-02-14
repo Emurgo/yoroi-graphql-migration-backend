@@ -18,9 +18,11 @@ export default {
   safeBlockDifference: process.env.SAFE_BLOCK_DIFFERENCE || "10",
   usingQueueEndpoint: process.env.USE_SIGNED_TX_QUEUE || "false",
   aws: {
-    lambdaEndpoint: process.env.LAMBDA_ENDPOINT || "",
+    lambda: {
+      nftValidator: process.env.NFT_VALIDATOR_LAMBDA || "devNftValidatorLambda"
+    },
     accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
-    region: process.env.AWS_REGION ?? ""
+    region: process.env.AWS_REGION || "eu-central-1"
   },
 };
