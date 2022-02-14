@@ -1,6 +1,6 @@
 {
   "name": "yoroi-cardano-backend",
-  "version": "2.0.0",
+  "version": "2.3.0",
   "description": "Wrapped for cardano-db-sync and cardano-graphql with endpoints useful for light wallets",
   "main": "src/index.ts",
   "scripts": {
@@ -10,7 +10,8 @@
     "dev": "tsc-watch --onSuccess \"node ./dist/index.js\"",
     "eslint": "eslint src tests",
     "test": "mocha -r ts-node/register tests/**/*.test.ts --slow 0",
-    "testtxhist": "mocha -r ts-node/register tests/txHistory.test.ts"
+    "testtxhist": "mocha -r ts-node/register tests/txHistory.test.ts",
+    "prettier": "npx prettier --write src"
   },
   "author": "",
   "license": "MIT",
@@ -20,7 +21,9 @@
     }
   },
   "dependencies": {
-    "@emurgo/cardano-serialization-lib-nodejs": "^4.2.0",
+    "@emurgo/cardano-serialization-lib-nodejs": "9.1.3",
+    "@sentry/node": "^6.17.5",
+    "@sentry/tracing": "^6.17.5",
     "aws-sdk": "^2.1036.0",
     "axios": "^0.21.1",
     "bech32": "^1.1.4",
@@ -30,6 +33,7 @@
     "config": "^3.3.2",
     "cors": "^2.8.5",
     "express": "^5.0.0-alpha.8",
+    "hash-wasm": "^4.9.0",
     "lodash": "^4.17.20",
     "mocha": "^8.2.0",
     "pg": "^8.4.2",
@@ -59,6 +63,7 @@
     "eslint-config-airbnb-typescript": "^9.0.0",
     "eslint-plugin-import": "^2.22.1",
     "husky": "^4.3.0",
+    "prettier": "^2.5.1",
     "ramda": "^0.27.1"
   },
   "engines": {

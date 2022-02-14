@@ -10,15 +10,17 @@ export default {
     addressRequestLimit: 50,
     apiResponseLimit: 50,
     txSubmissionEndpoint: process.env.TX_SUBMISSION_ENDPOINT || "https://backend.yoroiwallet.com/api/submit/tx",
+    signedTxQueueEndpoint: process.env.SIGNED_TX_QUEUE_ENDPOINT || "http://localhost:3030/",
     smashEndpoint: process.env.SMASH_ENDPOINT || "https://smash.yoroiwallet.com/api/v1/metadata/",
     port: process.env.PORT || 8082,
     txsHashesRequestLimit: 150,
   },
+  safeBlockDifference: process.env.SAFE_BLOCK_DIFFERENCE || "10",
+  usingQueueEndpoint: process.env.USE_SIGNED_TX_QUEUE || "false",
   aws: {
     lambdaEndpoint: process.env.LAMBDA_ENDPOINT || "",
     accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
     region: process.env.AWS_REGION ?? ""
   },
-  safeBlockDifference: process.env.SAFE_BLOCK_DIFFERENCE || "10"
 };

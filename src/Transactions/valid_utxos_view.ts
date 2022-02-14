@@ -1,4 +1,4 @@
-import { Pool, } from "pg";
+import { Pool } from "pg";
 
 export const createViewSql = `
 drop view if exists valid_utxos_view;
@@ -10,6 +10,7 @@ SELECT
   , encode(tx.hash,'hex') as hash
   , tx_out.index
   , tx_out.value
+  , tx_out.data_hash
   , block.block_no as "blockNumber"
   , (
     select json_agg(ROW (encode("multi_asset"."policy", 'hex'), encode("multi_asset"."name", 'hex'), "quantity"))
@@ -40,7 +41,7 @@ WHERE tx.valid_contract -- utxos only from valid txs
       AND tx_out.index = tx_in.tx_out_index)`;
 
 export const createValidUtxosView = (pool: Pool): void => {
-  if(process.env.NODE_TYPE !== "slave"){
+  if (process.env.NODE_TYPE !== "slave") {
     pool.query(createViewSql);
   }
 };

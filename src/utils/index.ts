@@ -1,3 +1,4 @@
+import { blake2b } from "hash-wasm";
 import { Router, Request, Response, NextFunction } from "express";
 import {
   Address,
@@ -6,16 +7,19 @@ import {
   PointerAddress,
   EnterpriseAddress,
   RewardAddress,
+  Transaction,
 } from "@emurgo/cardano-serialization-lib-nodejs";
 import { decode, fromWords } from "bech32";
 import { Prefixes } from "./cip5";
-import {Asset} from "../Transactions/types";
+import { Asset } from "../Transactions/types";
 
-export const contentTypeHeaders = { headers: {"Content-Type": "application/json"}};
+export const contentTypeHeaders = {
+  headers: { "Content-Type": "application/json" },
+};
 
 export const errMsgs = { noValue: "no value" };
 
-type Wrapper = ((router: Router) => void);
+type Wrapper = (router: Router) => void;
 
 export const applyMiddleware = (
   middlewareWrappers: Wrapper[],
@@ -26,10 +30,10 @@ export const applyMiddleware = (
   }
 };
 
-export const HEX_REGEXP = RegExp("^[0-9a-fA-F]+$"); 
+export const HEX_REGEXP = RegExp("^[0-9a-fA-F]+$");
 
 export interface Dictionary<T> {
- [key: string]: T;
+  [key: string]: T;
 }
 
 type Handler = (
@@ -53,27 +57,28 @@ export const applyRoutes = (routes: Route[], router: Router) => {
   }
 };
 
-
 export interface UtilOK<T> {
   kind: "ok";
   value: T;
 }
 export interface UtilErr {
-  kind: "error"
+  kind: "error";
   errMsg: string;
 }
 export type UtilEither<T> = UtilOK<T> | UtilErr;
 
 export function assertNever(x: never): never {
-  throw new Error ("this should never happen" + x);
+  throw new Error("this should never happen" + x);
 }
-
 
 /**
  * This method validates addresses request body
  * @param {Array[String]} addresses
  */
-export const validateAddressesReq = (addressRequestLimit: number, addresses: string[]): UtilEither<string[]> => {
+export const validateAddressesReq = (
+  addressRequestLimit: number,
+  addresses: string[]
+): UtilEither<string[]> => {
   const errorMessage = `Addresses request length should be (0, ${addressRequestLimit}]`;
   if (!addresses) {
     return { kind: "error", errMsg: errorMessage };
@@ -84,8 +89,8 @@ export const validateAddressesReq = (addressRequestLimit: number, addresses: str
 };
 
 export interface TxBlockData {
-    tx: string;
-    block: string;
+  tx: string;
+  block: string;
 }
 export interface HistoryRequest {
   addresses: string[];
@@ -94,27 +99,47 @@ export interface HistoryRequest {
   untilBlock: string;
 }
 
-export const validateHistoryReq = (addressRequestLimit:number, apiResponseLimit:number, data: any): UtilEither<HistoryRequest> => {
-  if(!("addresses" in data))
-    return {kind:"error", errMsg: "body.addresses does not exist."};
-  if(!("untilBlock" in data))
-    return {kind:"error", errMsg: "body.untilBlock does not exist."};
-  if(("after" in data) && !("tx" in data.after))
-    return {kind:"error", errMsg: "body.after exists but body.after.tx does not"};
-  if(("after" in data) && !("block" in data.after))
-    return {kind:"error", errMsg: "body.after exists but body.after.block does not"};
-  if(("limit" in data) && typeof data.limit !== "number")
-    return {kind:"error", errMsg: " body.limit must be a number"};
-  if(("limit" in data) && data.limit > apiResponseLimit)
-    return {kind:"error", errMsg: `body.limit parameter exceeds api limit: ${apiResponseLimit}`};
+export const validateHistoryReq = (
+  addressRequestLimit: number,
+  apiResponseLimit: number,
+  data: any
+): UtilEither<HistoryRequest> => {
+  if (!("addresses" in data))
+    return { kind: "error", errMsg: "body.addresses does not exist." };
+  if (!("untilBlock" in data))
+    return { kind: "error", errMsg: "body.untilBlock does not exist." };
+  if ("after" in data && !("tx" in data.after))
+    return {
+      kind: "error",
+      errMsg: "body.after exists but body.after.tx does not",
+    };
+  if ("after" in data && !("block" in data.after))
+    return {
+      kind: "error",
+      errMsg: "body.after exists but body.after.block does not",
+    };
+  if ("limit" in data && typeof data.limit !== "number")
+    return { kind: "error", errMsg: " body.limit must be a number" };
+  if ("limit" in data && data.limit > apiResponseLimit)
+    return {
+      kind: "error",
+      errMsg: `body.limit parameter exceeds api limit: ${apiResponseLimit}`,
+    };
 
-  const validatedAddresses = validateAddressesReq(addressRequestLimit, data.addresses);
-  switch(validatedAddresses.kind){
-  case "ok": 
-    return {kind:"ok", value: data};
-  case "error":
-    return {kind: "error", errMsg: "body.addresses: " +validatedAddresses.errMsg};
-  default: return assertNever(validatedAddresses);
+  const validatedAddresses = validateAddressesReq(
+    addressRequestLimit,
+    data.addresses
+  );
+  switch (validatedAddresses.kind) {
+    case "ok":
+      return { kind: "ok", value: data };
+    case "error":
+      return {
+        kind: "error",
+        errMsg: "body.addresses: " + validatedAddresses.errMsg,
+      };
+    default:
+      return assertNever(validatedAddresses);
   }
 };
 
@@ -127,14 +152,12 @@ export const extractAssets = (obj: null | any): Asset[] => {
       assetId: policyId + "." + name, // policyId.nameId
       policyId,
       name,
-      amount: token.f3.toString()
+      amount: token.f3.toString(),
     };
   });
 };
 
-export function getSpendingKeyHash(
-  wasmAddr: Address,
-): (undefined | string) {
+export function getSpendingKeyHash(wasmAddr: Address): undefined | string {
   const getResult = (bytes: Uint8Array | undefined) => {
     if (bytes == null) return undefined;
     return Buffer.from(bytes).toString("hex");
@@ -143,7 +166,9 @@ export function getSpendingKeyHash(
   {
     const baseAddr = BaseAddress.from_address(wasmAddr);
     if (baseAddr) {
-      const result = getResult(baseAddr.payment_cred().to_keyhash()?.to_bytes());
+      const result = getResult(
+        baseAddr.payment_cred().to_keyhash()?.to_bytes()
+      );
       baseAddr.free();
       return result;
     }
@@ -159,16 +184,16 @@ export function getSpendingKeyHash(
   {
     const enterpriseAddr = EnterpriseAddress.from_address(wasmAddr);
     if (enterpriseAddr) {
-      const result = getResult(enterpriseAddr.payment_cred().to_keyhash()?.to_bytes());
+      const result = getResult(
+        enterpriseAddr.payment_cred().to_keyhash()?.to_bytes()
+      );
       enterpriseAddr.free();
       return result;
     }
   }
 }
 
-export function validateRewardAddress(
-  wasmAddr: Address,
-): boolean {
+export function validateRewardAddress(wasmAddr: Address): boolean {
   const rewardAddr = RewardAddress.from_address(wasmAddr);
   return rewardAddr != null;
 }
@@ -179,10 +204,10 @@ export function getAddressesByType(addresses: string[]): {
    * since it's possible somebody wants the tx history for a specific address
    * and not the tx history for the payment key of the address
    */
-  legacyAddr: string[],
-  bech32: string[],
-  paymentCreds: string[],
-  stakingKeys: string[],
+  legacyAddr: string[];
+  bech32: string[];
+  paymentCreds: string[];
+  stakingKeys: string[];
 } {
   const legacyAddr = [];
   const bech32 = [];
@@ -194,7 +219,7 @@ export function getAddressesByType(addresses: string[]): {
       legacyAddr.push(address);
       continue;
     }
-    
+
     try {
       const bech32Info = decode(address, 1000);
       switch (bech32Info.prefix) {
@@ -224,12 +249,11 @@ export function getAddressesByType(addresses: string[]): {
         }
         case Prefixes.PAYMENT_KEY_HASH: {
           const payload = fromWords(bech32Info.words);
-          paymentCreds.push(
-            `\\x${Buffer.from(payload).toString("hex")}`
-          );
+          paymentCreds.push(`\\x${Buffer.from(payload).toString("hex")}`);
           break;
         }
-        default: continue;
+        default:
+          continue;
       }
       continue;
     } catch (_e) {
@@ -237,9 +261,7 @@ export function getAddressesByType(addresses: string[]): {
     }
     try {
       if (HEX_REGEXP.test(address)) {
-        const wasmAddr = Address.from_bytes(
-          Buffer.from(address, "hex")
-        );
+        const wasmAddr = Address.from_bytes(Buffer.from(address, "hex"));
         if (validateRewardAddress(wasmAddr)) {
           stakingKeys.push(`\\x${address}`);
         }
@@ -257,4 +279,13 @@ export function getAddressesByType(addresses: string[]): {
     paymentCreds,
     stakingKeys,
   };
+}
+
+export async function calculateTxId(signedTx: string): Promise<string> {
+  const txBuffer = Buffer.from(signedTx, "base64");
+  const tx = Transaction.from_bytes(txBuffer);
+  const txBody = tx.body();
+
+  const blake2bTxHash = await blake2b(txBody.to_bytes(), 256);
+  return blake2bTxHash;
 }
