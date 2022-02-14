@@ -64,8 +64,11 @@ export const handlePolicyIdExists =
   };
 
 const policyIdQuery = `
+  with filterPolicies as (
+    select decode(n, 'hex') from unnest(($1)::varchar array) as n
+  )
   SELECT encode(policy, 'hex') as policy_hex FROM multi_asset
-  WHERE encode(policy, 'hex') = ANY($1);`;
+  WHERE policy in (select * from filterPolicies)`;
 
 const fingerprintQuery = `
   SELECT fingerprint FROM multi_asset
