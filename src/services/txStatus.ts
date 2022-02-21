@@ -66,7 +66,6 @@ export const handleTxStatus =
         response.submissionStatus = submissionStatus;
       } catch (err) {
         console.error(err);
-        // ignore errors
       }
     }
 
