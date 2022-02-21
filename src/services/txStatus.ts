@@ -55,9 +55,9 @@ export const handleTxStatus =
 
         const submissionStatus: {
           [key: string]: {
-            status: string,
-            reason: string,
-          },
+            status: string;
+            reason: string;
+          };
         } = {};
         for (const status of result.data) {
           submissionStatus[status.id] = {
