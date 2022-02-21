@@ -294,7 +294,7 @@ const getFundInfo = async (req: Request, res: Response) => {
     currentFund: {
       id: 7,
       registrationStart: "2021-11-18T11:00:00Z",
-      registrationEnd: "2022-01-13T11:00:00Z",
+      registrationEnd: "2122-01-13T11:00:00Z",
       votingStart: "2022-01-13T11:00:00Z",
       votingEnd: "2022-01-27T11:00:00Z",
       votingPowerThreshold: "450",
