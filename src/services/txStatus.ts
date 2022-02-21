@@ -53,14 +53,16 @@ export const handleTxStatus =
           },
         });
 
-        const submissionStatus: { [key: string]: {
-          status: string,
-          reason: string
-        } } = {};
+        const submissionStatus: {
+          [key: string]: {
+            status: string,
+            reason: string,
+          },
+        } = {};
         for (const status of result.data) {
           submissionStatus[status.id] = {
             status: status.status,
-            reason: status.reason
+            reason: status.reason,
           };
         }
         response.submissionStatus = submissionStatus;
