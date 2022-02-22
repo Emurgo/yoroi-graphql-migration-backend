@@ -68,7 +68,7 @@ const submit = async (req: Request, res: Response) => {
       );
     }
   } catch (error: any) {
-    const { status, statusText, data } = error.response?.data;
+    const { status, statusText, data } = error.response ?? {};
     const msg = `Error trying to send transaction: ${JSON.stringify({
       status,
       statusText,
