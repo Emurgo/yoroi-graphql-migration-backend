@@ -40,42 +40,13 @@ const submitToQueue = async (req: Request, res: Response) => {
 
 const submit = async (req: Request, res: Response) => {
   const buffer = Buffer.from(req.body.signedTx, "base64");
-  const LOGGING_MSG_HOLDER: [any, any] = [null, null];
   try {
-    const endpointResponse: any = await axios({
+    const endpointResponse: any = (await axios({
       method: "post",
       url: submissionEndpoint,
       data: buffer,
       headers: contentTypeHeaders,
-    }).then(
-      (r) => {
-        try {
-          const { status, statusText, data } = r || {};
-          LOGGING_MSG_HOLDER[0] = `FULL: ${JSON.stringify({
-            status,
-            statusText,
-            data,
-          })}`;
-        } catch (e) {
-          try {
-            LOGGING_MSG_HOLDER[0] = `FULL_ERR: ${r} | ${e}`;
-          } catch (ee) {
-            LOGGING_MSG_HOLDER[0] = `FULL_ERR_ERR: ${ee}`;
-          }
-        }
-        return r;
-      },
-      (err) => {
-        try {
-          const { status, data } = err.response || {};
-          LOGGING_MSG_HOLDER[1] = `ERR: ${JSON.stringify(
-            err
-          )}, ERR_RESP: ${JSON.stringify({ status, data })}`;
-        } catch (e) {
-          LOGGING_MSG_HOLDER[1] = `ERR_ERR: ${err}`;
-        }
-      }
-    );
+    }));
     if (endpointResponse?.status === 202) {
       if (endpointResponse.data.Left) {
         const msg = `Transaction was rejected: ${endpointResponse.data.Left}`;
@@ -92,15 +63,17 @@ const submit = async (req: Request, res: Response) => {
             status,
             statusText,
             data,
-            err: LOGGING_MSG_HOLDER[1],
           }
         )}`
       );
     }
   } catch (error: any) {
-    const msg = `Error trying to send transaction: ${error} - ${JSON.stringify(
-      LOGGING_MSG_HOLDER
-    )}`;
+    const { status, statusText, data } = error.response?.data;
+    const msg = `Error trying to send transaction: ${JSON.stringify({
+      status,
+      statusText,
+      data,
+    })}`;
     throw Error(msg);
   }
 };
