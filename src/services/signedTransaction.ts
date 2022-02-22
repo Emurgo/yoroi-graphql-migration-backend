@@ -71,6 +71,7 @@ const submit = async (req: Request, res: Response) => {
     if (error.response != null) {
       const { status, data } = error.response;
       res.status(status).send(data);
+      return;
     }
     throw Error(`Error trying to send transaction: ${String(error)}`);
   }
