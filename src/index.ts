@@ -355,6 +355,11 @@ const routes: Route[] = [
     handler: filterUsedAddresses(pool),
   },
   {
+    path: "/v2/txs/utxoAtPoint",
+    method: "post",
+    handler: utxoAtPoint(pool)
+  },
+  {
     path: "/txs/utxoForAddresses",
     method: "post",
     handler: utxoForAddresses(pool),
