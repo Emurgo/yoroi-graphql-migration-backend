@@ -26,13 +26,13 @@ describe("/messages/getMessageBoard", function () {
     expect(result.data).not.be.empty;
     expect(result.data).to.have.property(validPoolId);
     expect(result.data[validPoolId]).to.be.an("array").that.is.not.empty;
-    expect(result.data[validPoolId][0].eng).to.have.property("block_no");
+    expect(result.data[validPoolId][0].eng).to.have.property("blockNumber");
     expect(result.data[validPoolId][0].eng).to.have.property("title");
     expect(result.data[validPoolId][0].eng).to.have.property("content");
     expect(result.data[validPoolId][0].eng).to.have.property("valid");
     expect(result.data[validPoolId][0].eng).to.have.property("expire");
 
-    expect(result.data[validPoolId][0].eng.block_no).to.be.equal(6157866);
+    expect(result.data[validPoolId][0].eng.blockNumber).to.be.equal(6157866);
     expect(result.data[validPoolId][0].eng.title).to.be.equal(
       "Welcome to NUTS!"
     );

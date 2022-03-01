@@ -84,6 +84,7 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
     block_num: number, // NOTE: not slot_no
     receiver: string,
     amount: string,
+    dataHash: string,
     assets: Asset[],
   }>
   ```
@@ -374,6 +375,7 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
     outputs: Array<{ //these will be ordered by transaction index asc.
       address: string,
       amount: string,
+      dataHash: string,
       assets: Asset[]
     }>,
     withdrawals: Array<{| address: string, // hex
@@ -423,6 +425,114 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   }>
   ```
 </details>
+
+<details>
+  <summary>v2/txs/get</summary>
+  This endpoint returns the transactions' information given their hashes (or ids).
+
+  Since short rollbacks are common (by design) in Cardano Shelley, your app needs to be ready for this.
+
+  Input
+
+  Up to 100 tx hashes in the request
+
+  ```js
+  {
+   txHashes: string[],
+  }
+  ```
+
+  Output
+
+  Up to `100` transactions are returned. Transactions which are not yet on-chain will be ignored and won't be included in the response. The `txHashes` sent in the request are transformed into keys under the `txs` object, and the value corresponding to this key is the transaction information
+
+  ```js
+  txs: {
+    "<txHash>": {
+      // information that is only present if block is included in the blockchain
+      block_num: null | number,
+      block_hash: null | string,
+      tx_ordinal: null | number,
+      time: null | string, // timestamp with timezone
+      epoch: null | number,
+      slot: null | number,
+
+      // information that is always present
+      type: 'byron' | 'shelley',
+      hash: string,
+      last_update: string, // timestamp with timezone
+      tx_state: 'Successful' | 'Failed' | 'Pending',
+      inputs: Array<{ // these will be ordered by the input transaction id asc
+        address: string,
+        amount: string,
+        id: string, // concatenation of txHash || index
+        index: number,
+        txHash: string, 
+        assets: Asset[]
+      }>,
+      collateral_inputs: Array<{
+        address: string,
+        amount: string,
+        id: string, // concatenation of txHash || index
+        index: number,
+        txHash: string,
+        assets: Asset[]
+      }>,
+      outputs: Array<{ //these will be ordered by transaction index asc.
+        address: string,
+        amount: string,
+        dataHash: string,
+        assets: Asset[]
+      }>,
+      withdrawals: Array<{| address: string, // hex
+        amount: string
+      |}>,
+      certificates: Array<{|
+        kind: 'StakeRegistration',
+        rewardAddress:string, //hex
+      |} | {|
+        kind: 'StakeDeregistration',
+        rewardAddress:string, // hex
+      |} | {|
+        kind: 'StakeDelegation',
+        rewardAddress:string, // hex
+        poolKeyHash: string, // hex
+      |} | {|
+        kind: 'PoolRegistration',
+        poolParams: {|
+          operator: string, // hex
+          vrfKeyHash: string, // hex
+          pledge: string,
+          cost: string,
+          margin: number,
+          rewardAccount: string, // hex
+          poolOwners: Array<string>,  // hex
+          relays: Array<{| ipv4: string|null,
+            ipv6: string|null,
+            dnsName: string|null,
+            dnsSrvName: string|null,
+            port: string|null |}>,
+          poolMetadata: null | {|
+            url: string,
+            metadataHash: string, //hex
+          |},
+        |},
+      |} | {|
+        type: 'PoolRetirement',
+        poolKeyHash: string, // hex
+        epoch: number,
+      |} {|
+        type: 'MoveInstantaneousRewardsCert',
+        rewards: { [addresses: string]: string } // dictionary of stake addresses to their reward amounts in lovelace
+        pot: 0 | 1 // 0 = Reserves, 1 = Treasury
+      |}>,
+      valid_contract: boolean, // False if the contract is invalid. True if the contract is valid or there is no contract.
+      script_size: number, // The sum of the script sizes (in bytes) of scripts in the transaction.
+    }
+  }
+  ```
+</details>
+
 <details>
   <summary>v2/bestblock</summary>
   Input
@@ -496,7 +606,10 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   Output
 
   ```js
-  []
+  {
+    // this is calculated based on the submitted `signedTx`, and will be an exact match of the transaction ID on the blockchain once the transaction is confirmed
+    txId: string
+  }
   ```
 </details>
 <details>
@@ -515,8 +628,11 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
 
   ```
   {
-    "depth": {
+    depth: {
       "<txHash>": number
+    },
+    submissionStatus?: {
+      "<txHash>": "WAITING" | "FAILED" | "MAX_RETRY_REACHED" | "SUCCEESS"
     }
   }
   ```
@@ -580,6 +696,213 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
     // entry for an asset is null if it is not found.
     supplies: {
       "${asset.policy}.${asset.name}": number | null
+    }
+  }
+  ```
+</details>
+<details>
+  <summary>txs/io/:tx_hash</summary>
+  This endpoint is used to get inputs and outputs of a transaction with the given hash
+
+  Input
+
+  None (GET request)
+
+  Output
+
+  ```
+  {
+    inputs: Array<{ // these will be ordered by the input transaction id asc
+      address: string,
+      amount: string,
+      id: string, // concatenation of txHash || index
+      index: number,
+      txHash: string, 
+      assets: Asset[]
+    }>,
+    collateralInputs: Array<{
+      address: string,
+      amount: string,
+      id: string, // concatenation of txHash || index
+      index: number,
+      txHash: string,
+      assets: Asset[]
+    }>,
+    outputs: Array<{ //these will be ordered by transaction index asc.
+      address: string,
+      amount: string,
+      dataHash: string,
+      assets: Asset[]
+    }>,
+  }
+  ```
+</details>
+<details>
+  <summary>txs/io/:tx_hash/o/:index</summary>
+  This endpoint is used to get a single output with the given index of a transaction with the given hash
+
+  Input
+
+  None (GET request)
+
+  Output
+
+  ```
+  {
+    output: {
+      address: string,
+      amount: string,
+      dataHash: string,
+      assets: Asset[]
+    },
+  }
+  ```
+</details>
+<details>
+  <summary>/oracles/getDatapoints</summary>
+  This endpoint is used to return specific data (data point) of a specified oracle.
+
+  There are two usages of this endpoint - with and without source.
+  This is because when calling with source, ticker becomes mandatory.
+
+  1. without specifying source:
+
+  Input
+
+  ```js
+  {
+    addresses: Array<string>, // mandatory, bech32 addresses of trusted oracles
+    ticker?: string,  // optional. If not set, fetch all available tickers. If set, fetch only that ticker
+    blockNum?: number, // optional. If not set, fetch latest `count` data and order desc.
+    // If set, find `count` nearest (absolute) values around that block
+    // e.g. with block_no = 100, count = 3 and data at blocks 85,90,100,115,135, returned data will be for blocks:
+    // 100 (absolute distance 0), 90 (absolute distance 10) and 115 (absolute distance 15 - same as block 85, but more recent)
+    // i.e. nearest blocks to the block specified
+    // in case of a draw we display the more recent block
+    count?: number, // optional, default 1, max 10
+  }
+  ```
+
+  Output
+
+  ```js
+  [addresses: string]: undefined | {
+    blockDistance: number | null,
+    blockNumber: number,
+    txHash: string,
+    txIndex: number,
+    payload: any, // if a ticker is specified, then array of JSON with data,
+                 // if not specified then all tickers are returned in form of [ticker: string]: Array<any>
+  }
+  ```
+
+  2. with source (and thus also ticker) specified:
+
+  Input
+
+  ```js
+  {
+    addresses: Array<string>, // mandatory, bech32 addresses of trusted oracles
+    ticker: string,  // mandatory. When filtering with source, tickers are mandatory
+    blockNum?: number, // optional. If not set, fetch latest `count` data and order desc.
+    // If set, find `count` nearest (absolute) values around that block
+    // e.g. with block_no = 100, count = 3 and data at blocks 85,90,100,115,135, returned data will be for blocks:
+    // 100 (absolute distance 0), 90 (absolute distance 10) and 115 (absolute distance 15 - same as block 85, but more recent)
+    // i.e. nearest blocks to the block specified
+    // in case of a draw we display the more recent block
+    source: string, // mandatory. Source of the data
+    count?: number, // optional, default 1, max 10
+  }
+  ```
+
+  Output
+
+  ```js
+  [addresses: string]: undefined | {
+    blockDistance: number | null,
+    blockNumber: number,
+    txHash: string,
+    txIndex: number,
+    payload: any, // JSON with data
+  }
+  ```
+</details>
+<details>
+  <summary>/oracles/getTickers</summary>
+  This endpoint is used to return all available tickers of a specified array of oracles.
+
+  Input
+
+  ```js
+  {
+    addresses: Array<string>, // bech32 addresses of trusted oracles
+  }
+  ```
+
+  Output
+
+  ```js
+  [addresses: string]: undefined | {
+    Array<{
+      ticker: string,
+      latestBlock: number,
+    }>
+  }
+  ```
+</details>
+<details>
+  <summary>/multiAsset/policyIdExists</summary>
+  This endpoint is used to check if given policyIds and (optionally) fingerprints already exist on chain.
+
+  Number of policyIds need to be in [0, 100]
+
+  Number of fingerprints need to be in [0, 100]
+
+  Input
+
+  ```js
+  {
+    policyIds: Array<string>, // hex encoded policyIds that will be checked,
+    fingerprints?: Array<string>, // fingerprints that will be checked,
+  }
+  ```
+
+  Output
+
+  ```js
+  {
+    policyIdResults: Array<{
+      [policyId: string]: boolean
+    }>,
+    fingerprintResults?: Array<{
+      [fingerprint: string]: boolean
+    }>
+  }
+  ```
+</details>
+<details>
+  <summary>/multiAsset/metadata</summary>
+  Retrieves on-chain metadata for assets.
+
+  Input
+
+  ```js
+  {
+    assets: Array<{
+      name: string,
+      policy: string,
+    }>
+  }
+  ```
+
+  Output
+
+  ```js
+  {
+    // the key in this case is a combination of policy and name, separated by a dot: "policy"."name"
+    [asset: string]: {
+      key: string, // the metadata label key. e.g. 721 in case of NFTs
+      metadata: any
     }
   }
   ```
