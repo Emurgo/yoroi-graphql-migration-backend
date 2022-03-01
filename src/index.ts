@@ -44,11 +44,14 @@ import { handleGetTxIO } from "./services/txIO";
 import { handleTipStatusGet, handleTipStatusPost } from "./services/tipStatus";
 import { handleGetTransactions } from "./services/transactions";
 
+import { handlePolicyIdExists } from "./services/policyIdExists";
+
 import { HealthChecker } from "./HealthChecker";
 
 import { createCertificatesView } from "./Transactions/certificates";
 import { createTransactionOutputView } from "./Transactions/output";
 import { createValidUtxosView } from "./Transactions/valid_utxos_view";
+import { createUtxoFunctions } from "./Transactions/utxoFunctions";
 import { createTransactionUtilityFunctions } from "./Transactions/userDefinedFunctions";
 import { poolDelegationHistory } from "./services/poolHistory";
 import { handleGetCardanoWalletPools } from "./services/cardanoWallet";
@@ -60,6 +63,8 @@ import { handleOracleDatapoint } from "./services/oracleDatapoint";
 import { handleOracleTicker } from "./services/oracleTicker";
 
 import { mapTransactionFragsToResponse } from "./utils/mappers";
+import * as Sentry from "@sentry/node";
+import * as Tracing from "@sentry/tracing";
 
 const pool = new Pool({
   user: config.get("db.user"),
@@ -71,11 +76,35 @@ const pool = new Pool({
 createCertificatesView(pool);
 createValidUtxosView(pool);
 createTransactionOutputView(pool);
+createUtxoFunctions(pool);
 createTransactionUtilityFunctions(pool);
 
 const healthChecker = new HealthChecker(() => askBestBlock(pool));
 
 const router = express();
+
+Sentry.init({
+  dsn: process.env.DSNExpress,
+  integrations: [
+    // enable HTTP calls tracing
+    new Sentry.Integrations.Http({ tracing: true }),
+    // enable Express.js middleware tracing
+    new Tracing.Integrations.Express({
+      // to trace all requests to the default router
+      router,
+      // alternatively, you can specify the routes you want to trace:
+      // router: someRouter,
+    }),
+    new Tracing.Integrations.Postgres(),
+  ],
+
+  // We recommend adjusting this value in production, or using tracesSampler
+  // for finer control
+  tracesSampleRate: 1.0,
+});
+
+router.use(Sentry.Handlers.requestHandler());
+router.use(Sentry.Handlers.tracingHandler());
 
 const middlewares = [
   middleware.handleCors,
@@ -269,7 +298,7 @@ const getFundInfo = async (req: Request, res: Response) => {
     currentFund: {
       id: 7,
       registrationStart: "2021-11-18T11:00:00Z",
-      registrationEnd: "2022-01-13T11:00:00Z",
+      registrationEnd: "2122-01-13T11:00:00Z",
       votingStart: "2022-01-13T11:00:00Z",
       votingEnd: "2022-01-27T11:00:00Z",
       votingPowerThreshold: "450",
@@ -329,6 +358,11 @@ const routes: Route[] = [
     handler: filterUsedAddresses(pool),
   },
   {
+    path: "/v2/txs/utxoAtPoint",
+    method: "post",
+    handler: utxoAtPoint(pool)
+  },
+  {
     path: "/txs/utxoForAddresses",
     method: "post",
     handler: utxoForAddresses(pool),
@@ -340,6 +374,11 @@ const routes: Route[] = [
   },
   { path: "/v2/txs/history", method: "post", handler: txHistory },
   { path: "/txs/io/:tx_hash", method: "get", handler: handleGetTxIO(pool) },
+  {
+    path: "/txs/io/:tx_hash/o/:index",
+    method: "get",
+    handler: handleGetTxOutput(pool),
+  },
   { path: "/v2/txs/get", method: "post", handler: handleGetTransactions(pool) },
   { path: "/txs/signed", method: "post", handler: handleSignedTx },
   {
@@ -383,6 +422,11 @@ const routes: Route[] = [
     handler: handleTxStatus(pool),
   },
   {
+    path: "/multiAsset/policyIdExists",
+    method: "post",
+    handler: handlePolicyIdExists(pool),
+  },
+  {
     path: "/v2/importerhealthcheck",
     method: "get",
     handler: async (_req: Request, res: Response) => {
@@ -408,6 +452,7 @@ const routes: Route[] = [
 applyRoutes(routes, router);
 router.use(middleware.logErrors);
 router.use(middleware.errorHandler);
+router.use(Sentry.Handlers.errorHandler());
 
 const server = http.createServer(router);
 

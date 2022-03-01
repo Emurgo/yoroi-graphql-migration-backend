@@ -32,7 +32,7 @@ export const latestMetadataQuery = `
           on pool_hash.id = pool_update.hash_id 
      join pool_metadata_ref
           on pool_update.meta_id = pool_metadata_ref.id
-     where encode(pool_hash.hash_raw, 'hex') = $1
+     where pool_hash.hash_raw = decode($1, 'hex')
     order by pool_update.id desc limit 1;
 `;
 

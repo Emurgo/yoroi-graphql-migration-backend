@@ -10,6 +10,7 @@ export const askBestBlock = async (
   const query = `
   SELECT epoch_no AS "epoch",
     epoch_slot_no AS "slot",
+    slot_no AS "globalSlot",
     encode(hash, 'hex') as hash,
     block_no AS height
   FROM BLOCK
