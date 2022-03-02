@@ -39,6 +39,7 @@ import { handleGetRewardHistory } from "./services/rewardHistory";
 import { handleGetMultiAssetSupply } from "./services/multiAssetSupply";
 import { handleGetMultiAssetTxMintMetadata } from "./services/multiAssetTxMint";
 import { handleTxStatus } from "./services/txStatus";
+import { handleUtxoDiffSincePoint } from "./services/utxoDiffSincePoint";
 import { handleGetTxIO, handleGetTxOutput } from "./services/txIO";
 import { handleTipStatusGet, handleTipStatusPost } from "./services/tipStatus";
 import { handleGetTransactions } from "./services/transactions";
@@ -349,6 +350,8 @@ const routes: Route[] = [
   { path: "/v2/bestblock", method: "get", handler: bestBlock(pool) },
   { path: "/v2/tipStatus", method: "get", handler: handleTipStatusGet(pool) },
   { path: "/v2/tipStatus", method: "post", handler: handleTipStatusPost(pool) },
+  { path: "/v2/txs/utxoAtPoint", method: "post", handler: utxoAtPoint(pool) },
+  { path: "/v2/txs/utxoDiffSincePoint", method: "post", handler: handleUtxoDiffSincePoint(pool) },
   {
     path: "/v2/addresses/filterUsed",
     method: "post",
