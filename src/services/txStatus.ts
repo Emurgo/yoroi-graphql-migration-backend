@@ -18,6 +18,8 @@ WHERE tx.hash in (
 
 export const handleTxStatus =
   (pool: Pool) => async (req: Request, res: Response) => {
+    const txQueue = config.get("usingQueueEndpoint") === "true";
+
     if (!req.body || !req.body.txHashes) {
       throw new Error("error, no tx txHashes informed.");
     }
@@ -34,7 +36,9 @@ export const handleTxStatus =
 
     const result = await pool.query(txStatusQuery, [txHashes]);
 
-    const response: any = {};
+    const response: any = {
+      txQueue
+    };
     const depth: { [key: string]: number } = {};
 
     for (const item of result.rows) {
@@ -43,7 +47,7 @@ export const handleTxStatus =
 
     response.depth = depth;
 
-    if (config.get("usingQueueEndpoint") === "true") {
+    if (txQueue) {
       try {
         const result = await axios({
           method: "post",
