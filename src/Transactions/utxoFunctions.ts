@@ -46,7 +46,7 @@ $$ LANGUAGE plpgsql;
 `;
 
 export const createUtxoFunctions = (pool: Pool): void => {
-  if(process.env.NODE_TYPE !== "slave"){
+  if (process.env.NODE_TYPE !== "slave") {
     pool.query(sql);
   }
 };

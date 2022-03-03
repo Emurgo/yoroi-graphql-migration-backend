@@ -351,7 +351,11 @@ const routes: Route[] = [
   { path: "/v2/tipStatus", method: "get", handler: handleTipStatusGet(pool) },
   { path: "/v2/tipStatus", method: "post", handler: handleTipStatusPost(pool) },
   { path: "/v2/txs/utxoAtPoint", method: "post", handler: utxoAtPoint(pool) },
-  { path: "/v2/txs/utxoDiffSincePoint", method: "post", handler: handleUtxoDiffSincePoint(pool) },
+  {
+    path: "/v2/txs/utxoDiffSincePoint",
+    method: "post",
+    handler: handleUtxoDiffSincePoint(pool),
+  },
   {
     path: "/v2/addresses/filterUsed",
     method: "post",
@@ -360,7 +364,7 @@ const routes: Route[] = [
   {
     path: "/v2/txs/utxoAtPoint",
     method: "post",
-    handler: utxoAtPoint(pool)
+    handler: utxoAtPoint(pool),
   },
   {
     path: "/txs/utxoForAddresses",

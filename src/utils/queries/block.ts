@@ -19,32 +19,34 @@ export const getLatestBlock = async (pool: Pool): Promise<BlockFrag> => {
   }
 
   const row = result.rows[0];
-  
+
   return {
     epochNo: row.epoch_no,
     hash: row.hash,
     slotNo: row.slot_no,
-    number: row.block_no
+    number: row.block_no,
   };
 };
 
-export const getBlock = (pool: Pool) => async (hash: string): Promise<BlockFrag | undefined> => {
-  const result = await pool.query(
-    `${baseGetBlockQuery}
+export const getBlock =
+  (pool: Pool) =>
+  async (hash: string): Promise<BlockFrag | undefined> => {
+    const result = await pool.query(
+      `${baseGetBlockQuery}
     WHERE encode(hash, 'hex') = ($1)::varchar`,
-    [hash]
-  );
+      [hash]
+    );
 
-  if (!result.rows || result.rows.length === 0) {
-    return undefined;
-  }
+    if (!result.rows || result.rows.length === 0) {
+      return undefined;
+    }
 
-  const row = result.rows[0];
-  
-  return {
-    epochNo: row.epoch_no,
-    hash: row.hash,
-    slotNo: row.slot_no,
-    number: row.block_no
+    const row = result.rows[0];
+
+    return {
+      epochNo: row.epoch_no,
+      hash: row.hash,
+      slotNo: row.slot_no,
+      number: row.block_no,
+    };
   };
-};

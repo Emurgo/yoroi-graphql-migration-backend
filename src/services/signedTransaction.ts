@@ -41,12 +41,12 @@ const submitToQueue = async (req: Request, res: Response) => {
 const submit = async (req: Request, res: Response) => {
   const buffer = Buffer.from(req.body.signedTx, "base64");
   try {
-    const endpointResponse: any = (await axios({
+    const endpointResponse: any = await axios({
       method: "post",
       url: submissionEndpoint,
       data: buffer,
       headers: contentTypeHeaders,
-    }));
+    });
     if (endpointResponse?.status === 202) {
       if (endpointResponse.data.Left) {
         const msg = `Transaction was rejected: ${endpointResponse.data.Left}`;
