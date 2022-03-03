@@ -59,6 +59,8 @@ import { handleMessageDirect } from "./services/messageDirect";
 import { handleOracleDatapoint } from "./services/oracleDatapoint";
 import { handleOracleTicker } from "./services/oracleTicker";
 
+import { getFundInfo } from "./services/catalyst";
+
 import { mapTransactionFragsToResponse } from "./utils/mappers";
 import * as Sentry from "@sentry/node";
 import * as Tracing from "@sentry/tracing";
@@ -287,19 +289,6 @@ const getStatus = async (req: Request, res: Response) => {
     }
   }
   res.send({ isServerOk: true, isMaintenance: false, serverTime: Date.now() });
-};
-
-const getFundInfo = async (req: Request, res: Response) => {
-  res.send({
-    currentFund: {
-      id: 7,
-      registrationStart: "2021-11-18T11:00:00Z",
-      registrationEnd: "2122-01-13T11:00:00Z",
-      votingStart: "2022-01-13T11:00:00Z",
-      votingEnd: "2022-01-27T11:00:00Z",
-      votingPowerThreshold: "450",
-    },
-  });
 };
 
 const routes: Route[] = [
