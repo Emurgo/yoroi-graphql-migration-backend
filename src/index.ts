@@ -1,7 +1,6 @@
 import config from "config";
 import http from "http";
 import express from "express";
-import * as websockets from "ws";
 import { Request, Response } from "express";
 
 import { Pool } from "pg";
@@ -9,7 +8,6 @@ import { Pool } from "pg";
 // eslint-disable-next-line
 const semverCompare = require("semver-compare");
 
-import { connectionHandler } from "./ws-server";
 import {
   applyMiddleware,
   applyRoutes,
@@ -66,6 +64,8 @@ import { mapTransactionFragsToResponse } from "./utils/mappers";
 import * as Sentry from "@sentry/node";
 import * as Tracing from "@sentry/tracing";
 
+const sentryEnabled = config.get("sentry.enabled") === "true";
+
 const pool = new Pool({
   user: config.get("db.user"),
   host: config.get("db.host"),
@@ -83,28 +83,30 @@ const healthChecker = new HealthChecker(() => askBestBlock(pool));
 
 const router = express();
 
-Sentry.init({
-  dsn: process.env.DSNExpress,
-  integrations: [
-    // enable HTTP calls tracing
-    new Sentry.Integrations.Http({ tracing: true }),
-    // enable Express.js middleware tracing
-    new Tracing.Integrations.Express({
-      // to trace all requests to the default router
-      router,
-      // alternatively, you can specify the routes you want to trace:
-      // router: someRouter,
-    }),
-    new Tracing.Integrations.Postgres(),
-  ],
+if (sentryEnabled) {
+  Sentry.init({
+    dsn: process.env.DSNExpress,
+    integrations: [
+      // enable HTTP calls tracing
+      new Sentry.Integrations.Http({ tracing: true }),
+      // enable Express.js middleware tracing
+      new Tracing.Integrations.Express({
+        // to trace all requests to the default router
+        router,
+        // alternatively, you can specify the routes you want to trace:
+        // router: someRouter,
+      }),
+      new Tracing.Integrations.Postgres(),
+    ],
 
-  // We recommend adjusting this value in production, or using tracesSampler
-  // for finer control
-  tracesSampleRate: 1.0,
-});
+    // We recommend adjusting this value in production, or using tracesSampler
+    // for finer control
+    tracesSampleRate: parseFloat(config.get("sentry.tracesSampleRate")),
+  });
 
-router.use(Sentry.Handlers.requestHandler());
-router.use(Sentry.Handlers.tracingHandler());
+  router.use(Sentry.Handlers.requestHandler());
+  router.use(Sentry.Handlers.tracingHandler());
+}
 
 const middlewares = [
   middleware.handleCors,
@@ -456,11 +458,11 @@ const routes: Route[] = [
 applyRoutes(routes, router);
 router.use(middleware.logErrors);
 router.use(middleware.errorHandler);
-router.use(Sentry.Handlers.errorHandler());
+
+if (sentryEnabled) {
+  router.use(Sentry.Handlers.errorHandler());
+}
 
 const server = http.createServer(router);
-
-const wss = new websockets.Server({ server });
-wss.on("connection", connectionHandler(pool));
 
 server.listen(port, () => console.log(`listening on ${port}...`));
