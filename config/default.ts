@@ -16,5 +16,8 @@ export default {
     txsHashesRequestLimit: 150,
   },
   safeBlockDifference: process.env.SAFE_BLOCK_DIFFERENCE || "10",
-  usingQueueEndpoint: process.env.USE_SIGNED_TX_QUEUE || "false"
+  usingQueueEndpoint: process.env.USE_SIGNED_TX_QUEUE || "false",
+  sentry: {
+    tracesSampleRate: process.env.SENTRY_TRACES_SAMPLE_RATE || "0.01"
+  }
 };
