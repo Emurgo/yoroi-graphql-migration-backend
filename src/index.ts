@@ -259,6 +259,7 @@ const txHistory = async (req: Request, res: Response) => {
 };
 
 const getStatus = async (req: Request, res: Response) => {
+  const isQueueOnline = config.get("usingQueueEndpoint") === "true";
   const mobilePlatformVersionPrefixes = ["android / ", "ios / ", "- /"];
   const desktopPlatformVersionPrefixes = ["firefox / ", "chrome / "];
   const clientVersionHeader = "yoroi-version";
@@ -290,7 +291,7 @@ const getStatus = async (req: Request, res: Response) => {
       }
     }
   }
-  res.send({ isServerOk: true, isMaintenance: false, serverTime: Date.now() });
+  res.send({ isServerOk: true, isMaintenance: false, serverTime: Date.now(), isQueueOnline });
 };
 
 const getFundInfo = async (req: Request, res: Response) => {
