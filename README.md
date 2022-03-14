@@ -693,6 +693,7 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
     isServerOk: boolean, // heartbeat endpoint for server. IF you want the node status, use v2/importerhealthcheck instead
     isMaintenance: boolean, // manually set and indicates you should disable ADA integration in your app until it returns false. Use to avoid weird app-side behavior during server upgrades.
     serverTime: number, // in millisecond unix time
+    isQueueOnline: boolean, // indicates if the backend is using the TX queue to submit the signed transactions. Essentially, it returns true if the USE_SIGNED_TX_QUEUE env var is set to "true".
   }
   ```
 </details>
