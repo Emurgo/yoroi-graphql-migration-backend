@@ -291,7 +291,12 @@ const getStatus = async (req: Request, res: Response) => {
       }
     }
   }
-  res.send({ isServerOk: true, isMaintenance: false, serverTime: Date.now(), isQueueOnline });
+  res.send({
+    isServerOk: true,
+    isMaintenance: false,
+    serverTime: Date.now(),
+    isQueueOnline,
+  });
 };
 
 const getFundInfo = async (req: Request, res: Response) => {
