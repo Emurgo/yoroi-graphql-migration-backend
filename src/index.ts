@@ -302,11 +302,11 @@ const getStatus = async (req: Request, res: Response) => {
 const getFundInfo = async (req: Request, res: Response) => {
   res.send({
     currentFund: {
-      id: 7,
+      id: 9,
       registrationStart: "2021-11-18T11:00:00Z",
-      registrationEnd: "2122-01-13T11:00:00Z",
-      votingStart: "2022-01-13T11:00:00Z",
-      votingEnd: "2022-01-27T11:00:00Z",
+      registrationEnd: "2125-01-13T11:00:00Z",
+      votingStart: "2022-04-14T11:00:00Z",
+      votingEnd: "2022-04-28T11:00:00Z",
       votingPowerThreshold: "450",
     },
   });
