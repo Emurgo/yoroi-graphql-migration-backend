@@ -22,6 +22,7 @@ import * as middleware from "./middleware";
 
 import { askBestBlock } from "./services/bestblock";
 import { utxoForAddresses } from "./services/utxoForAddress";
+import { utxoAtPoint } from "./services/utxoAtPoint";
 import {
   askBlockNumByHash,
   askBlockNumByTxHash,
@@ -38,6 +39,7 @@ import { handleGetRewardHistory } from "./services/rewardHistory";
 import { handleGetMultiAssetSupply } from "./services/multiAssetSupply";
 import { handleGetMultiAssetTxMintMetadata } from "./services/multiAssetTxMint";
 import { handleTxStatus } from "./services/txStatus";
+import { handleUtxoDiffSincePoint } from "./services/utxoDiffSincePoint";
 import { handleGetTxIO, handleGetTxOutput } from "./services/txIO";
 import { handleTipStatusGet, handleTipStatusPost } from "./services/tipStatus";
 import { handleGetTransactions } from "./services/transactions";
@@ -50,6 +52,7 @@ import { HealthChecker } from "./HealthChecker";
 import { createCertificatesView } from "./Transactions/certificates";
 import { createTransactionOutputView } from "./Transactions/output";
 import { createValidUtxosView } from "./Transactions/valid_utxos_view";
+import { createUtxoFunctions } from "./Transactions/utxoFunctions";
 import { createTransactionUtilityFunctions } from "./Transactions/userDefinedFunctions";
 import { poolDelegationHistory } from "./services/poolHistory";
 import { handleGetCardanoWalletPools } from "./services/cardanoWallet";
@@ -74,6 +77,7 @@ const pool = new Pool({
 createCertificatesView(pool);
 createValidUtxosView(pool);
 createTransactionOutputView(pool);
+createUtxoFunctions(pool);
 createTransactionUtilityFunctions(pool);
 
 const healthChecker = new HealthChecker(() => askBestBlock(pool));
@@ -256,6 +260,7 @@ const txHistory = async (req: Request, res: Response) => {
 };
 
 const getStatus = async (req: Request, res: Response) => {
+  const isQueueOnline = config.get("usingQueueEndpoint") === "true";
   const mobilePlatformVersionPrefixes = ["android / ", "ios / ", "- /"];
   const desktopPlatformVersionPrefixes = ["firefox / ", "chrome / "];
   const clientVersionHeader = "yoroi-version";
@@ -287,17 +292,22 @@ const getStatus = async (req: Request, res: Response) => {
       }
     }
   }
-  res.send({ isServerOk: true, isMaintenance: false, serverTime: Date.now() });
+  res.send({
+    isServerOk: true,
+    isMaintenance: false,
+    serverTime: Date.now(),
+    isQueueOnline,
+  });
 };
 
 const getFundInfo = async (req: Request, res: Response) => {
   res.send({
     currentFund: {
-      id: 7,
+      id: 9,
       registrationStart: "2021-11-18T11:00:00Z",
-      registrationEnd: "2022-01-13T11:00:00Z",
-      votingStart: "2022-01-13T11:00:00Z",
-      votingEnd: "2022-01-27T11:00:00Z",
+      registrationEnd: "2125-01-13T11:00:00Z",
+      votingStart: "2022-04-14T11:00:00Z",
+      votingEnd: "2022-04-28T11:00:00Z",
       votingPowerThreshold: "450",
     },
   });
@@ -347,10 +357,21 @@ const routes: Route[] = [
   { path: "/v2/bestblock", method: "get", handler: bestBlock(pool) },
   { path: "/v2/tipStatus", method: "get", handler: handleTipStatusGet(pool) },
   { path: "/v2/tipStatus", method: "post", handler: handleTipStatusPost(pool) },
+  { path: "/v2/txs/utxoAtPoint", method: "post", handler: utxoAtPoint(pool) },
+  {
+    path: "/v2/txs/utxoDiffSincePoint",
+    method: "post",
+    handler: handleUtxoDiffSincePoint(pool),
+  },
   {
     path: "/v2/addresses/filterUsed",
     method: "post",
     handler: filterUsedAddresses(pool),
+  },
+  {
+    path: "/v2/txs/utxoAtPoint",
+    method: "post",
+    handler: utxoAtPoint(pool),
   },
   {
     path: "/txs/utxoForAddresses",
