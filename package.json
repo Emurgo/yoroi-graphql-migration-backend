@@ -1,6 +1,6 @@
 {
   "name": "yoroi-cardano-backend",
-  "version": "2.2.0",
+  "version": "2.3.4",
   "description": "Wrapped for cardano-db-sync and cardano-graphql with endpoints useful for light wallets",
   "main": "src/index.ts",
   "scripts": {
@@ -24,6 +24,8 @@
   "dependencies": {
     "aws-sdk": "^2.1056.0",
     "@emurgo/cardano-serialization-lib-nodejs": "9.1.3",
+    "@sentry/node": "^6.17.5",
+    "@sentry/tracing": "^6.17.5",
     "axios": "^0.21.1",
     "bech32": "^1.1.4",
     "bunyan": "^1.8.15",

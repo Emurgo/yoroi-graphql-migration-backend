@@ -46,7 +46,7 @@ const getMultiAssetSupply = async (
     from multi_asset
     join ma_tx_mint mint on multi_asset.id = mint.id
     where
-      multi_asset.name = ($1)::bytea and encode(multi_asset.policy, 'hex') = ($2)::varchar`;
+      multi_asset.name = ($1)::bytea and multi_asset.policy = decode(($2)::varchar, 'hex')`;
 
   const result = await pool.query(query, [asset.name, asset.policy]);
 

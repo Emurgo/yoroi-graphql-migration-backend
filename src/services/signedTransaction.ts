@@ -40,39 +40,13 @@ const submitToQueue = async (req: Request, res: Response) => {
 
 const submit = async (req: Request, res: Response) => {
   const buffer = Buffer.from(req.body.signedTx, "base64");
-  const LOGGING_MSG_HOLDER: [any, any] = [null, null];
   try {
     const endpointResponse: any = await axios({
       method: "post",
       url: submissionEndpoint,
       data: buffer,
       headers: contentTypeHeaders,
-    }).then(
-      (r) => {
-        try {
-          const { status, statusText, data } = r || {};
-          LOGGING_MSG_HOLDER[0] = `FULL: ${JSON.stringify({
-            status,
-            statusText,
-            data,
-          })}`;
-        } catch (e) {
-          try {
-            LOGGING_MSG_HOLDER[0] = `FULL_ERR: ${r} | ${e}`;
-          } catch (ee) {
-            LOGGING_MSG_HOLDER[0] = `FULL_ERR_ERR: ${ee}`;
-          }
-        }
-        return r;
-      },
-      (err) => {
-        try {
-          LOGGING_MSG_HOLDER[1] = `ERR: ${JSON.stringify(err)}`;
-        } catch (e) {
-          LOGGING_MSG_HOLDER[1] = `ERR_ERR: ${err}`;
-        }
-      }
-    );
+    });
     if (endpointResponse?.status === 202) {
       if (endpointResponse.data.Left) {
         const msg = `Transaction was rejected: ${endpointResponse.data.Left}`;
@@ -89,16 +63,17 @@ const submit = async (req: Request, res: Response) => {
             status,
             statusText,
             data,
-            err: LOGGING_MSG_HOLDER[1],
           }
         )}`
       );
     }
   } catch (error: any) {
-    const msg = `Error trying to send transaction: ${error} - ${JSON.stringify(
-      LOGGING_MSG_HOLDER
-    )}`;
-    throw Error(msg);
+    if (error.response != null) {
+      const { status, data } = error.response;
+      res.status(status).send(data);
+      return;
+    }
+    throw Error(`Error trying to send transaction: ${String(error)}`);
   }
 };
 
