@@ -44,7 +44,7 @@ const getMultiAssetSupply = async (
   const query = `
     select sum(mint.quantity) as supply
     from multi_asset
-    join ma_tx_mint mint on multi_asset.id = mint.id
+    join ma_tx_mint mint on multi_asset.id = mint.ident
     where
       multi_asset.name = ($1)::bytea and multi_asset.policy = decode(($2)::varchar, 'hex')`;
 
