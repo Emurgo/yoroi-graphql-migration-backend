@@ -960,11 +960,10 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   ***200 OK*** (when the validation already happened)
   ```js
   {
-    smallVariantFile: string,
-    largeVariantFile: string,
-    contentsOnImage: string[],
-    category: 'GREEN' | 'YELLOW' | 'RED',
-    validated: boolean
+    status: string,
+    contents: Array<string>,
+    originalStatus: string,
+    thirdPartyReport: any
   }
   ```
 
