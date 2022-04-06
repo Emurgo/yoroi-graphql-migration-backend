@@ -21,11 +21,15 @@ group by ma.policy,
     ma.fingerprint;`;
 
   const results = await pool.query(query, [fingerprint]);
-  return results.rows.map((x) => ({
-    policy: x.policy,
-    name: x.asset,
-    txs: x.txs,
-  }));
+
+  if (results.rows.length === 0) return null;
+  const row = results.rows[0];
+
+  return {
+    policy: row.policy,
+    name: row.asset,
+    txs: row.txs,
+  };
 };
 
 export const handleGetAssetMintTxs =
