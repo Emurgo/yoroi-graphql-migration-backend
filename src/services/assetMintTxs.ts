@@ -21,17 +21,18 @@ group by ma.policy,
     ma.fingerprint;`;
 
   const results = await pool.query(query, [fingerprint]);
-  return results.rows.map(x => ({
+  return results.rows.map((x) => ({
     policy: x.policy,
     name: x.asset,
-    txs: x.txs
+    txs: x.txs,
   }));
 };
 
 export const handleGetAssetMintTxs =
   (pool: Pool) =>
   async (req: Request, res: Response): Promise<void> => {
-    if (!req.params.fingerprint) throw new Error("missing fingerprint in request params");
+    if (!req.params.fingerprint)
+      throw new Error("missing fingerprint in request params");
 
     const metadata = await getAssetMintMetadata(pool, req.params.fingerprint);
     res.send(metadata);
