@@ -38,6 +38,7 @@ import { handleGetRegHistory } from "./services/regHistory";
 import { handleGetRewardHistory } from "./services/rewardHistory";
 import { handleGetMultiAssetSupply } from "./services/multiAssetSupply";
 import { handleGetMultiAssetTxMintMetadata } from "./services/multiAssetTxMint";
+import { handleGetAssetMintTxs } from "./services/assetMintTxs";
 import { handleTxStatus } from "./services/txStatus";
 import { handleUtxoDiffSincePoint } from "./services/utxoDiffSincePoint";
 import { handleGetTxIO, handleGetTxOutput } from "./services/txIO";
@@ -425,6 +426,11 @@ const routes: Route[] = [
     path: "/multiAsset/metadata",
     method: "post",
     handler: handleGetMultiAssetTxMintMetadata(pool),
+  },
+  {
+    path: "/asset/:fingerprint/mintTxs",
+    method: "get",
+    handler: handleGetAssetMintTxs(pool),
   },
   {
     path: "/tx/status",
