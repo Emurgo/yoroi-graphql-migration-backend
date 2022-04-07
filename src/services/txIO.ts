@@ -13,7 +13,13 @@ const QUERY_IO = `
   limit 1;`;
 
 const QUERY_OUT = `
-  select out_addr_val_pairs(tx.id, tx.hash)->$2::int as "out"
+  select
+    out_addr_val_pairs(tx.id, tx.hash)->$2::int as "out",
+    (
+      select encode(spendingTx.hash, 'hex')
+      from tx_in inner join tx spendingTx on tx_in.tx_in_id = spendingTx.id
+      where tx_in.tx_out_id = tx.id and tx_in.tx_out_index = $2
+    )  as "spendingTxHash"
   from tx
   where tx.hash = decode($1, 'hex')
   limit 1;`;
@@ -107,5 +113,6 @@ export const handleGetTxOutput =
         dataHash: obj.f3,
         assets: extractAssets(obj.f4),
       },
+      spendingTxHash: result.rows[0].spendingTxHash,
     });
   };
