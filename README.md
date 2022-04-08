@@ -946,6 +946,26 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   }
   ```
 </details>
+<details>
+  <summary>/asset/:fingerprint/mintTxs</summary>
+  Retrieves all minting transactions for the given asset fingerprint together with its metadata, if any.
+
+  Output
+
+  ```js
+  {
+    policy: string, // hex-encoded policy
+    name: string, // hex-encoded asset name
+    txs: Array<{
+      hash: string,
+      metadata?: {
+        key: number,
+        json: any
+      }
+    }>
+  }
+  ```
+</details>
 
 <details>
   <summary>multiAsset/validateNFT/:fingerprint</summary>
