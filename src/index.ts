@@ -44,6 +44,7 @@ import { handleUtxoDiffSincePoint } from "./services/utxoDiffSincePoint";
 import { handleGetTxIO, handleGetTxOutput } from "./services/txIO";
 import { handleTipStatusGet, handleTipStatusPost } from "./services/tipStatus";
 import { handleGetTransactions } from "./services/transactions";
+import { handleValidateNft } from "./services/validateNft";
 
 import { handlePolicyIdExists } from "./services/policyIdExists";
 
@@ -431,6 +432,11 @@ const routes: Route[] = [
     path: "/asset/:fingerprint/mintTxs",
     method: "get",
     handler: handleGetAssetMintTxs(pool),
+  },
+  {
+    path: "/multiAsset/validateNFT/:fingerprint",
+    method: "post",
+    handler: handleValidateNft(pool)
   },
   {
     path: "/tx/status",

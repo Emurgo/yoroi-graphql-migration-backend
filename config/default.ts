@@ -16,5 +16,13 @@ export default {
     txsHashesRequestLimit: 150,
   },
   safeBlockDifference: process.env.SAFE_BLOCK_DIFFERENCE || "10",
-  usingQueueEndpoint: process.env.USE_SIGNED_TX_QUEUE || "false"
+  usingQueueEndpoint: process.env.USE_SIGNED_TX_QUEUE || "false",
+  aws: {
+    lambda: {
+      nftValidator: process.env.NFT_VALIDATOR_LAMBDA || "devNftValidatorLambda"
+    },
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
+    region: process.env.AWS_REGION || "eu-central-1"
+  },
 };

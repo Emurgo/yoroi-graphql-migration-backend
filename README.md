@@ -966,3 +966,30 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   }
   ```
 </details>
+
+<details>
+  <summary>multiAsset/validateNFT/:fingerprint</summary>
+  Retrieves image from an NFT and validates it. In case this was already done for the given NFT, simply return the validation results
+
+  Input
+
+  None (GET request)
+
+  Outputs:
+
+  ***200 OK*** (when the validation already happened)
+  ```js
+  {
+    status: string,
+    contents: Array<string>,
+    originalStatus: string,
+    thirdPartyReport: any
+  }
+  ```
+
+  ***204 No Content*** (when NFT is sent for validation)
+  ```js
+  {
+  }
+  ```
+</details>
