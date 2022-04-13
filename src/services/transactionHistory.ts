@@ -146,7 +146,7 @@ JOIN block b
             on tx.id = w."tx_id"
             JOIN stake_address as addr
             on w.addr_id = addr.id
-            where addr.hash_raw = any(('{}')::bytea array)
+            where addr.hash_raw = any(($7)::bytea array)
            ) hashes
     ),
     distinct_transactions AS (
