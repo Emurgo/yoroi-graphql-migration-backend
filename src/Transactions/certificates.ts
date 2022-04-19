@@ -1,8 +1,7 @@
 import { Pool } from "pg";
 
 export const createViewSql = `
-drop view if exists combined_certificates;
-create view combined_certificates as
+create or replace view combined_certificates as
 select 'StakeRegistration' as "jsType"
      , 'CertRegKey' as "formalType"
      , reg.tx_id as "txId"
