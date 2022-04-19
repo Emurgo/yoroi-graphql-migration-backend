@@ -436,7 +436,7 @@ const routes: Route[] = [
   {
     path: "/multiAsset/validateNFT/:fingerprint",
     method: "post",
-    handler: handleValidateNft(pool)
+    handler: handleValidateNft(pool),
   },
   {
     path: "/tx/status",
