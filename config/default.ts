@@ -25,4 +25,8 @@ export default {
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
     region: process.env.AWS_REGION || "eu-central-1"
   },
+  postgresOptions: {
+    workMem: process.env.WORK_MEM || "'2GB'",
+    maxParallelWorkers: process.env.MAX_PARALLEL_WORKERS || "12"
+  }
 };
