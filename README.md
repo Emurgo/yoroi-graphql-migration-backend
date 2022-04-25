@@ -958,6 +958,10 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
     name: string, // hex-encoded asset name
     txs: Array<{
       hash: string,
+      block: {
+        slot: number,
+        epoch: number
+      },
       metadata?: {
         key: number,
         json: any
