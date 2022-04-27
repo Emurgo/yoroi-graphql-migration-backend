@@ -29,8 +29,13 @@ const verifyExistingAnalysis = async (
   fingerprint: string,
   envName: string
 ) => {
-  const nftValidatorLambdaNameTemplate: string = config.get("aws.lambda.nftValidator");
-  const functionName = nftValidatorLambdaNameTemplate.replace("{envName}", envName);
+  const nftValidatorLambdaNameTemplate: string = config.get(
+    "aws.lambda.nftValidator"
+  );
+  const functionName = nftValidatorLambdaNameTemplate.replace(
+    "{envName}",
+    envName
+  );
 
   const response = await lambda
     .invoke({
@@ -55,8 +60,13 @@ const sendNftForAnalysis = async (
   metadatImage: string,
   envName: string
 ): Promise<void> => {
-  const nftValidatorLambdaNameTemplate: string = config.get("aws.lambda.nftValidator");
-  const functionName = nftValidatorLambdaNameTemplate.replace("{envName}", envName);
+  const nftValidatorLambdaNameTemplate: string = config.get(
+    "aws.lambda.nftValidator"
+  );
+  const functionName = nftValidatorLambdaNameTemplate.replace(
+    "{envName}",
+    envName
+  );
 
   const response = await lambda
     .invoke({
@@ -87,7 +97,11 @@ export const handleValidateNft =
     const envName = req.body.envName ?? "dev";
 
     const lambda = getLambda();
-    const existingAnalysis = await verifyExistingAnalysis(lambda, fingerprint, envName);
+    const existingAnalysis = await verifyExistingAnalysis(
+      lambda,
+      fingerprint,
+      envName
+    );
     if (existingAnalysis !== "NOT_FOUND") {
       return res.status(200).send(existingAnalysis);
     }
