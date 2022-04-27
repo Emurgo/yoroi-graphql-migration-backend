@@ -19,7 +19,7 @@ export default {
   usingQueueEndpoint: process.env.USE_SIGNED_TX_QUEUE || "false",
   aws: {
     lambda: {
-      nftValidator: process.env.NFT_VALIDATOR_LAMBDA || "devNftValidatorLambda"
+      nftValidator: process.env.NFT_VALIDATOR_LAMBDA || "{envName}NftValidatorLambda"
     },
     accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
