@@ -26,11 +26,20 @@ const getLambda = (): AWS.Lambda => {
 
 const verifyExistingAnalysis = async (
   lambda: AWS.Lambda,
-  fingerprint: string
+  fingerprint: string,
+  envName: string
 ) => {
+  const nftValidatorLambdaNameTemplate: string = config.get(
+    "aws.lambda.nftValidator"
+  );
+  const functionName = nftValidatorLambdaNameTemplate.replace(
+    "{envName}",
+    envName
+  );
+
   const response = await lambda
     .invoke({
-      FunctionName: config.get("aws.lambda.nftValidator"),
+      FunctionName: functionName,
       InvocationType: "RequestResponse",
       Payload: JSON.stringify({
         action: "Verify",
@@ -48,11 +57,20 @@ const verifyExistingAnalysis = async (
 const sendNftForAnalysis = async (
   lambda: AWS.Lambda,
   fingerprint: string,
-  metadatImage: string
+  metadatImage: string,
+  envName: string
 ): Promise<void> => {
+  const nftValidatorLambdaNameTemplate: string = config.get(
+    "aws.lambda.nftValidator"
+  );
+  const functionName = nftValidatorLambdaNameTemplate.replace(
+    "{envName}",
+    envName
+  );
+
   const response = await lambda
     .invoke({
-      FunctionName: config.get("aws.lambda.nftValidator"),
+      FunctionName: functionName,
       InvocationType: "Event",
       Payload: JSON.stringify({
         action: "Validate",
@@ -76,8 +94,14 @@ export const handleValidateNft =
       });
     }
 
+    const envName = req.body.envName ?? "dev";
+
     const lambda = getLambda();
-    const existingAnalysis = await verifyExistingAnalysis(lambda, fingerprint);
+    const existingAnalysis = await verifyExistingAnalysis(
+      lambda,
+      fingerprint,
+      envName
+    );
     if (existingAnalysis !== "NOT_FOUND") {
       return res.status(200).send(existingAnalysis);
     }
@@ -122,7 +146,7 @@ export const handleValidateNft =
       return res.status(204).send();
     }
 
-    await sendNftForAnalysis(lambda, fingerprint, metadata.image);
+    await sendNftForAnalysis(lambda, fingerprint, metadata.image, envName);
 
     return res.status(202).send();
   };
