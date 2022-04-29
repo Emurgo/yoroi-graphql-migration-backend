@@ -491,12 +491,24 @@ server.listen(port, async () => {
     (await pool.query("SHOW max_parallel_workers;")).rows[0]
       .max_parallel_workers
   );
+  console.log(
+    "current pool max_parallel_workers_per_gather",
+    (await pool.query("SHOW max_parallel_workers_per_gather;")).rows[0]
+      .max_parallel_workers_per_gather
+  );
 
-  console.log("setting new values for work_mem & max_parallel_workers");
+  console.log(
+    "setting new values for work_mem, max_parallel_workers & max_parallel_workers_per_gather"
+  );
   await pool.query(`SET work_mem=${config.get("postgresOptions.workMem")};`);
   await pool.query(
     `SET max_parallel_workers=${config.get(
       "postgresOptions.maxParallelWorkers"
+    )};`
+  );
+  await pool.query(
+    `SET max_parallel_workers_per_gather=${config.get(
+      "postgresOptions.maxParallelWorkersPerGather"
     )};`
   );
 
@@ -508,6 +520,11 @@ server.listen(port, async () => {
     "new pool max_parallel_workers",
     (await pool.query("SHOW max_parallel_workers;")).rows[0]
       .max_parallel_workers
+  );
+  console.log(
+    "new pool max_parallel_workers_per_gather",
+    (await pool.query("SHOW max_parallel_workers_per_gather;")).rows[0]
+      .max_parallel_workers_per_gather
   );
 
   console.log(`listening on ${port}...`);
