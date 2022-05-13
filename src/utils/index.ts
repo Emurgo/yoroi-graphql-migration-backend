@@ -40,12 +40,12 @@ type Handler = (
   req: Request,
   res: Response,
   next: NextFunction
-) => Promise<void> | void;
+) => Promise<void> | void | Promise<Response>;
 
 export interface Route {
   path: string;
   method: string;
-  handler: Handler | Handler[];
+  handler: Handler | Handler[] | Response;
 }
 
 export const applyRoutes = (routes: Route[], router: Router) => {

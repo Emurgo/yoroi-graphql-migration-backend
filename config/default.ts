@@ -17,6 +17,18 @@ export default {
   },
   safeBlockDifference: process.env.SAFE_BLOCK_DIFFERENCE || "10",
   usingQueueEndpoint: process.env.USE_SIGNED_TX_QUEUE || "false",
+  aws: {
+    lambda: {
+      nftValidator: "{envName}NftValidatorLambda"
+    },
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
+    region: process.env.AWS_REGION || "eu-central-1"
+  },
+  postgresOptions: {
+    workMem: process.env.WORK_MEM || "'2GB'",
+    maxParallelWorkers: process.env.MAX_PARALLEL_WORKERS || "12"
+  },
   coinPrice: {
     currentPriceHttpCacheControlMaxAge: 60, // which is the price data refresh interval
     logLevel: "info",

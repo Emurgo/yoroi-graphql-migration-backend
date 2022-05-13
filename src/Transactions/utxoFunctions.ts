@@ -1,7 +1,6 @@
 import { Pool } from "pg";
 
-const sql = `DROP FUNCTION IF EXISTS utxo_used_as_valid_input;
-CREATE OR REPLACE FUNCTION utxo_used_as_valid_input (
+const sql = `CREATE OR REPLACE FUNCTION utxo_used_as_valid_input (
   _tx_out_tx_id bigint,
   _tx_out_index smallint,
   _reference_block_no uinteger,
@@ -22,7 +21,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP FUNCTION IF EXISTS utxo_used_as_invalid_collateral;
 CREATE OR REPLACE FUNCTION utxo_used_as_invalid_collateral (
   _tx_out_tx_id bigint,
   _tx_out_index smallint,

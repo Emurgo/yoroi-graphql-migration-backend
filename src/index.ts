@@ -38,11 +38,13 @@ import { handleGetRegHistory } from "./services/regHistory";
 import { handleGetRewardHistory } from "./services/rewardHistory";
 import { handleGetMultiAssetSupply } from "./services/multiAssetSupply";
 import { handleGetMultiAssetTxMintMetadata } from "./services/multiAssetTxMint";
+import { handleGetAssetMintTxs } from "./services/assetMintTxs";
 import { handleTxStatus } from "./services/txStatus";
 import { handleUtxoDiffSincePoint } from "./services/utxoDiffSincePoint";
 import { handleGetTxIO, handleGetTxOutput } from "./services/txIO";
 import { handleTipStatusGet, handleTipStatusPost } from "./services/tipStatus";
 import { handleGetTransactions } from "./services/transactions";
+import { handleValidateNft } from "./services/validateNft";
 
 import { handlePolicyIdExists } from "./services/policyIdExists";
 
@@ -304,7 +306,7 @@ const getStatus = async (req: Request, res: Response) => {
 const getFundInfo = async (req: Request, res: Response) => {
   res.send({
     currentFund: {
-      id: 9,
+      id: 8,
       registrationStart: "2021-11-18T11:00:00Z",
       registrationEnd: "2125-01-13T11:00:00Z",
       votingStart: "2022-04-14T11:00:00Z",
@@ -429,6 +431,16 @@ const routes: Route[] = [
     handler: handleGetMultiAssetTxMintMetadata(pool),
   },
   {
+    path: "/asset/:fingerprint/mintTxs",
+    method: "get",
+    handler: handleGetAssetMintTxs(pool),
+  },
+  {
+    path: "/multiAsset/validateNFT/:fingerprint",
+    method: "post",
+    handler: handleValidateNft(pool),
+  },
+  {
     path: "/tx/status",
     method: "post",
     handler: handleTxStatus(pool),
@@ -472,4 +484,34 @@ const server = http.createServer(router);
 const wss = new websockets.Server({ server });
 wss.on("connection", connectionHandler(pool));
 
-server.listen(port, () => console.log(`listening on ${port}...`));
+server.listen(port, async () => {
+  console.log(
+    "current pool work_mem",
+    (await pool.query("SHOW work_mem;")).rows[0].work_mem
+  );
+  console.log(
+    "current pool max_parallel_workers",
+    (await pool.query("SHOW max_parallel_workers;")).rows[0]
+      .max_parallel_workers
+  );
+
+  console.log("setting new values for work_mem & max_parallel_workers");
+  await pool.query(`SET work_mem=${config.get("postgresOptions.workMem")};`);
+  await pool.query(
+    `SET max_parallel_workers=${config.get(
+      "postgresOptions.maxParallelWorkers"
+    )};`
+  );
+
+  console.log(
+    "new pool work_mem",
+    (await pool.query("SHOW work_mem;")).rows[0].work_mem
+  );
+  console.log(
+    "new pool max_parallel_workers",
+    (await pool.query("SHOW max_parallel_workers;")).rows[0]
+      .max_parallel_workers
+  );
+
+  console.log(`listening on ${port}...`);
+});

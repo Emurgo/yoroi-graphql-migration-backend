@@ -946,3 +946,54 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   }
   ```
 </details>
+<details>
+  <summary>/asset/:fingerprint/mintTxs</summary>
+  Retrieves all minting transactions for the given asset fingerprint together with its metadata, if any.
+
+  Output
+
+  ```js
+  {
+    policy: string, // hex-encoded policy
+    name: string, // hex-encoded asset name
+    txs: Array<{
+      hash: string,
+      block: {
+        slot: number,
+        epoch: number
+      },
+      metadata?: {
+        key: number,
+        json: any
+      }
+    }>
+  }
+  ```
+</details>
+
+<details>
+  <summary>multiAsset/validateNFT/:fingerprint</summary>
+  Retrieves image from an NFT and validates it. In case this was already done for the given NFT, simply return the validation results
+
+  Input
+
+  None (GET request)
+
+  Outputs:
+
+  ***200 OK*** (when the validation already happened)
+  ```js
+  {
+    status: string,
+    contents: Array<string>,
+    originalStatus: string,
+    thirdPartyReport: any
+  }
+  ```
+
+  ***204 No Content*** (when NFT is sent for validation)
+  ```js
+  {
+  }
+  ```
+</details>

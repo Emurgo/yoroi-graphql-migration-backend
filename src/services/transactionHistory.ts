@@ -46,7 +46,7 @@ const askTransactionSqlQuery = `
             select tx.hash as hash
             FROM tx
 
-            JOIN tx_in 
+            JOIN tx_in
               ON tx_in.tx_in_id = tx.id
 
             ${
@@ -56,11 +56,11 @@ const askTransactionSqlQuery = `
               we have to check the address for all outputs that occur in the input table
             **/ ""
             }
-            JOIN tx_out source_tx_out 
-              ON tx_in.tx_out_id = source_tx_out.tx_id 
+            JOIN tx_out source_tx_out
+              ON tx_in.tx_out_id = source_tx_out.tx_id
              AND tx_in.tx_out_index::smallint = source_tx_out.index::smallint
 
-            JOIN tx source_tx 
+            JOIN tx source_tx
               ON source_tx_out.tx_id = source_tx.id
 
             WHERE source_tx_out.address = ANY(($1)::varchar array)
@@ -73,7 +73,7 @@ const askTransactionSqlQuery = `
           select tx.hash as hash
             FROM tx
 
-            JOIN collateral_tx_in 
+            JOIN collateral_tx_in
               ON collateral_tx_in.tx_in_id = tx.id
 
             ${
@@ -83,11 +83,11 @@ const askTransactionSqlQuery = `
               we have to check the address for all outputs that occur in the input table
             **/ ""
             }
-            JOIN tx_out source_tx_out 
-              ON collateral_tx_in.tx_out_id = source_tx_out.tx_id 
+            JOIN tx_out source_tx_out
+              ON collateral_tx_in.tx_out_id = source_tx_out.tx_id
             AND collateral_tx_in.tx_out_index::smallint = source_tx_out.index::smallint
 
-            JOIN tx source_tx 
+            JOIN tx source_tx
               ON source_tx_out.tx_id = source_tx.id
 
             WHERE source_tx_out.address = ANY(($1)::varchar array)
@@ -107,10 +107,10 @@ const askTransactionSqlQuery = `
           UNION
             ${/* 3) Get all certificates for the transaction */ ""}
             select tx.hash as hash
-            from tx 
+            from tx
 
-            JOIN combined_certificates as certs 
-              on tx.id = certs."txId" 
+            JOIN combined_certificates as certs
+              on tx.id = certs."txId"
             where
               (
                 certs."formalType" in ('CertRegKey', 'CertDeregKey','CertDelegate')
@@ -161,8 +161,8 @@ const askTransactionSqlQuery = `
        , block.epoch_no as "blockEpochNo"
        , block.slot_no as "blockSlotNo"
        , block.epoch_slot_no as "blockSlotInEpoch"
-       , case when vrf_key is null then 'byron' 
-              else 'shelley' end 
+       , case when vrf_key is null then 'byron'
+              else 'shelley' end
          as "blockEra"
        , block.time at time zone 'UTC' as "includedAt"
        , (select json_agg(( source_tx_out.address
@@ -177,9 +177,9 @@ const askTransactionSqlQuery = `
           FROM tx inadd_tx
           JOIN tx_in
             ON tx_in.tx_in_id = inadd_tx.id
-          JOIN tx_out source_tx_out 
+          JOIN tx_out source_tx_out
             ON tx_in.tx_out_id = source_tx_out.tx_id AND tx_in.tx_out_index::smallint = source_tx_out.index::smallint
-          JOIN tx source_tx 
+          JOIN tx source_tx
             ON source_tx_out.tx_id = source_tx.id
           where inadd_tx.hash = tx.hash) as "inAddrValPairs"
         , (select json_agg(( source_tx_out.address
@@ -194,20 +194,20 @@ const askTransactionSqlQuery = `
           FROM tx inadd_tx
           JOIN collateral_tx_in
           ON collateral_tx_in.tx_in_id = inadd_tx.id
-          JOIN tx_out source_tx_out 
+          JOIN tx_out source_tx_out
           ON collateral_tx_in.tx_out_id = source_tx_out.tx_id AND collateral_tx_in.tx_out_index::smallint = source_tx_out.index::smallint
-          JOIN tx source_tx 
+          JOIN tx source_tx
           ON source_tx_out.tx_id = source_tx.id
           where inadd_tx.hash = tx.hash) as "collateralInAddrValPairs"
        , (select json_agg((
-                    "address", 
+                    "address",
                     "value",
                     "txDataHash",
                    (select json_agg(ROW(encode("ma"."policy", 'hex'), encode("ma"."name", 'hex'), "quantity"))
                         FROM ma_tx_out
                         inner join multi_asset ma on ma_tx_out.ident = ma.id
                         JOIN tx_out token_tx_out
-                        ON tx.id = token_tx_out.tx_id         
+                        ON tx.id = token_tx_out.tx_id
                         WHERE ma_tx_out."tx_out_id" = token_tx_out.id AND hasura_to."address" = token_tx_out.address AND hasura_to.index = token_tx_out.index)
                     ) order by "index" asc) as outAddrValPairs
           from "TransactionOutput" hasura_to
@@ -218,9 +218,9 @@ const askTransactionSqlQuery = `
           on addr.id = w.addr_id
           where tx_id = tx.id) as withdrawals
        , (select json_agg(row_to_json(combined_certificates) order by "certIndex" asc)
-          from combined_certificates 
+          from combined_certificates
           where "txId" = tx.id) as certificates
-                            
+
   from tx
 
   JOIN hashes
@@ -229,10 +229,10 @@ const askTransactionSqlQuery = `
   JOIN block
     on block.id = tx.block_id
 
-  LEFT JOIN pool_metadata_ref 
-    on tx.id = pool_metadata_ref.registered_tx_id 
+  LEFT JOIN pool_metadata_ref
+    on tx.id = pool_metadata_ref.registered_tx_id
 
-  where 
+  where
         ${/* is within untilBlock (inclusive) */ ""}
         block.block_no <= $2
         and (
@@ -244,7 +244,7 @@ const askTransactionSqlQuery = `
             /* 2) Is in the same block as the "after" field, but is tx that appears afterwards */ ""
           }
           (block.block_no = $3 and tx.block_index > $4)
-        ) 
+        )
 
   order by block.time asc, tx.block_index asc
   limit $5;
@@ -365,6 +365,7 @@ export const askTransactionHistory = async (
       epochNo: row.blockEpochNo,
       slotNo: row.blockSlotInEpoch,
     };
+
     return {
       hash: row.hash.toString("hex"),
       block: blockFrag,
