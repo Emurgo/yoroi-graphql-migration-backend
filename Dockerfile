@@ -10,10 +10,15 @@ RUN apk add git openssh
 COPY . .
 
 RUN npm install
+RUN cd script/coin-price-data-fetcher && npm install
+RUN apt-get -y install cron
+RUN touch /var/log/cron.log
+RUN (crontab -l ; echo "*/5 * * * * cd /usr/src/app/script/coin-price-data-fetcher && npm start-fetcher") | crontab
+
 # If you are building your code for production
 # RUN npm ci --only=production
 
 # Bundle app source
 
 EXPOSE 8080
-CMD [ "node", "./dist/index.js" ]
+CMD cron && node ./dist/index.js
