@@ -108,6 +108,19 @@ async function getTickersFromS3Since(
 }
 
 export async function start() {
+  try {
+    await util.promisify(S3.getObject.bind(S3))(
+      // eslint-disable-next-line
+      // @ts-expect-error: TypeScript can't get `util.promisify` straight
+      { Bucket, Key: '__BEGIN_FLAG' }
+    );
+  } catch (error) {
+    if (error.message === 'The specified key does not exist.') {
+      logger.info('no begin flag');
+      return;
+    }
+  }
+
   const client = new Client({
     user: config.get("db.user"),
     host: config.get("db.host"),
