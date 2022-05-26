@@ -112,11 +112,11 @@ export async function start() {
     await util.promisify(S3.getObject.bind(S3))(
       // eslint-disable-next-line
       // @ts-expect-error: TypeScript can't get `util.promisify` straight
-      { Bucket, Key: '__BEGIN_FLAG' }
+      { Bucket, Key: "__BEGIN_FLAG" }
     );
   } catch (error) {
-    if (error.message === 'The specified key does not exist.') {
-      logger.info('no begin flag');
+    if (error.message === "The specified key does not exist.") {
+      logger.info("no begin flag");
       return;
     }
   }
