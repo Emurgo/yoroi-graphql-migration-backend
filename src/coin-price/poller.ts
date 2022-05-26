@@ -108,6 +108,7 @@ async function getTickersFromS3Since(
 }
 
 export async function start() {
+  // do nothing if there isn't a flag file present in the S3 bucket
   try {
     await util.promisify(S3.getObject.bind(S3))(
       // eslint-disable-next-line
