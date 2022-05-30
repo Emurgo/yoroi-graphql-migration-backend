@@ -77,6 +77,14 @@ const pool = new Pool({
   password: config.get("db.password"),
   port: config.get("db.port"),
 });
+
+const yoroiDbPool = new Pool({
+  user: config.get("yoroiDb.user"),
+  host: config.get("yoroiDb.host"),
+  database: config.get("yoroiDb.database"),
+  password: config.get("yoroiDb.password"),
+  port: config.get("yoroiDb.port"),
+});
 createCertificatesView(pool);
 createValidUtxosView(pool);
 createTransactionOutputView(pool);
@@ -206,8 +214,8 @@ const txHistory = async (req: Request, res: Response) => {
       const [referenceTx, referenceBlock] =
         (body.after && [body.after.tx, body.after.block]) || [];
       const referenceBestBlock = body.untilBlock;
-      const untilBlockNum = await askBlockNumByHash(pool, referenceBestBlock);
-      const afterBlockInfo = await askBlockNumByTxHash(pool, referenceTx);
+      const untilBlockNum = await askBlockNumByHash(pool, referenceBestBlock, yoroiDbPool);
+      const afterBlockInfo = await askBlockNumByTxHash(pool, referenceTx, yoroiDbPool);
 
       if (
         untilBlockNum.kind === "error" &&
@@ -235,12 +243,18 @@ const txHistory = async (req: Request, res: Response) => {
       }
       const afterInfo = getOrDefaultAfterParam(afterBlockInfo);
 
+      const type = (await utils.shouldUseYoroiDb(yoroiDbPool))
+        ? "yoroi-db"
+        : "legacy";
+
       const maybeTxs = await askTransactionHistory(
         pool,
+        yoroiDbPool,
         limit,
         body.addresses,
         afterInfo,
-        untilBlockNum.value
+        untilBlockNum.value,
+        type
       );
       switch (maybeTxs.kind) {
         case "ok": {
@@ -491,24 +505,6 @@ server.listen(port, async () => {
   );
   console.log(
     "current pool max_parallel_workers",
-    (await pool.query("SHOW max_parallel_workers;")).rows[0]
-      .max_parallel_workers
-  );
-
-  console.log("setting new values for work_mem & max_parallel_workers");
-  await pool.query(`SET work_mem=${config.get("postgresOptions.workMem")};`);
-  await pool.query(
-    `SET max_parallel_workers=${config.get(
-      "postgresOptions.maxParallelWorkers"
-    )};`
-  );
-
-  console.log(
-    "new pool work_mem",
-    (await pool.query("SHOW work_mem;")).rows[0].work_mem
-  );
-  console.log(
-    "new pool max_parallel_workers",
     (await pool.query("SHOW max_parallel_workers;")).rows[0]
       .max_parallel_workers
   );

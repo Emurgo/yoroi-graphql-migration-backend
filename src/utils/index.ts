@@ -1,3 +1,4 @@
+import config from "config";
 import { blake2b } from "hash-wasm";
 import { Router, Request, Response, NextFunction } from "express";
 import {
@@ -12,6 +13,7 @@ import {
 import { decode, fromWords } from "bech32";
 import { Prefixes } from "./cip5";
 import { Asset } from "../Transactions/types";
+import { Pool } from "pg";
 
 export const contentTypeHeaders = {
   headers: { "Content-Type": "application/json" },
@@ -52,7 +54,7 @@ export const applyRoutes = (routes: Route[], router: Router) => {
   for (const route of routes) {
     const { method, path, handler } = route;
     // uncomment this line if you want to test locally
-    // (router as any)[method](`/api${path}`, handler);
+    (router as any)[method](`/api${path}`, handler);
     (router as any)[method](path, handler);
   }
 };
@@ -289,3 +291,12 @@ export async function calculateTxId(signedTx: string): Promise<string> {
   const blake2bTxHash = await blake2b(txBody.to_bytes(), 256);
   return blake2bTxHash;
 }
+
+export const shouldUseYoroiDb = async (yoroiDbPool: Pool): Promise<boolean> => {
+  if (config.get("useYoroiDb") !== "true") return false;
+
+  const results = await yoroiDbPool.query("SELECT is_ok FROM sync_status");
+  if (results.rowCount === 0) return false;
+
+  return results.rows[0].is_ok ?? false;
+};

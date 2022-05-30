@@ -6,6 +6,14 @@ export default {
     password: process.env.POSTGRES_PASSWORD || "",
     port: process.env.POSTGRES_PORT || 5432
   },
+  yoroiDb: {
+    user: process.env.YOROI_POSTGRES_USER || "",
+    host: process.env.YOROI_POSTGRES_HOST || "",
+    database: process.env.YOROI_POSTGRES_DB || "",
+    password: process.env.YOROI_POSTGRES_PASSWORD || "",
+    port: process.env.YOROI_POSTGRES_PORT || 0
+  },
+  useYoroiDb: process.env.USE_YOROI_DB || "false",
   server: {
     addressRequestLimit: 50,
     apiResponseLimit: 50,

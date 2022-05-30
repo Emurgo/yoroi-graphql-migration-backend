@@ -3,6 +3,7 @@ import {
   UtilEither,
   extractAssets,
   getAddressesByType,
+  shouldUseYoroiDb,
 } from "../utils";
 
 import {
@@ -24,6 +25,8 @@ import {
 
 import { Pool } from "pg";
 
+const MAX_INT = "2147483647";
+
 /**
   Everything else in this repo is using graphql, so why psql here?
   Hasura and the rest of the GraphQL start are _slow_ for this sort of thing.
@@ -36,7 +39,7 @@ import { Pool } from "pg";
   also left the original GraphQL query in this file. 
   Beware! The GraphQL query never passed tests, and doesn't pull blockindex/tx_ordinal/tx_index.
 **/
-const askTransactionSqlQuery = `
+const legacyTxHistorySql = `
   with
     hashes as (
       select distinct hash
@@ -250,7 +253,92 @@ const askTransactionSqlQuery = `
   limit $5;
 `;
 
-const MAX_INT = "2147483647";
+const txHistorySql = `
+WITH ids as (
+  SELECT DISTINCT tx.id, tx.block__time, tx.block_index
+  FROM history_tx tx
+      JOIN history_addr addr on tx.id = addr.tx_id
+      WHERE addr.address = ANY($1::text array)
+      AND block__block_no + 0 <= $2
+      AND (
+          block__block_no + 0 > $3
+          OR (
+              block__block_no + 0 = $3
+              AND block_index + 0 > $4
+          )
+      )
+  ORDER BY block__time ASC, block_index asc
+  limit $5
+)
+SELECT tx.hash,
+tx.fee,
+tx.valid_contract,
+tx.script_size,
+tx.metadata,
+tx.block_index "txIndex",
+tx.block__block_no as "blockNumber",
+tx.block__hash as "blockHash",
+tx.block__epoch_no as "blockEpochNo",
+tx.block__slot_no as "blockSlotNo",
+tx.block__epoch_slot_no as "blockSlotInEpoch",
+tx.block__block_no as "blockNumber",
+case
+    when tx.block__vrf_key is null then 'byron'
+    else 'shelley' end
+as "blockEra",
+tx.block__time at time zone 'UTC' as "includedAt",
+tx."inAddrValPairs",
+tx."collateralInAddrValPairs",
+tx."outAddrValPairs",
+tx."withdrawals",
+tx."certificates"
+FROM history_tx tx
+  JOIN ids on ids.id = tx.id
+`;
+
+const getHistoryLegacy = async (
+  pool: Pool,
+  addresses: string[],
+  untilNum: number,
+  after: {
+    blockNumber: number,
+    txIndex: number
+  },
+  limit: number,
+  paymentCreds: string[],
+  stakingKeys: string[]
+) => {
+  return await pool.query(legacyTxHistorySql, [
+    addresses,
+    untilNum,
+    after.blockNumber,
+    after.txIndex,
+    limit,
+    paymentCreds,
+    stakingKeys,
+  ]);
+};
+
+const getHistoryYoroiDb = async (
+  pool: Pool,
+  addresses: string[],
+  untilNum: number,
+  after: {
+    blockNumber: number,
+    txIndex: number
+  },
+  limit: number,
+  paymentCreds: string[],
+  stakingKeys: string[]
+) => {
+  return await pool.query(txHistorySql, [
+    [...addresses, ...paymentCreds, ...stakingKeys],
+    untilNum,
+    after.blockNumber,
+    after.txIndex,
+    limit
+  ]);
+};
 
 function buildMetadataObj(
   metadataMap: null | Record<string, string>
@@ -288,26 +376,66 @@ function buildMetadataObj(
   return result;
 }
 
+const _getHistory = async (
+  pool: Pool,
+  yoroiDbPool: Pool,
+  addresses: string[],
+  untilNum: number,
+  after: {
+    blockNumber: number,
+    txIndex: number
+  },
+  limit: number,
+  paymentCreds: string[],
+  stakingKeys: string[],
+  type: "legacy" | "yoroi-db"
+) => {
+  if (type === "legacy")
+    return await getHistoryLegacy(
+      pool,
+      addresses,
+      untilNum,
+      after,
+      limit,
+      paymentCreds,
+      stakingKeys
+    );
+
+  return await getHistoryYoroiDb(
+    yoroiDbPool,
+    addresses,
+    untilNum,
+    after,
+    limit,
+    paymentCreds.map(x => x.replace("\\x", "")),
+    stakingKeys.map(x => x.replace("\\x", ""))
+  );
+};
+
 export const askTransactionHistory = async (
   pool: Pool,
+  yoroiDbPool: Pool,
   limit: number,
   addresses: string[],
   after: {
     blockNumber: number;
     txIndex: number;
   },
-  untilNum: number
+  untilNum: number,
+  type: "legacy" | "yoroi-db"
 ): Promise<UtilEither<TransactionFrag[]>> => {
   const addressTypes = getAddressesByType(addresses);
-  const ret = await pool.query(askTransactionSqlQuery, [
+  const ret = await _getHistory(
+    pool,
+    yoroiDbPool,
     [...addressTypes.legacyAddr, ...addressTypes.bech32],
     untilNum,
-    after.blockNumber,
-    after.txIndex,
+    after,
     limit,
     addressTypes.paymentCreds,
     addressTypes.stakingKeys,
-  ]);
+    type,
+  );
   const txs = ret.rows.map((row: any): TransactionFrag => {
     const inputs = row.inAddrValPairs
       ? row.inAddrValPairs.map(
@@ -409,14 +537,47 @@ const askBlockNumByTxHashQuery = `
   WHERE "tx"."hash"=decode($1, 'hex')
 `;
 
+type YoroiDbStatus = "ok" | "not_ok" | "skip";
+
+const confirmYoroiDbStatus = async (yoroiDbPool: Pool, blockNumberToCompare: number): Promise<YoroiDbStatus> => {
+  if (await shouldUseYoroiDb(yoroiDbPool)) {
+    const yoroiDbBestBlockResult = await yoroiDbPool.query(`
+      SELECT block__block_no as "blockNumber"
+      FROM history_tx
+      WHERE block__block_no = (SELECT MAX(block__block_no) FROM history_tx) limit 1
+    `);
+    if (yoroiDbBestBlockResult.rowCount > 0) {
+      const yoroiDbBestBlockNo = parseInt(yoroiDbBestBlockResult.rows[0].blockNumber);
+
+      // we are using yoroi-db but the asked block hash is not yet there
+      if (blockNumberToCompare > yoroiDbBestBlockNo) {
+        return "not_ok";
+      }
+    }
+
+    return "ok";
+  }
+
+  return "skip";
+};
+
 export const askBlockNumByTxHash = async (
   pool: Pool,
-  hash: string | undefined
+  hash: string | undefined,
+  yoroiDbPool?: Pool,
 ): Promise<UtilEither<BlockNumByTxHashFrag>> => {
   if (!hash) return { kind: "error", errMsg: errMsgs.noValue };
 
   try {
     const res = await pool.query(askBlockNumByTxHashQuery, [hash]);
+
+    if (yoroiDbPool) {
+      const yoroiDbStatus = await confirmYoroiDbStatus(yoroiDbPool, res.rows[0].blockNumber);
+      if (yoroiDbStatus === "not_ok") {
+        return { kind: "error", errMsg: errMsgs.noValue };
+      }
+    }
+
     return {
       kind: "ok",
       value: {
@@ -442,7 +603,8 @@ const askBlockNumByHashQuery = `
 
 export const askBlockNumByHash = async (
   pool: Pool,
-  hash: string
+  hash: string,
+  yoroiDbPool?: Pool,
 ): Promise<UtilEither<number>> => {
   if (!hash) return { kind: "error", errMsg: errMsgs.noValue };
 
@@ -450,6 +612,14 @@ export const askBlockNumByHash = async (
     const res = await pool.query(askBlockNumByHashQuery, [hash]);
     if (res.rows.length === 0)
       return { kind: "error", errMsg: errMsgs.noValue };
+
+    if (yoroiDbPool) {
+      const yoroiDbStatus = await confirmYoroiDbStatus(yoroiDbPool, res.rows[0].blockNumber);
+      if (yoroiDbStatus === "not_ok") {
+        return { kind: "error", errMsg: errMsgs.noValue };
+      }
+    }
+
     return {
       kind: "ok",
       value: res.rows[0].blockNumber,
