@@ -4,11 +4,7 @@ import config from "config";
 import AWS from "aws-sdk";
 import Logger from "bunyan";
 import { Client } from "pg";
-import {
-  createTickersTable,
-  getLatestTicker,
-  insertTicker
-} from "./db-api";
+import { createTickersTable, getLatestTicker, insertTicker } from "./db-api";
 
 AWS.config.update({ region: config.get("coinPrice.s3.region") });
 
@@ -42,7 +38,7 @@ async function getTickersFromS3Since(
   dataCallback: (ticker: Buffer) => Promise<void>,
   errorCallback: () => Promise<void>,
   successCallback: () => Promise<void>,
-  logger: Logger,
+  logger: Logger
 ): Promise<void> {
   let continuationToken = undefined;
 
@@ -130,7 +126,6 @@ export async function start() {
 
     curlogger.info("start from timestamp", latestTicker?.timestamp);
 
-
     await client.query("BEGIN");
 
     await getTickersFromS3Since(
@@ -155,7 +150,7 @@ export async function start() {
         curlogger.info("commit");
         await client.query("COMMIT");
       },
-      curlogger,
+      curlogger
     );
   }
   await client.end();
@@ -163,7 +158,7 @@ export async function start() {
 
 try {
   start();
-} catch(error) {
+} catch (error) {
   logger.error("poller error", error);
   process.exit(1);
 }

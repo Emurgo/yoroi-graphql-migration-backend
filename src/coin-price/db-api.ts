@@ -32,7 +32,7 @@ export async function getLatestTicker(
 ): Promise<Ticker> {
   return (
     await db.query({
-      text: "SELECT * from tickers WHERE \"from\"=$1 ORDER BY time DESC LIMIT 1",
+      text: 'SELECT * from tickers WHERE "from"=$1 ORDER BY time DESC LIMIT 1',
       values: [fromCurrency],
     })
   ).rows.map(rowToTicker)[0];
@@ -48,8 +48,8 @@ export async function getTickers(
       const time = Math.floor(timestamp / 1000);
       const result = await db.query({
         text:
-          "SELECT \"time\" FROM tickers " +
-          "WHERE time<=$1 AND \"from\"=$2" +
+          'SELECT "time" FROM tickers ' +
+          'WHERE time<=$1 AND "from"=$2' +
           "ORDER BY time DESC " +
           "LIMIT 1;",
         values: [time, fromCurrency],
@@ -60,7 +60,7 @@ export async function getTickers(
 
   return (
     await db.query({
-      text: "SELECT * from tickers WHERE \"from\"=$1 AND time=ANY($2::bigint[])",
+      text: 'SELECT * from tickers WHERE "from"=$1 AND time=ANY($2::bigint[])',
       values: [fromCurrency, timeValues],
     })
   ).rows.map(rowToTicker);
@@ -71,7 +71,7 @@ export async function insertTicker(
   ticker: Ticker
 ): Promise<void> {
   await db.query({
-    text: "INSERT INTO tickers(\"from\", time, signature, prices) VALUES ($1, $2, $3, $4)",
+    text: 'INSERT INTO tickers("from", time, signature, prices) VALUES ($1, $2, $3, $4)',
     values: [
       ticker.from,
       Math.floor(ticker.timestamp / 1000),
