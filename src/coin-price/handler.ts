@@ -95,14 +95,8 @@ const logger = Logger.createLogger({
   level: config.get("coinPrice.logLevel"),
 });
 
-export default function installHandlers(
-  server: any,
-  db: Pool,
-): void {
-  server.get(
-    "/price/:from/current",
-    currentPrice.bind(null, db, logger)
-  );
+export default function installHandlers(server: any, db: Pool): void {
+  server.get("/price/:from/current", currentPrice.bind(null, db, logger));
   server.get(
     "/price/:from/:timestamps",
     historicalPrice.bind(null, db, logger)
