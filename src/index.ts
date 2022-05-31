@@ -296,6 +296,7 @@ const getStatus = async (req: Request, res: Response) => {
     }
   }
   res.send({
+    parallelSync: Boolean(process.env.PARALLEL_SYNC),
     isServerOk: true,
     isMaintenance: false,
     serverTime: Date.now(),
