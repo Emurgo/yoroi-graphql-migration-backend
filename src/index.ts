@@ -91,7 +91,7 @@ createTransactionOutputView(pool);
 createUtxoFunctions(pool);
 createTransactionUtilityFunctions(pool);
 
-const healthChecker = new HealthChecker(() => askBestBlock(pool));
+const healthChecker = new HealthChecker(() => askBestBlock(pool, yoroiDbPool));
 
 const router = express();
 
@@ -131,7 +131,7 @@ const addressesRequestLimit: number = config.get("server.addressRequestLimit");
 const apiResponseLimit: number = config.get("server.apiResponseLimit");
 
 const bestBlock = (pool: Pool) => async (_req: Request, res: Response) => {
-  const result = await askBestBlock(pool);
+  const result = await askBestBlock(pool, yoroiDbPool);
   switch (result.kind) {
     case "ok": {
       const cardano = result.value;
