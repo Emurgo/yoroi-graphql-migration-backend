@@ -4,11 +4,7 @@ import config from "config";
 import AWS from "aws-sdk";
 import Logger from "bunyan";
 import { Client } from "pg";
-import {
-  createTickersTable,
-  getLatestTicker,
-  insertTicker
-} from "./db-api";
+import { createTickersTable, getLatestTicker, insertTicker } from "./db-api";
 
 AWS.config.update({ region: config.get("coinPrice.s3.region") });
 
@@ -42,7 +38,7 @@ async function getTickersFromS3Since(
   dataCallback: (ticker: Buffer) => Promise<void>,
   errorCallback: () => Promise<void>,
   successCallback: () => Promise<void>,
-  logger: Logger,
+  logger: Logger
 ): Promise<void> {
   let continuationToken = undefined;
 
@@ -108,6 +104,20 @@ async function getTickersFromS3Since(
 }
 
 export async function start() {
+  // do nothing if there isn't a flag file present in the S3 bucket
+  try {
+    await util.promisify(S3.getObject.bind(S3))(
+      // eslint-disable-next-line
+      // @ts-expect-error: TypeScript can't get `util.promisify` straight
+      { Bucket, Key: "__BEGIN_FLAG" }
+    );
+  } catch (error) {
+    if (error.message === "The specified key does not exist.") {
+      logger.info("no begin flag");
+      return;
+    }
+  }
+
   const client = new Client({
     user: config.get("db.user"),
     host: config.get("db.host"),
@@ -129,7 +139,6 @@ export async function start() {
     const latestTicker = await getLatestTicker(client, currency);
 
     curlogger.info("start from timestamp", latestTicker?.timestamp);
-
 
     await client.query("BEGIN");
 
@@ -155,7 +164,7 @@ export async function start() {
         curlogger.info("commit");
         await client.query("COMMIT");
       },
-      curlogger,
+      curlogger
     );
   }
   await client.end();
@@ -163,7 +172,7 @@ export async function start() {
 
 try {
   start();
-} catch(error) {
+} catch (error) {
   logger.error("poller error", error);
   process.exit(1);
 }
