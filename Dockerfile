@@ -6,5 +6,6 @@ RUN npm install
 RUN cd script/coin-price-data-fetcher && npm install
 RUN touch /var/log/cron.log
 RUN echo "*/5 * * * * cd /usr/src/app/script/coin-price-data-fetcher && if [ $run_fetcher == 'true' ]; then npm run start-fetcher; fi" > /etc/crontabs/root
+RUN echo "* * * * * cd /usr/src/app/ && ./dist/coin-price/poller.js" >> /etc/crontabs/root
 EXPOSE 8080
 CMD crond -l 2 -f > /dev/stdout 2> /dev/stderr & node ./dist/index.js
