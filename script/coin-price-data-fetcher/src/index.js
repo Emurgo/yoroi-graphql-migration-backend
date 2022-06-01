@@ -17,6 +17,9 @@ function median(numbers: Array<number>): number {
 }
 
 async function main() {
+  if (!(process.env.RUN_FETCHER === 'true' || process.env.run_fetcher == 'true')) {
+    return;
+  }
   let mode = (process.argv[2] === 'monitor') ? 'monitor' : 'fetcher';
 
   logger.info(`start ${mode}`);
