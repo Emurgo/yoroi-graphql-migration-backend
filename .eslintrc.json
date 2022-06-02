@@ -18,7 +18,7 @@
     "rules": {
         "no-unused-vars": "off",
         "quotes": [
-            "error",
+            "warn",
             "double"
         ],
         "semi": [

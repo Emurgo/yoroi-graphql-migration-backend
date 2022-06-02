@@ -77,15 +77,15 @@ const coinapi: ApiFunc = async (fetch, apiKey) => {
 // Provides ADA-all
 const coinpaprika: ApiFunc = async (fetch, _apiKey) => {
   const responseAda = await fetch(
-    'https://api.coinpaprika.com/v1/tickers/ada-cardano?quotes=USD,BTC,ETH,JPY,EUR'
+    'https://api.coinpaprika.com/v1/tickers/ada-cardano?quotes=USD,BTC,ETH'
   );
-  const resultAda = ['USD', 'JPY', 'EUR', 'BTC', 'ETH'].map(to =>
+  const resultAda = ['USD', 'BTC', 'ETH'].map(to =>
     ({ from: 'ADA', to, price: responseAda.quotes[to].price })
   );
   const responseErg = await fetch(
-    'https://api.coinpaprika.com/v1/tickers/efyt-ergo?quotes=USD,BTC,ETH,JPY,EUR'
+    'https://api.coinpaprika.com/v1/tickers/efyt-ergo?quotes=USD,BTC,ETH'
   );
-  const resultErg = ['USD', 'JPY', 'EUR', 'BTC', 'ETH'].map(to =>
+  const resultErg = ['USD', 'BTC', 'ETH'].map(to =>
     ({ from: 'ERG', to, price: responseErg.quotes[to].price })
   );
   return [...resultAda, ...resultErg];
