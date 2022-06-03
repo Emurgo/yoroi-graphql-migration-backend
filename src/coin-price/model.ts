@@ -28,6 +28,6 @@ export async function getHistoricalPrice(
   fromCurrency: string,
   timestamps: Array<number>,
   _logger: Logger
-): Promise<Array<Ticker>> {
+): Promise<Array<Ticker | null>> {
   return dbApi.getTickers(db, fromCurrency, timestamps);
 }

@@ -42,28 +42,24 @@ export async function getTickers(
   db: Pool,
   fromCurrency: string,
   timestamps: Array<number>
-): Promise<Array<Ticker>> {
-  const timeValues = await Promise.all(
+): Promise<Array<Ticker | null>> {
+  return Promise.all(
     timestamps.map(async (timestamp) => {
       const time = Math.floor(timestamp / 1000);
       const result = await db.query({
         text:
-          'SELECT "time" FROM tickers ' +
+          "SELECT * FROM tickers " +
           'WHERE time<=$1 AND "from"=$2' +
           "ORDER BY time DESC " +
           "LIMIT 1;",
         values: [time, fromCurrency],
       });
-      return result.rows[0].time;
+      if (result.rows.length > 0) {
+        return rowToTicker(result.rows[0]);
+      }
+      return null;
     })
   );
-
-  return (
-    await db.query({
-      text: 'SELECT * from tickers WHERE "from"=$1 AND time=ANY($2::bigint[])',
-      values: [fromCurrency, timeValues],
-    })
-  ).rows.map(rowToTicker);
 }
 
 export async function insertTicker(
