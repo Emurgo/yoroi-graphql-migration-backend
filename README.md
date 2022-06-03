@@ -586,6 +586,7 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
     // null when no blocks in db
     epoch: null | number,
     slot: null | number,
+    globalSlot: null | number,
     hash: null | string,
   }
   ```
@@ -600,8 +601,20 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
 
   ```js
   {
-    safeBlock: string,
-    bestBlock: string
+    safeBlock: {
+      height: number,
+      epoch: null | number,
+      slot: null | number,
+      globalSlot: null | number,
+      hash: null | string,
+    },
+    bestBlock:  {
+      height: number,
+      epoch: null | number,
+      slot: null | number,
+      globalSlot: null | number,
+      hash: null | string,
+    }
   }
   ```
 </details>
