@@ -29,7 +29,7 @@ function rowToTicker(row: any): Ticker {
 export async function getLatestTicker(
   db: Pool | Client,
   fromCurrency: string
-): Promise<Ticker> {
+): Promise<Ticker | undefined> {
   return (
     await db.query({
       text: 'SELECT * from tickers WHERE "from"=$1 ORDER BY time DESC LIMIT 1',
