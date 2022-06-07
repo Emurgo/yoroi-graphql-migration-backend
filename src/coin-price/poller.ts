@@ -34,7 +34,6 @@ function getLogger(): Logger {
   return _logger;
 }
 
-
 function toPrefix(currency: string): string {
   return `prices-${currency}`;
 }
@@ -116,7 +115,6 @@ async function getTickersFromS3Since(
 }
 
 export async function start() {
-
   const S3 = getS3();
   const Bucket = getBucket();
   const logger = getLogger();
@@ -188,7 +186,6 @@ export async function start() {
 }
 
 if (process.env.RUN_POLLER === "true") {
-
   AWS.config.update({ region: config.get("coinPrice.s3.region") });
   _S3 = new AWS.S3({
     accessKeyId: config.get("coinPrice.s3.accessKeyId"),
