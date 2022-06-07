@@ -6,21 +6,12 @@ import Logger from "bunyan";
 import { Client } from "pg";
 import { createTickersTable, getLatestTicker, insertTicker } from "./db-api";
 
-AWS.config.update({ region: config.get("coinPrice.s3.region") });
-
-const S3 = new AWS.S3({
-  accessKeyId: config.get("coinPrice.s3.accessKeyId"),
-  secretAccessKey: config.get("coinPrice.s3.secretAccessKey"),
-});
-
-const Bucket = config.get("coinPrice.s3.bucketName") as string;
-
-const logger = Logger.createLogger({
-  name: "coin-price-poller",
-  level: config.get("coinPrice.logLevel"),
-});
-
+const RETRY_COUNT = 3;
 const CURRENCIES = ["ADA", "ERG"];
+
+let S3: AWS.S3 | void;
+let Bucket: string | void;
+let logger: Logger | void;
 
 function toPrefix(currency: string): string {
   return `prices-${currency}`;
@@ -28,8 +19,6 @@ function toPrefix(currency: string): string {
 function toObjectKey(currency: string, timestamp: number): string {
   return `prices-${currency}-${timestamp}.json`;
 }
-
-const RETRY_COUNT = 3;
 
 async function getTickersFromS3Since(
   // milliseconds after epoch, undefined means start from the beginning (full-sync)
@@ -104,11 +93,6 @@ async function getTickersFromS3Since(
 }
 
 export async function start() {
-  if (process.env.RUN_POLLER !== "true") {
-    logger.info("not master");
-    return;
-  }
-
   // do nothing if there isn't a flag file present in the S3 bucket
   try {
     await util.promisify(S3.getObject.bind(S3))(
@@ -175,9 +159,23 @@ export async function start() {
   await client.end();
 }
 
-try {
-  start();
-} catch (error) {
-  logger.error("poller error", error);
-  process.exit(1);
+if (process.env.RUN_POLLER === "true") {
+
+  AWS.config.update({ region: config.get("coinPrice.s3.region") });
+  S3 = new AWS.S3({
+    accessKeyId: config.get("coinPrice.s3.accessKeyId"),
+    secretAccessKey: config.get("coinPrice.s3.secretAccessKey"),
+  });
+  Bucket = config.get("coinPrice.s3.bucketName") as string;
+  logger = Logger.createLogger({
+    name: "coin-price-poller",
+    level: config.get("coinPrice.logLevel"),
+  });
+
+  try {
+    start();
+  } catch (error) {
+    logger.error("poller error", error);
+    process.exit(1);
+  }
 }
