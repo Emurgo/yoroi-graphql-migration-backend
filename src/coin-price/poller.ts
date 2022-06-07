@@ -6,21 +6,33 @@ import Logger from "bunyan";
 import { Client } from "pg";
 import { createTickersTable, getLatestTicker, insertTicker } from "./db-api";
 
-AWS.config.update({ region: config.get("coinPrice.s3.region") });
-
-const S3 = new AWS.S3({
-  accessKeyId: config.get("coinPrice.s3.accessKeyId"),
-  secretAccessKey: config.get("coinPrice.s3.secretAccessKey"),
-});
-
-const Bucket = config.get("coinPrice.s3.bucketName") as string;
-
-const logger = Logger.createLogger({
-  name: "coin-price-poller",
-  level: config.get("coinPrice.logLevel"),
-});
-
+const RETRY_COUNT = 3;
 const CURRENCIES = ["ADA", "ERG"];
+
+let _S3: AWS.S3 | void;
+let _Bucket: string | void;
+let _logger: Logger | void;
+
+function getS3(): AWS.S3 {
+  if (_S3 == null) {
+    throw new Error("S3 is not initialised");
+  }
+  return _S3;
+}
+
+function getBucket(): string {
+  if (_Bucket == null) {
+    throw new Error("Bucket is not initialised");
+  }
+  return _Bucket;
+}
+
+function getLogger(): Logger {
+  if (_logger == null) {
+    throw new Error("Logger is not initialised");
+  }
+  return _logger;
+}
 
 function toPrefix(currency: string): string {
   return `prices-${currency}`;
@@ -28,8 +40,6 @@ function toPrefix(currency: string): string {
 function toObjectKey(currency: string, timestamp: number): string {
   return `prices-${currency}-${timestamp}.json`;
 }
-
-const RETRY_COUNT = 3;
 
 async function getTickersFromS3Since(
   // milliseconds after epoch, undefined means start from the beginning (full-sync)
@@ -41,7 +51,8 @@ async function getTickersFromS3Since(
   logger: Logger
 ): Promise<void> {
   let continuationToken = undefined;
-
+  const S3 = getS3();
+  const Bucket = getBucket();
   for (;;) {
     logger.debug(
       "fetching price data from S3 since",
@@ -104,10 +115,9 @@ async function getTickersFromS3Since(
 }
 
 export async function start() {
-  if (process.env.RUN_POLLER !== "true") {
-    logger.info("not master");
-    return;
-  }
+  const S3 = getS3();
+  const Bucket = getBucket();
+  const logger = getLogger();
 
   // do nothing if there isn't a flag file present in the S3 bucket
   try {
@@ -175,9 +185,22 @@ export async function start() {
   await client.end();
 }
 
-try {
-  start();
-} catch (error) {
-  logger.error("poller error", error);
-  process.exit(1);
+if (process.env.RUN_POLLER === "true") {
+  AWS.config.update({ region: config.get("coinPrice.s3.region") });
+  _S3 = new AWS.S3({
+    accessKeyId: config.get("coinPrice.s3.accessKeyId"),
+    secretAccessKey: config.get("coinPrice.s3.secretAccessKey"),
+  });
+  _Bucket = config.get("coinPrice.s3.bucketName") as string;
+  _logger = Logger.createLogger({
+    name: "coin-price-poller",
+    level: config.get("coinPrice.logLevel"),
+  });
+
+  try {
+    start();
+  } catch (error) {
+    _logger.error("poller error", error);
+    process.exit(1);
+  }
 }
