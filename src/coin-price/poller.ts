@@ -9,9 +9,31 @@ import { createTickersTable, getLatestTicker, insertTicker } from "./db-api";
 const RETRY_COUNT = 3;
 const CURRENCIES = ["ADA", "ERG"];
 
-let S3: AWS.S3 | void;
-let Bucket: string | void;
-let logger: Logger | void;
+let _S3: AWS.S3 | void;
+let _Bucket: string | void;
+let _logger: Logger | void;
+
+function getS3(): AWS.S3 {
+  if (_S3 == null) {
+    throw new Error("S3 is not initialised");
+  }
+  return _S3;
+}
+
+function getBucket(): string {
+  if (_Bucket == null) {
+    throw new Error("Bucket is not initialised");
+  }
+  return _Bucket;
+}
+
+function getLogger(): Logger {
+  if (_logger == null) {
+    throw new Error("Logger is not initialised");
+  }
+  return _logger;
+}
+
 
 function toPrefix(currency: string): string {
   return `prices-${currency}`;
@@ -30,7 +52,8 @@ async function getTickersFromS3Since(
   logger: Logger
 ): Promise<void> {
   let continuationToken = undefined;
-
+  const S3 = getS3();
+  const Bucket = getBucket();
   for (;;) {
     logger.debug(
       "fetching price data from S3 since",
@@ -93,6 +116,11 @@ async function getTickersFromS3Since(
 }
 
 export async function start() {
+
+  const S3 = getS3();
+  const Bucket = getBucket();
+  const logger = getLogger();
+
   // do nothing if there isn't a flag file present in the S3 bucket
   try {
     await util.promisify(S3.getObject.bind(S3))(
@@ -162,12 +190,12 @@ export async function start() {
 if (process.env.RUN_POLLER === "true") {
 
   AWS.config.update({ region: config.get("coinPrice.s3.region") });
-  S3 = new AWS.S3({
+  _S3 = new AWS.S3({
     accessKeyId: config.get("coinPrice.s3.accessKeyId"),
     secretAccessKey: config.get("coinPrice.s3.secretAccessKey"),
   });
-  Bucket = config.get("coinPrice.s3.bucketName") as string;
-  logger = Logger.createLogger({
+  _Bucket = config.get("coinPrice.s3.bucketName") as string;
+  _logger = Logger.createLogger({
     name: "coin-price-poller",
     level: config.get("coinPrice.logLevel"),
   });
@@ -175,7 +203,7 @@ if (process.env.RUN_POLLER === "true") {
   try {
     start();
   } catch (error) {
-    logger.error("poller error", error);
+    _logger.error("poller error", error);
     process.exit(1);
   }
 }
