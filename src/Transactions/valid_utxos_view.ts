@@ -1,8 +1,7 @@
 import { Pool } from "pg";
 
 export const createViewSql = `
-drop view if exists valid_utxos_view;
-create view valid_utxos_view as
+create or replace view valid_utxos_view as
 SELECT
   tx_out.id
   , tx_out.address

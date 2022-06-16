@@ -22,6 +22,7 @@ import * as middleware from "./middleware";
 
 import { askBestBlock } from "./services/bestblock";
 import { utxoForAddresses } from "./services/utxoForAddress";
+import { utxoAtPoint } from "./services/utxoAtPoint";
 import {
   askBlockNumByHash,
   askBlockNumByTxHash,
@@ -37,10 +38,13 @@ import { handleGetRegHistory } from "./services/regHistory";
 import { handleGetRewardHistory } from "./services/rewardHistory";
 import { handleGetMultiAssetSupply } from "./services/multiAssetSupply";
 import { handleGetMultiAssetTxMintMetadata } from "./services/multiAssetTxMint";
+import { handleGetAssetMintTxs } from "./services/assetMintTxs";
 import { handleTxStatus } from "./services/txStatus";
+import { handleUtxoDiffSincePoint } from "./services/utxoDiffSincePoint";
 import { handleGetTxIO, handleGetTxOutput } from "./services/txIO";
 import { handleTipStatusGet, handleTipStatusPost } from "./services/tipStatus";
 import { handleGetTransactions } from "./services/transactions";
+import { handleValidateNft } from "./services/validateNft";
 
 import { handlePolicyIdExists } from "./services/policyIdExists";
 
@@ -49,6 +53,7 @@ import { HealthChecker } from "./HealthChecker";
 import { createCertificatesView } from "./Transactions/certificates";
 import { createTransactionOutputView } from "./Transactions/output";
 import { createValidUtxosView } from "./Transactions/valid_utxos_view";
+import { createUtxoFunctions } from "./Transactions/utxoFunctions";
 import { createTransactionUtilityFunctions } from "./Transactions/userDefinedFunctions";
 import { poolDelegationHistory } from "./services/poolHistory";
 import { handleGetCardanoWalletPools } from "./services/cardanoWallet";
@@ -65,6 +70,8 @@ import { mapTransactionFragsToResponse } from "./utils/mappers";
 import * as Sentry from "@sentry/node";
 import * as Tracing from "@sentry/tracing";
 
+import installCoinPriceHandlers from "./coin-price/handler";
+
 const pool = new Pool({
   user: config.get("db.user"),
   host: config.get("db.host"),
@@ -75,6 +82,7 @@ const pool = new Pool({
 createCertificatesView(pool);
 createValidUtxosView(pool);
 createTransactionOutputView(pool);
+createUtxoFunctions(pool);
 createTransactionUtilityFunctions(pool);
 
 const healthChecker = new HealthChecker(() => askBestBlock(pool));
@@ -257,6 +265,7 @@ const txHistory = async (req: Request, res: Response) => {
 };
 
 const getStatus = async (req: Request, res: Response) => {
+  const isQueueOnline = config.get("usingQueueEndpoint") === "true";
   const mobilePlatformVersionPrefixes = ["android / ", "ios / ", "- /"];
   const desktopPlatformVersionPrefixes = ["firefox / ", "chrome / "];
   const clientVersionHeader = "yoroi-version";
@@ -288,7 +297,13 @@ const getStatus = async (req: Request, res: Response) => {
       }
     }
   }
-  res.send({ isServerOk: true, isMaintenance: false, serverTime: Date.now() });
+  res.send({
+    parallelSync: Boolean(process.env.PARALLEL_SYNC),
+    isServerOk: true,
+    isMaintenance: false,
+    serverTime: Date.now(),
+    isQueueOnline,
+  });
 };
 
 const routes: Route[] = [
@@ -335,10 +350,21 @@ const routes: Route[] = [
   { path: "/v2/bestblock", method: "get", handler: bestBlock(pool) },
   { path: "/v2/tipStatus", method: "get", handler: handleTipStatusGet(pool) },
   { path: "/v2/tipStatus", method: "post", handler: handleTipStatusPost(pool) },
+  { path: "/v2/txs/utxoAtPoint", method: "post", handler: utxoAtPoint(pool) },
+  {
+    path: "/v2/txs/utxoDiffSincePoint",
+    method: "post",
+    handler: handleUtxoDiffSincePoint(pool),
+  },
   {
     path: "/v2/addresses/filterUsed",
     method: "post",
     handler: filterUsedAddresses(pool),
+  },
+  {
+    path: "/v2/txs/utxoAtPoint",
+    method: "post",
+    handler: utxoAtPoint(pool),
   },
   {
     path: "/txs/utxoForAddresses",
@@ -395,6 +421,16 @@ const routes: Route[] = [
     handler: handleGetMultiAssetTxMintMetadata(pool),
   },
   {
+    path: "/asset/:fingerprint/mintTxs",
+    method: "get",
+    handler: handleGetAssetMintTxs(pool),
+  },
+  {
+    path: "/multiAsset/validateNFT/:fingerprint",
+    method: "post",
+    handler: handleValidateNft(pool),
+  },
+  {
     path: "/tx/status",
     method: "post",
     handler: handleTxStatus(pool),
@@ -428,6 +464,7 @@ const routes: Route[] = [
 ];
 
 applyRoutes(routes, router);
+installCoinPriceHandlers(router, pool);
 router.use(middleware.logErrors);
 router.use(middleware.errorHandler);
 router.use(Sentry.Handlers.errorHandler());
@@ -437,4 +474,34 @@ const server = http.createServer(router);
 const wss = new websockets.Server({ server });
 wss.on("connection", connectionHandler(pool));
 
-server.listen(port, () => console.log(`listening on ${port}...`));
+server.listen(port, async () => {
+  console.log(
+    "current pool work_mem",
+    (await pool.query("SHOW work_mem;")).rows[0].work_mem
+  );
+  console.log(
+    "current pool max_parallel_workers",
+    (await pool.query("SHOW max_parallel_workers;")).rows[0]
+      .max_parallel_workers
+  );
+
+  console.log("setting new values for work_mem & max_parallel_workers");
+  await pool.query(`SET work_mem=${config.get("postgresOptions.workMem")};`);
+  await pool.query(
+    `SET max_parallel_workers=${config.get(
+      "postgresOptions.maxParallelWorkers"
+    )};`
+  );
+
+  console.log(
+    "new pool work_mem",
+    (await pool.query("SHOW work_mem;")).rows[0].work_mem
+  );
+  console.log(
+    "new pool max_parallel_workers",
+    (await pool.query("SHOW max_parallel_workers;")).rows[0]
+      .max_parallel_workers
+  );
+
+  console.log(`listening on ${port}...`);
+});

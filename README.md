@@ -89,6 +89,83 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   }>
   ```
 </details>
+
+<details>
+  <summary>v2/txs/utxoAtPoint</summary>
+  This endpoint is based on the current `/txs/utxoForAddresses`. It adds capabilities for passing a reference block and pagination information.
+
+
+  This endpoint basically takes a "snapshot" of how was the UTxO information for the given addresses up to `referenceBlock`, meaning UTxOs created in transactions from blocks after `referenceBlockHash` won't be included, but also that UTxOs spent only in blocks after `referenceBlockHash` will actually be included in the response.
+  
+  OBS: we don't actually take snapshots, such information can be inferred from on-chain data.
+
+  Input
+
+  Up to 50 addresses in the request
+
+  ```js
+  {
+    // byron addresses, bech32 address, bech32 stake addresses or addr_vkh
+    addresses: Array<string>,
+    page: number,
+    pageSize: number,
+    referenceBlockHash?: string // the hash of the block
+  }
+  ```
+
+  Output
+
+  ```js
+  Array<{
+    utxo_id: string, // concat tx_hash and tx_index
+    tx_hash: string,
+    tx_index: number,
+    block_num: number, // NOTE: not slot_no
+    receiver: string,
+    amount: string,
+    assets: Asset[],
+  }>
+  ```
+</details>
+
+<details>
+  <summary>v2/txs/utxoDiffSincePoint</summary>
+  Returns a diff of inputs and outputs between two points. See the comments next to the request parameters for more information.
+  This endpoint is better used in combination with `v2/txs/utxoAtPoint`. After making a request to `v2/txs/utxoAtPoint`, the clients can keep their local copy of the UTxO state by calling `v2/txs/utxoDiffSincePoint` with `afterPoint` or `afterBestBlocks` being built using the block from the previous request as a reference point and making any changes established by the diff, so essentially discarding outputs which have been returned in the diff as inputs and including the new outputs returned by the diff.
+
+
+  Input
+
+  ```js
+  {
+    // byron addresses, bech32 address, bech32 stake addresses or addr_vkh
+    addresses: Array<string>,
+    untilBlockHash: string, // only transactions up to this block (including it) will be considered for generating the diff
+    afterPoint?: {
+      blockHash: string, // only transactions AFTER this clock will be considered for generating the diff
+      itemIndex?: number // if `itemIndex` is supplied, we will also consider transactions from `blockHash`, but only the outputs which have a bigger index than `itemIndex`
+    },
+    afterBestBlocks?: Array<string> // only transactions after the latest block from this array will be included. The inclusion of `afterBestBlocks` in the request will also add 2 new fields to the response (see the response bellow for more details)
+  }
+  ```
+
+  Output
+
+  ```js
+  {
+    diffItems: Array<{
+      type: "output" | "input",
+      id: string, // in the format {TX hash}:{output index}
+      amount: string,
+      assets?: Asset[], // only included for outputs
+      block_num?: number // only included for outputs
+    }>,
+    lastFoundBestBlock?: string, // only included if `afterBestBlocks` was supplied. This will be the latest found block from `afterBestBlocks`
+    lastFoundSafeBlock?: string // only included if `afterBestBlocks` was supplied. This will be the latest safe block from `afterBestBlocks`, safe block being the block with the highest depth up to a maximum, determined at runtime by configuration
+  }
+  ```
+</details>
+
 <details>
   <summary>account/registrationHistory</summary>
   Input
@@ -509,6 +586,7 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
     // null when no blocks in db
     epoch: null | number,
     slot: null | number,
+    globalSlot: null | number,
     hash: null | string,
   }
   ```
@@ -523,8 +601,20 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
 
   ```js
   {
-    safeBlock: string,
-    bestBlock: string
+    safeBlock: {
+      height: number,
+      epoch: null | number,
+      slot: null | number,
+      globalSlot: null | number,
+      hash: null | string,
+    },
+    bestBlock:  {
+      height: number,
+      epoch: null | number,
+      slot: null | number,
+      globalSlot: null | number,
+      hash: null | string,
+    }
   }
   ```
 </details>
@@ -616,6 +706,7 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
     isServerOk: boolean, // heartbeat endpoint for server. IF you want the node status, use v2/importerhealthcheck instead
     isMaintenance: boolean, // manually set and indicates you should disable ADA integration in your app until it returns false. Use to avoid weird app-side behavior during server upgrades.
     serverTime: number, // in millisecond unix time
+    isQueueOnline: boolean, // indicates if the backend is using the TX queue to submit the signed transactions. Essentially, it returns true if the USE_SIGNED_TX_QUEUE env var is set to "true".
   }
   ```
 </details>
@@ -865,6 +956,57 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
       key: string, // the metadata label key. e.g. 721 in case of NFTs
       metadata: any
     }
+  }
+  ```
+</details>
+<details>
+  <summary>/asset/:fingerprint/mintTxs</summary>
+  Retrieves all minting transactions for the given asset fingerprint together with its metadata, if any.
+
+  Output
+
+  ```js
+  {
+    policy: string, // hex-encoded policy
+    name: string, // hex-encoded asset name
+    txs: Array<{
+      hash: string,
+      block: {
+        slot: number,
+        epoch: number
+      },
+      metadata?: {
+        key: number,
+        json: any
+      }
+    }>
+  }
+  ```
+</details>
+
+<details>
+  <summary>multiAsset/validateNFT/:fingerprint</summary>
+  Retrieves image from an NFT and validates it. In case this was already done for the given NFT, simply return the validation results
+
+  Input
+
+  None (GET request)
+
+  Outputs:
+
+  ***200 OK*** (when the validation already happened)
+  ```js
+  {
+    status: string,
+    contents: Array<string>,
+    originalStatus: string,
+    thirdPartyReport: any
+  }
+  ```
+
+  ***204 No Content*** (when NFT is sent for validation)
+  ```js
+  {
   }
   ```
 </details>
