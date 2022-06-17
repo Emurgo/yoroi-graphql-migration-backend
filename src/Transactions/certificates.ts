@@ -167,7 +167,7 @@ UNION ALL
 
 select 'MoveInstantaneousRewardsCert' as "jsType"
      , 'CertMir' as "formalType"
-     , addr.registered_tx_id as "txId"
+     , addr.tx_id as "txId"
      , max(reg.cert_index) as "certIndex"
      , null as "stakeCred"
      , null::text as "poolHashKey"
@@ -190,13 +190,13 @@ join stake_address as addr
 join stake_registration reg
   on addr.id = reg.addr_id
 where reserve.type = 'reserves'
-group by addr.registered_tx_id
+group by addr.tx_id
 
 UNION ALL
 
 select 'MoveInstantaneousRewardsCert' as "jsType"
      , 'CertMir' as "formalType"
-     , addr.registered_tx_id as "txId"
+     , addr.tx_id as "txId"
      , max(reg.cert_index) as "certIndex"
      , null as "stakeCred"
      , null::text as "poolHashKey"
@@ -219,7 +219,7 @@ join stake_address as addr
 join stake_registration reg
   on addr.id = reg.addr_id
 where treasury.type = 'treasury'
-group by addr.registered_tx_id;`;
+group by addr.tx_id;`;
 
 export const createCertificatesView = (pool: Pool): void => {
   if (process.env.NODE_TYPE !== "slave") {
