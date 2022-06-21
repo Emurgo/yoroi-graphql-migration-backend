@@ -103,7 +103,7 @@ select 'PoolRegistration' as "jsType"
          where
          pool_update.hash_id = pool_hash.id
           and
-          pool_owner.registered_tx_id = pool.registered_tx_id
+          pool_update.registered_tx_id = pool.registered_tx_id
        ) as "poolParamsOwners"
 
      , ( select json_agg(json_build_object( 'ipv4',       ipv4

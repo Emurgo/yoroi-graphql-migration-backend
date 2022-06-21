@@ -33,8 +33,8 @@ const queryMessageBoard = `
       JOIN pool_update pu ON (po.pool_update_id = pu.id)
       JOIN pool_hash ph ON (pu.hash_id = ph.id)
       JOIN stake_address sa ON (sa.id = po.addr_id)
-    WHERE po.registered_tx_id = (
-        SELECT MAX(registered_tx_id)
+    WHERE pu.registered_tx_id = (
+        SELECT MAX(pu.registered_tx_id)
         FROM pool_owner po
           JOIN pool_update pu ON (po.pool_update_id = pu.id)
           JOIN pool_hash ph ON (pu.hash_id = ph.id)
