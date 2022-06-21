@@ -105,6 +105,17 @@ const askTransactionSqlQuery = `
               or tx_out.payment_cred = ANY(($6)::bytea array)
 
           UNION
+            ${/* 2.1) Get all collateral outputs for the transaction */ ""}
+            select tx.hash as hash
+            from tx
+
+            JOIN collateral_tx_out
+              on tx.id = collateral_tx_out.tx_id
+
+            where collateral_tx_out.address = ANY(($1)::varchar array)
+              or collateral_tx_out.payment_cred = ANY(($6)::bytea array)
+
+          UNION
             ${/* 3) Get all certificates for the transaction */ ""}
             select tx.hash as hash
             from tx
@@ -212,6 +223,19 @@ const askTransactionSqlQuery = `
                     ) order by "index" asc) as outAddrValPairs
           from "TransactionOutput" hasura_to
           where hasura_to."txHash" = tx.hash) as "outAddrValPairs"
+        , (select json_agg((
+                    "address",
+                    "value",
+                    "txDataHash",
+                  (select json_agg(ROW(encode("ma"."policy", 'hex'), encode("ma"."name", 'hex'), "quantity"))
+                        FROM ma_tx_out
+                        inner join multi_asset ma on ma_tx_out.ident = ma.id
+                        JOIN tx_out token_tx_out
+                        ON tx.id = token_tx_out.tx_id
+                        WHERE ma_tx_out."tx_out_id" = token_tx_out.id AND hasura_to."address" = token_tx_out.address AND hasura_to.index = token_tx_out.index)
+                    ) order by "index" asc) as collateralOutAddrValPairs
+          from "CollateralTransactionOutput" hasura_to
+          where hasura_to."txHash" = tx.hash) as "collateralOutAddrValPairs"
        , (select json_agg((encode(addr."hash_raw",'hex'), "amount") order by w."id" asc)
           from withdrawal as w
           join stake_address as addr
