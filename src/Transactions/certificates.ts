@@ -122,7 +122,7 @@ from pool_update as pool
 join pool_hash
   on pool.hash_id = pool_hash.id
 join stake_address as addr
-  on addr.if = pool.reward_addr_id
+  on addr.id = pool.reward_addr_id
 left join pool_metadata_ref as pool_meta
   on pool_meta.id = pool.meta_id
 group by pool.registered_tx_id
