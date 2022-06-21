@@ -99,8 +99,9 @@ select 'PoolRegistration' as "jsType"
      , encode(addr.hash_raw,'hex') as "poolParamsRewardAccount"
      , ( select json_agg(encode(stake_address.hash_raw,'hex'))
          from pool_owner inner join stake_address on pool_owner.addr_id = stake_address.id
+         inner join pool_update on pool_owner.pool_update_id = pool_update.id
          where
-          pool_owner.pool_hash_id = pool_hash.id
+         pool_update.hash_id = pool_hash.id
           and
           pool_owner.registered_tx_id = pool.registered_tx_id
        ) as "poolParamsOwners"
