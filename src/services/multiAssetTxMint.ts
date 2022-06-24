@@ -70,7 +70,9 @@ function createGetMultiAssetTxMintMetadataQuery(assets: Asset[]) {
   from ma_tx_mint mint
     join multi_asset ma on mint.ident = ma.id
     join tx on mint.tx_id = tx.id
+    join block on block.id = tx.block_id
     join tx_metadata meta on tx.id = meta.tx_id
-  where ${whereConditions}`;
+  where ${whereConditions}
+  order by block.epoch_no desc, block.slot_no desc, tx.block_index desc`;
   return query;
 }
