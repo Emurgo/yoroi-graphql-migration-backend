@@ -71,6 +71,8 @@ import * as Tracing from "@sentry/tracing";
 
 import installCoinPriceHandlers from "./coin-price/handler";
 
+import { applyV3Routes } from "./v3";
+
 const pool = new Pool({
   user: config.get("db.user"),
   host: config.get("db.host"),
@@ -486,6 +488,7 @@ const routes: Route[] = [
 ];
 
 applyRoutes(routes, router);
+applyV3Routes(router);
 installCoinPriceHandlers(router, pool);
 router.use(middleware.logErrors);
 router.use(middleware.errorHandler);
@@ -503,24 +506,6 @@ server.listen(port, async () => {
   );
   console.log(
     "current pool max_parallel_workers",
-    (await pool.query("SHOW max_parallel_workers;")).rows[0]
-      .max_parallel_workers
-  );
-
-  console.log("setting new values for work_mem & max_parallel_workers");
-  await pool.query(`SET work_mem=${config.get("postgresOptions.workMem")};`);
-  await pool.query(
-    `SET max_parallel_workers=${config.get(
-      "postgresOptions.maxParallelWorkers"
-    )};`
-  );
-
-  console.log(
-    "new pool work_mem",
-    (await pool.query("SHOW work_mem;")).rows[0].work_mem
-  );
-  console.log(
-    "new pool max_parallel_workers",
     (await pool.query("SHOW max_parallel_workers;")).rows[0]
       .max_parallel_workers
   );

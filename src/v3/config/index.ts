@@ -1,0 +1,1 @@
+export const mongoDbConnectionString = "mongodb://research-01.emurgo-rnd.com:27017";
