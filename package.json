@@ -4,6 +4,7 @@
   "description": "Wrapped for cardano-db-sync and cardano-graphql with endpoints useful for light wallets",
   "main": "src/index.ts",
   "scripts": {
+    "postinstall": "tsc",
     "start": "pm2 start pm2.yaml",
     "stop": "pm2 stop pm2.yaml",
     "start-poller": "pm2 start ./dist/coin-price/poller.js --cron '* * * * *'",
