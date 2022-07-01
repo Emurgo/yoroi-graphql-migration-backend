@@ -1,9 +1,20 @@
 import { Request, Response } from "express";
 import { Db } from "mongodb";
-import { getAddressesByType } from "../../utils";
-import { Address, BigInt, BigNum, ByronAddress, Ed25519KeyHash, GeneralTransactionMetadata, Int, MetadataList, MetadataMap, RewardAddress, StakeCredential, TransactionMetadatum } from "@emurgo/cardano-serialization-lib-nodejs";
-import { decode, fromWords } from "bech32";
-import { Prefixes } from "../../utils/cip5";
+import {
+  Address,
+  BigNum,
+  ByronAddress,
+  Ed25519KeyHash,
+  GeneralTransactionMetadata,
+  Int,
+  MetadataList,
+  MetadataMap,
+  RewardAddress,
+  StakeCredential,
+  TransactionMetadatum
+} from "@emurgo/cardano-serialization-lib-nodejs";
+import { decode } from "bech32";
+import { Prefixes } from "../../../utils/cip5";
 
 const GENESIS_UNIX_TIMESTAMP = 1506243091;
 const SHELLEY_UNIX_TIMESTAMP = 1596491091;
