@@ -45,6 +45,8 @@ export const handleGetMultiAssetTxMintMetadata =
       throw new Error("assets should be an array");
     if (req.body.assets.length === 0)
       throw new Error("assets should not be empty");
+    if (req.body.assets.length > 100)
+      throw new Error("Max limit of 100 assets exceeded.");
     if (req.body.assets.find((a: any) => !a.policy))
       throw new Error("all assets on body should have a name and a policy");
 
