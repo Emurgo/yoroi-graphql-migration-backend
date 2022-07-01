@@ -1,20 +1,14 @@
 import { Request, Response } from "express";
 import { Db } from "mongodb";
 import {
-  Address,
   BigNum,
-  ByronAddress,
-  Ed25519KeyHash,
   GeneralTransactionMetadata,
   Int,
   MetadataList,
   MetadataMap,
-  RewardAddress,
-  StakeCredential,
   TransactionMetadatum
 } from "@emurgo/cardano-serialization-lib-nodejs";
-import { decode } from "bech32";
-import { Prefixes } from "../../../utils/cip5";
+import { mapAddresses } from "../../utils";
 
 const GENESIS_UNIX_TIMESTAMP = 1506243091;
 const SHELLEY_UNIX_TIMESTAMP = 1596491091;
@@ -84,30 +78,18 @@ export const txsHistoryHandler = (
   mappedAddresses.legacyAddr.forEach(p => {
     addressFilters.push({"transactions.outputs.address": p});
     addressFilters.push({"transactions.inputs.source.address": p});
-
-    addressFilters.push({"transactions.outputs.address": p});
-    addressFilters.push({"transactions.inputs.source.address": p});
   });
   mappedAddresses.bech32.forEach(p => {
-    addressFilters.push({"transactions.outputs.address": p});
-    addressFilters.push({"transactions.inputs.source.address": p});
-
     addressFilters.push({"transactions.outputs.address": p});
     addressFilters.push({"transactions.inputs.source.address": p});
   });
   mappedAddresses.paymentCreds.forEach(p => {
     addressFilters.push({"transactions.outputs.payment_cred": p});
     addressFilters.push({"transactions.inputs.source.payment_cred": p});
-
-    addressFilters.push({"transactions.outputs.stake_cred": p});
-    addressFilters.push({"transactions.inputs.source.stake_cred": p});
   });
   // mappedAddresses.stakingKeys.forEach(p => {
   //   filters.push({"transactions.certificates.payment_cred": p});
   //   filters.push({"transactions.inputs.source.payment_cred": p});
-
-  //   filters.push({"transactions.outputs.stake_cred": p});
-  //   filters.push({"transactions.inputs.source.stake_cred": p});
   // });
 
   const blockFilter = afterBlock
@@ -285,85 +267,6 @@ const buildMetadataObj = (
   metadataWasm.free();
 
   return result;
-};
-
-const mapAddresses = (addresses: string[]) => {
-  const HEX_REGEXP = RegExp("^[0-9a-fA-F]+$");
-
-  const legacyAddr: string[] = [];
-  const bech32: string[] = [];
-  const paymentCreds: string[] = [];
-  const stakingKeys: string[] = [];
-  for (const address of addresses) {
-    if (ByronAddress.is_valid(address)) {
-      legacyAddr.push(address);
-      continue;
-    }
-
-    try {
-      const bech32Info = decode(address, 1000);
-      switch (bech32Info.prefix) {
-        case Prefixes.ADDR: {
-          bech32.push(address);
-          break;
-        }
-        case Prefixes.ADDR_TEST: {
-          bech32.push(address);
-          break;
-        }
-        case Prefixes.STAKE: {
-          const wasmBech32 = Address.from_bech32(address);
-          stakingKeys.push(
-            `${Buffer.from(wasmBech32.to_bytes()).toString("hex")}`
-          );
-          wasmBech32.free();
-          break;
-        }
-        case Prefixes.STAKE_TEST: {
-          const wasmBech32 = Address.from_bech32(address);
-          stakingKeys.push(
-            `${Buffer.from(wasmBech32.to_bytes()).toString("hex")}`
-          );
-          wasmBech32.free();
-          break;
-        }
-        case Prefixes.PAYMENT_KEY_HASH: {
-          const keyHash = Ed25519KeyHash.from_bech32(address);
-          const paymentCred = StakeCredential.from_keyhash(keyHash);
-          paymentCreds.push(Buffer.from(paymentCred.to_bytes()).toString("hex"));
-          break;
-        }
-        default:
-          continue;
-      }
-      continue;
-    } catch (_e) {
-      // silently discard any non-valid Cardano addresses
-    }
-    try {
-      if (HEX_REGEXP.test(address)) {
-        const wasmAddr = Address.from_bytes(Buffer.from(address, "hex"));
-        if (validateRewardAddress(wasmAddr)) {
-          stakingKeys.push(`\\x${address}`);
-        }
-        wasmAddr.free();
-        continue;
-      }
-    } catch (_e) {
-      // silently discard any non-valid Cardano addresses
-    }
-  }
-  return {
-    legacyAddr,
-    bech32,
-    paymentCreds,
-    stakingKeys
-  };
-};
-
-const validateRewardAddress = (wasmAddr: Address) => {
-  const rewardAddr = RewardAddress.from_address(wasmAddr);
-  return rewardAddr != null;
 };
 
 const blockDate = (block: { era: string, slot: number }) => {
