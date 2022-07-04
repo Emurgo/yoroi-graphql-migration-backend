@@ -1,12 +1,13 @@
 import { Request, Response } from "express";
-import { Db } from "mongodb";
+import { MongoClient } from "mongodb";
 import { getUtxosForAddresses } from "../../queries/utxos-for-addresses";
 
 export const utxoSumForAddressesHandler = (
-  db: Db
+  mongoClient: MongoClient
 ) => async (
   req: Request, res: Response
 ) => {
+  const db = mongoClient.db("cardano");
   const blocksCollection = db.collection("blocks");
 
   if (!req.body || !req.body.addresses) {

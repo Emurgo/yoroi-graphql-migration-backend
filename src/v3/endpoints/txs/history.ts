@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { Db } from "mongodb";
+import { MongoClient } from "mongodb";
 import {
   BigNum,
   GeneralTransactionMetadata,
@@ -16,10 +16,11 @@ const SHELLEY_INITIAL_SLOT = 4924800;
 const BYRON_SLOT_DURATION_IN_SECONDS = 20;
 
 export const txsHistoryHandler = (
-  db: Db
+  mongoClient: MongoClient
 ) => async (
   req: Request, res: Response
 ) => {
+  const db = mongoClient.db("cardano");
   const blocksCollection = db.collection("blocks");
 
   const addresses = req.body.addresses as string[];

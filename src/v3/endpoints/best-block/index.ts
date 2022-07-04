@@ -1,11 +1,12 @@
 import { Request, Response } from "express";
-import { Db } from "mongodb";
+import { MongoClient } from "mongodb";
 
 export const bestBlockHandler = (
-  db: Db
+  mongoClient: MongoClient
 ) => async (
   req: Request, res: Response
 ) => {
+  const db = mongoClient.db("cardano");
   const blocksCollection = db.collection("blocks");
 
   const cursor = blocksCollection.find({
