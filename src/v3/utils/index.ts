@@ -98,3 +98,29 @@ export const mapAddresses = (addresses: string[]) => {
     stakingKeys
   };
 };
+
+export const mapInput = (i: any) => ({
+  address: i.source.address,
+  amount: i.source.amount.toString(),
+  id: `${i.tx_id}${i.index}`,
+  index: i.index,
+  txHash: i.tx_id,
+  assets: i.source.assets.map((a: any) => ({
+    assetId: `${a.policy}.${a.asset}`,
+    policyId: a.policy,
+    name: a.asset,
+    amount: a.amount.toString()
+  }))
+});
+
+export const mapOutput = (i: any) => ({
+  address: i.address,
+  amount: i.amount.toString(),
+  dataHash: null,
+  assets: i.assets.map((a: any) => ({
+    assetId: `${a.policy}.${a.asset}`,
+    policyId: a.policy,
+    name: a.asset,
+    amount: a.amount.toString()
+  }))
+});

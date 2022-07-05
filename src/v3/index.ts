@@ -7,6 +7,7 @@ import { utxoForAddressesHandler } from "./endpoints/txs/utxo-for-addresses";
 import { utxoSumForAddressesHandler } from "./endpoints/txs/utxo-sum-for-addresses";
 import { filterUsedHandler } from "./endpoints/addresses/filterUsed";
 import { multiAssetSupplyHandler } from "./endpoints/multiAsset/supply";
+import { txsIoHandler } from "./endpoints/txs/io";
 import { MongoClient } from "mongodb";
 
 const mongoClient = new MongoClient(config.mongoDbConnectionString);
@@ -42,6 +43,11 @@ export const applyV3Routes = (router: Router) => {
       path: "/v3/multiAsset/supply",
       method: "post",
       handler: multiAssetSupplyHandler(mongoClient)
+    },
+    {
+      path: "/v3/txs/io/:tx_hash",
+      method: "get",
+      handler: txsIoHandler(mongoClient)
     }
   ];
   applyRoutes(routes, router);

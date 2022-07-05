@@ -8,7 +8,7 @@ import {
   MetadataMap,
   TransactionMetadatum
 } from "@emurgo/cardano-serialization-lib-nodejs";
-import { mapAddresses } from "../../utils";
+import { mapAddresses, mapInput, mapOutput } from "../../utils";
 
 const GENESIS_UNIX_TIMESTAMP = 1506243091;
 const SHELLEY_UNIX_TIMESTAMP = 1596491091;
@@ -189,43 +189,9 @@ export const txsHistoryHandler = (
       time: blockDate(document),
       epoch: document.epoch,
       slot: document.epoch_slot,
-      inputs: document.transactions.inputs.map((i: any) => ({
-        address: i.source.address,
-        amount: i.source.amount.toString(),
-        id: `${i.tx_id}${i.index}`,
-        index: i.index,
-        txHash: i.tx_id,
-        assets: i.source.assets.map((a: any) => ({
-          assetId: `${a.policy}.${a.asset}`,
-          policyId: a.policy,
-          name: a.asset,
-          amount: a.amount.toString()
-        }))
-      })),
-      collateral_inputs: document.transactions.collateral_inputs.map((i: any) => ({
-        address: i.source.address,
-        amount: i.source.amount,
-        id: `${i.tx_id}${i.index}`,
-        index: i.index,
-        txHash: i.tx_id,
-        assets: i.source.assets.map((a: any) => ({
-          assetId: `${a.policy}.${a.asset}`,
-          policyId: a.policy,
-          name: a.asset,
-          amount: a.amount.toString()
-        }))
-      })),
-      outputs: document.transactions.outputs.map((i: any) => ({
-        address: i.address,
-        amount: i.amount.toString(),
-        dataHash: null,
-        assets: i.assets.map((a: any) => ({
-          assetId: `${a.policy}.${a.asset}`,
-          policyId: a.policy,
-          name: a.asset,
-          amount: a.amount.toString()
-        }))
-      })),
+      inputs: document.transactions.inputs.map(mapInput),
+      collateral_inputs: document.transactions.collateral_inputs.map(mapInput),
+      outputs: document.transactions.outputs.map(mapOutput),
     });
   }
   
