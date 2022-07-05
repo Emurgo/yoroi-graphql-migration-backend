@@ -4,6 +4,7 @@ import { applyRoutes, Route } from "../utils";
 import { txsHistoryHandler } from "./endpoints/txs/history";
 import { bestBlockHandler } from "./endpoints/best-block";
 import { utxoForAddressesHandler } from "./endpoints/txs/utxo-for-addresses";
+import { txOutputHandler } from "./endpoints/txs/output";
 import { utxoSumForAddressesHandler } from "./endpoints/txs/utxo-sum-for-addresses";
 import { filterUsedHandler } from "./endpoints/addresses/filterUsed";
 import { multiAssetSupplyHandler } from "./endpoints/multiAsset/supply";
@@ -48,6 +49,11 @@ export const applyV3Routes = (router: Router) => {
       path: "/v3/txs/io/:tx_hash",
       method: "get",
       handler: txsIoHandler(mongoClient)
+    },
+    {
+      path: "/v3/txs/io/:tx_hash/o/:index",
+      method: "get",
+      handler: txOutputHandler(mongoClient)
     }
   ];
   applyRoutes(routes, router);
