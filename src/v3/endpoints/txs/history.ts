@@ -85,13 +85,13 @@ export const txsHistoryHandler = (
     addressFilters.push({"transactions.inputs.source.address": p});
   });
   mappedAddresses.paymentCreds.forEach(p => {
-    addressFilters.push({"transactions.outputs.payment_cred": p});
-    addressFilters.push({"transactions.inputs.source.payment_cred": p});
+    addressFilters.push({"transactions.outputs.payment_cred": p.hex});
+    addressFilters.push({"transactions.inputs.source.payment_cred": p.hex});
   });
-  // mappedAddresses.stakingKeys.forEach(p => {
-  //   filters.push({"transactions.certificates.payment_cred": p});
-  //   filters.push({"transactions.inputs.source.payment_cred": p});
-  // });
+  mappedAddresses.stakingKeys.forEach(p => {
+    addressFilters.push({"transactions.certificates.stake_credential.addrKeyHash": p.hex});
+    addressFilters.push({"transactions.withdrawals.address": p.hex});
+  });
 
   const blockFilter = afterBlock
     ? {

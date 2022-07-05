@@ -18,8 +18,8 @@ export const mapAddresses = (addresses: string[]) => {
 
   const legacyAddr: string[] = [];
   const bech32: string[] = [];
-  const paymentCreds: string[] = [];
-  const stakingKeys: string[] = [];
+  const paymentCreds: {original: string, hex: string}[] = [];
+  const stakingKeys: {original: string, hex: string}[] = [];
   for (const address of addresses) {
     if (ByronAddress.is_valid(address)) {
       legacyAddr.push(address);
@@ -40,7 +40,10 @@ export const mapAddresses = (addresses: string[]) => {
         case Prefixes.STAKE: {
           const wasmBech32 = Address.from_bech32(address);
           stakingKeys.push(
-            `${Buffer.from(wasmBech32.to_bytes()).toString("hex")}`
+            {
+              original: address,
+              hex: `${Buffer.from(wasmBech32.to_bytes()).toString("hex")}`
+            }
           );
           wasmBech32.free();
           break;
@@ -48,7 +51,10 @@ export const mapAddresses = (addresses: string[]) => {
         case Prefixes.STAKE_TEST: {
           const wasmBech32 = Address.from_bech32(address);
           stakingKeys.push(
-            `${Buffer.from(wasmBech32.to_bytes()).toString("hex")}`
+            {
+              original: address,
+              hex: `${Buffer.from(wasmBech32.to_bytes()).toString("hex")}`
+            }
           );
           wasmBech32.free();
           break;
@@ -56,7 +62,10 @@ export const mapAddresses = (addresses: string[]) => {
         case Prefixes.PAYMENT_KEY_HASH: {
           const keyHash = Ed25519KeyHash.from_bech32(address);
           const paymentCred = StakeCredential.from_keyhash(keyHash);
-          paymentCreds.push(Buffer.from(paymentCred.to_bytes()).toString("hex"));
+          paymentCreds.push({
+            original: address,
+            hex: Buffer.from(paymentCred.to_bytes()).toString("hex")
+          });
           break;
         }
         default:
@@ -70,7 +79,10 @@ export const mapAddresses = (addresses: string[]) => {
       if (HEX_REGEXP.test(address)) {
         const wasmAddr = Address.from_bytes(Buffer.from(address, "hex"));
         if (validateRewardAddress(wasmAddr)) {
-          stakingKeys.push(`\\x${address}`);
+          stakingKeys.push({
+            original: address,
+            hex: address
+          });
         }
         wasmAddr.free();
         continue;

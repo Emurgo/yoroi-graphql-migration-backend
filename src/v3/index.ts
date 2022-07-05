@@ -5,6 +5,7 @@ import { txsHistoryHandler } from "./endpoints/txs/history";
 import { bestBlockHandler } from "./endpoints/best-block";
 import { utxoForAddressesHandler } from "./endpoints/txs/utxo-for-addresses";
 import { utxoSumForAddressesHandler } from "./endpoints/txs/utxo-sum-for-addresses";
+import { filterUsedHandler } from "./endpoints/addresses/filterUsed";
 import { MongoClient } from "mongodb";
 
 const mongoClient = new MongoClient(config.mongoDbConnectionString);
@@ -31,6 +32,11 @@ export const applyV3Routes = (router: Router) => {
       method: "post",
       handler: utxoSumForAddressesHandler(mongoClient),
     },
+    {
+      path: "/v3/addresses/filterUsed",
+      method: "post",
+      handler: filterUsedHandler(mongoClient),
+    }
   ];
   applyRoutes(routes, router);
 };
