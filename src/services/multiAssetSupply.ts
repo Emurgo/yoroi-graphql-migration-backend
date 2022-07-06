@@ -13,6 +13,8 @@ export const handleGetMultiAssetSupply =
       throw new Error("missing assets on request body");
     if (!Array.isArray(req.body.assets))
       throw new Error("assets should be an array");
+    if (req.body.assets.length > 100)
+      throw new Error("Max limit of 100 assets exceeded.");
     if (req.body.assets.length === 0)
       throw new Error("assets should not be empty");
     if (req.body.assets.find((a: any) => !a.policy))

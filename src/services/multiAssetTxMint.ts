@@ -45,6 +45,8 @@ export const handleGetMultiAssetTxMintMetadata =
       throw new Error("assets should be an array");
     if (req.body.assets.length === 0)
       throw new Error("assets should not be empty");
+    if (req.body.assets.length > 100)
+      throw new Error("Max limit of 100 assets exceeded.");
     if (req.body.assets.find((a: any) => !a.policy))
       throw new Error("all assets on body should have a name and a policy");
 
@@ -70,7 +72,9 @@ function createGetMultiAssetTxMintMetadataQuery(assets: Asset[]) {
   from ma_tx_mint mint
     join multi_asset ma on mint.ident = ma.id
     join tx on mint.tx_id = tx.id
+    join block on block.id = tx.block_id
     join tx_metadata meta on tx.id = meta.tx_id
-  where ${whereConditions}`;
+  where ${whereConditions}
+  order by block.epoch_no desc, block.slot_no desc, tx.block_index desc`;
   return query;
 }
