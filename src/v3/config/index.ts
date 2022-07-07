@@ -1,1 +1,1 @@
-export const mongoDbConnectionString = "mongodb://research-01.emurgo-rnd.com:27017";
+export const mongoDbConnectionString = process.env.MONGO_DB_CONNECTION_STRING ?? "mongodb://research-01.emurgo-rnd.com:27017";

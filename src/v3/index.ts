@@ -16,24 +16,9 @@ const mongoClient = new MongoClient(config.mongoDbConnectionString);
 export const applyV3Routes = (router: Router) => {
   const routes: Route[] = [
     {
-      path: "/v3/txs/history",
-      method: "post",
-      handler: txsHistoryHandler(mongoClient)
-    },
-    {
       path: "/v3/bestblock",
       method: "get",
       handler: bestBlockHandler(mongoClient)
-    },
-    {
-      path: "/v3/txs/utxoForAddresses",
-      method: "post",
-      handler: utxoForAddressesHandler(mongoClient),
-    },
-    {
-      path: "/v3/txs/utxoSumForAddresses",
-      method: "post",
-      handler: utxoSumForAddressesHandler(mongoClient),
     },
     {
       path: "/v3/addresses/filterUsed",
@@ -46,6 +31,11 @@ export const applyV3Routes = (router: Router) => {
       handler: multiAssetSupplyHandler(mongoClient)
     },
     {
+      path: "/v3/txs/history",
+      method: "post",
+      handler: txsHistoryHandler(mongoClient)
+    },
+    {
       path: "/v3/txs/io/:tx_hash",
       method: "get",
       handler: txsIoHandler(mongoClient)
@@ -54,7 +44,17 @@ export const applyV3Routes = (router: Router) => {
       path: "/v3/txs/io/:tx_hash/o/:index",
       method: "get",
       handler: txOutputHandler(mongoClient)
-    }
+    },
+    {
+      path: "/v3/txs/utxoForAddresses",
+      method: "post",
+      handler: utxoForAddressesHandler(mongoClient),
+    },
+    {
+      path: "/v3/txs/utxoSumForAddresses",
+      method: "post",
+      handler: utxoSumForAddressesHandler(mongoClient),
+    },
   ];
   applyRoutes(routes, router);
 };
