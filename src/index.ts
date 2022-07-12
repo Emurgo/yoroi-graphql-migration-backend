@@ -306,13 +306,18 @@ const getStatus = async (req: Request, res: Response) => {
 };
 
 const getFundInfo = async (req: Request, res: Response) => {
-  const response = await axios.get("https://servicing-station.vit.iohk.io/api/v0/fund");
+  const response = await axios.get(
+    "https://servicing-station.vit.iohk.io/api/v0/fund"
+  );
   if (response.data) {
-    const chainVotePlan = response.data.chain_vote_plans.reduce((prev: any, curr: any) => {
-      if (!prev.id) return curr;
-      if (prev.id > curr.id) return prev;
-      return curr;
-    }, {} as any);
+    const chainVotePlan = response.data.chain_vote_plans.reduce(
+      (prev: any, curr: any) => {
+        if (!prev.id) return curr;
+        if (prev.id > curr.id) return prev;
+        return curr;
+      },
+      {} as any
+    );
     return res.send({
       currentFund: {
         id: 8,
@@ -320,7 +325,9 @@ const getFundInfo = async (req: Request, res: Response) => {
         registrationEnd: response.data.fund_end_time,
         votingStart: chainVotePlan.chain_vote_start_time,
         votingEnd: chainVotePlan.chain_vote_end_time,
-        votingPowerThreshold: Math.floor(response.data.voting_power_threshold / 1_000_000).toString(),
+        votingPowerThreshold: Math.floor(
+          response.data.voting_power_threshold / 1_000_000
+        ).toString(),
       },
     });
   }

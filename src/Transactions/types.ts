@@ -25,6 +25,7 @@ export interface TransactionFrag {
   inputs: TransInputFrag[];
   collateralInputs: TransInputFrag[];
   outputs: TransOutputFrag[]; // technically a TransactionOutput fragment
+  collateralOutputs: TransOutputFrag[]; // technically a TransactionOutput fragment
   txIndex: number;
   withdrawals: TransOutputFrag[];
   certificates: Certificate[];

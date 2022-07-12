@@ -30,12 +30,14 @@ const queryMessageBoard = `
   WITH queried_pool_address AS (
     SELECT sa.id
     FROM pool_owner po
-      JOIN pool_hash ph ON (po.pool_hash_id = ph.id)
+      JOIN pool_update pu ON (po.pool_update_id = pu.id)
+      JOIN pool_hash ph ON (pu.hash_id = ph.id)
       JOIN stake_address sa ON (sa.id = po.addr_id)
-    WHERE po.registered_tx_id = (
-        SELECT MAX(registered_tx_id)
+    WHERE pu.registered_tx_id = (
+        SELECT MAX(pu.registered_tx_id)
         FROM pool_owner po
-          JOIN pool_hash ph ON (po.pool_hash_id = ph.id)
+          JOIN pool_update pu ON (po.pool_update_id = pu.id)
+          JOIN pool_hash ph ON (pu.hash_id = ph.id)
         WHERE ph.hash_raw = decode($1, 'hex')
       )
   )

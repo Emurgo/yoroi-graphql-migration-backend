@@ -105,6 +105,17 @@ const askTransactionSqlQuery = `
               or tx_out.payment_cred = ANY(($6)::bytea array)
 
           UNION
+            ${/* 2.1) Get all collateral outputs for the transaction */ ""}
+            select tx.hash as hash
+            from tx
+
+            JOIN collateral_tx_out
+              on tx.id = collateral_tx_out.tx_id
+
+            where collateral_tx_out.address = ANY(($1)::varchar array)
+              or collateral_tx_out.payment_cred = ANY(($6)::bytea array)
+
+          UNION
             ${/* 3) Get all certificates for the transaction */ ""}
             select tx.hash as hash
             from tx
@@ -212,11 +223,18 @@ const askTransactionSqlQuery = `
                     ) order by "index" asc) as outAddrValPairs
           from "TransactionOutput" hasura_to
           where hasura_to."txHash" = tx.hash) as "outAddrValPairs"
+          , (select json_agg((
+                  "address",
+                  "value",
+                  "txDataHash"
+                  ) order by "index" asc) as collateralOutAddrValPairs
+        from "CollateralTransactionOutput" hasura_to
+        where hasura_to."txHash" = tx.hash) as "collateralOutAddrValPairs"
        , (select json_agg((encode(addr."hash_raw",'hex'), "amount") order by w."id" asc)
           from withdrawal as w
           join stake_address as addr
           on addr.id = w.addr_id
-          where tx_id = tx.id) as withdrawals
+          where w.tx_id = tx.id) as withdrawals
        , (select json_agg(row_to_json(combined_certificates) order by "certIndex" asc)
           from combined_certificates
           where "txId" = tx.id) as certificates
@@ -343,6 +361,16 @@ export const askTransactionHistory = async (
           })
         )
       : [];
+    const collateralOutputs = row.collateralOutAddrValPairs
+      ? row.collateralOutAddrValPairs.map(
+          (obj: any): TransOutputFrag => ({
+            address: obj.f1,
+            amount: obj.f2.toString(),
+            dataHash: obj.f3?.toString() ?? null,
+            assets: [],
+          })
+        )
+      : [];
     const withdrawals: TransOutputFrag[] = row.withdrawals
       ? row.withdrawals.map(
           (obj: any): TransOutputFrag => ({
@@ -377,6 +405,7 @@ export const askTransactionHistory = async (
       inputs: inputs,
       collateralInputs: collateralInputs,
       outputs: outputs,
+      collateralOutputs: collateralOutputs,
       ttl: MAX_INT, // https://github.com/input-output-hk/cardano-db-sync/issues/212
       blockEra: row.blockEra === "byron" ? BlockEra.Byron : BlockEra.Shelley,
       txIndex: row.txIndex,

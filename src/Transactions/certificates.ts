@@ -99,10 +99,11 @@ select 'PoolRegistration' as "jsType"
      , encode(addr.hash_raw,'hex') as "poolParamsRewardAccount"
      , ( select json_agg(encode(stake_address.hash_raw,'hex'))
          from pool_owner inner join stake_address on pool_owner.addr_id = stake_address.id
+         inner join pool_update on pool_owner.pool_update_id = pool_update.id
          where
-          pool_owner.pool_hash_id = pool_hash.id
+         pool_update.hash_id = pool_hash.id
           and
-          pool_owner.registered_tx_id = pool.registered_tx_id
+          pool_update.registered_tx_id = pool.registered_tx_id
        ) as "poolParamsOwners"
 
      , ( select json_agg(json_build_object( 'ipv4',       ipv4
@@ -121,7 +122,7 @@ from pool_update as pool
 join pool_hash
   on pool.hash_id = pool_hash.id
 join stake_address as addr
-  on addr.hash_raw = pool.reward_addr
+  on addr.id = pool.reward_addr_id
 left join pool_metadata_ref as pool_meta
   on pool_meta.id = pool.meta_id
 group by pool.registered_tx_id
@@ -167,7 +168,7 @@ UNION ALL
 
 select 'MoveInstantaneousRewardsCert' as "jsType"
      , 'CertMir' as "formalType"
-     , addr.registered_tx_id as "txId"
+     , addr.tx_id as "txId"
      , max(reg.cert_index) as "certIndex"
      , null as "stakeCred"
      , null::text as "poolHashKey"
@@ -190,13 +191,13 @@ join stake_address as addr
 join stake_registration reg
   on addr.id = reg.addr_id
 where reserve.type = 'reserves'
-group by addr.registered_tx_id
+group by addr.tx_id
 
 UNION ALL
 
 select 'MoveInstantaneousRewardsCert' as "jsType"
      , 'CertMir' as "formalType"
-     , addr.registered_tx_id as "txId"
+     , addr.tx_id as "txId"
      , max(reg.cert_index) as "certIndex"
      , null as "stakeCred"
      , null::text as "poolHashKey"
@@ -219,7 +220,7 @@ join stake_address as addr
 join stake_registration reg
   on addr.id = reg.addr_id
 where treasury.type = 'treasury'
-group by addr.registered_tx_id;`;
+group by addr.tx_id;`;
 
 export const createCertificatesView = (pool: Pool): void => {
   if (process.env.NODE_TYPE !== "slave") {
