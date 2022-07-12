@@ -1,10 +1,17 @@
 import { Pool } from "pg";
 import { Request, Response } from "express";
 
-interface Asset {
-  name: string;
-  policy: string;
-}
+type Asset =
+  | {
+      // prefer this one
+      nameHex: string;
+      policy: string;
+    }
+  | {
+      // for backward compatibility
+      name: string;
+      policy: string;
+    };
 
 interface MultiAssetTxMintMetadata {
   key: string;
@@ -14,9 +21,15 @@ interface MultiAssetTxMintMetadata {
 const getMultiAssetTxMintMetadata = async (pool: Pool, assets: Asset[]) => {
   const query = createGetMultiAssetTxMintMetadataQuery(assets);
 
-  const params = assets
-    .map((a) => [a.name, a.policy])
-    .reduce((prev, curr) => prev.concat(curr), []);
+  const params = assets.flatMap((a) => {
+    if ("nameHex" in a) {
+      return [a.nameHex, a.policy];
+    }
+    if ("name" in a) {
+      return [a.name, a.policy];
+    }
+    throw new Error("expect nameHex or name in asset parameter");
+  });
 
   const ret: { [key: string]: MultiAssetTxMintMetadata[] } = {};
 
@@ -58,10 +71,19 @@ export const handleGetMultiAssetTxMintMetadata =
 
 function createGetMultiAssetTxMintMetadataQuery(assets: Asset[]) {
   const whereConditions = assets
-    .map(
-      (a, idx) => `( ma.name = ($${idx * 2 + 1})::bytea
-      and ma.policy = decode(($${idx * 2 + 2})::varchar, 'hex') )`
-    )
+    .map((a, idx) => {
+      let nameMatch;
+      if ("nameHex" in a) {
+        nameMatch = `decode(($${idx * 2 + 1})::varchar, 'hex')`;
+      } else if ("name" in a) {
+        nameMatch = `($${idx * 2 + 1})::bytea`;
+      } else {
+        throw new Error("expect nameHex or name in asset parameter");
+      }
+      return `( ma.name = ${nameMatch} and ma.policy = decode(($${
+        idx * 2 + 2
+      })::varchar, 'hex') )`;
+    })
     .join(" or ");
 
   const query = `
