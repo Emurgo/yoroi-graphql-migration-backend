@@ -56,6 +56,16 @@ export const mapTxRowsToTransactionFrags = (rows: any[]): TransactionFrag[] => {
           })
         )
       : [];
+    const collateralOutputs = row.collateralOutAddrValPairs
+      ? row.collateralOutAddrValPairs.map(
+          (obj: any): TransOutputFrag => ({
+            address: obj.f1,
+            amount: obj.f2.toString(),
+            dataHash: obj.f3?.toString() ?? null,
+            assets: [],
+          })
+        )
+      : [];
     const withdrawals: TransOutputFrag[] = row.withdrawals
       ? row.withdrawals.map(
           (obj: any): TransOutputFrag => ({
@@ -89,6 +99,7 @@ export const mapTxRowsToTransactionFrags = (rows: any[]): TransactionFrag[] => {
       inputs: inputs,
       collateralInputs: collateralInputs,
       outputs: outputs,
+      collateralOutputs: collateralOutputs,
       ttl: MAX_INT, // https://github.com/input-output-hk/cardano-db-sync/issues/212
       blockEra: row.blockEra === "byron" ? BlockEra.Byron : BlockEra.Shelley,
       txIndex: row.txIndex,
