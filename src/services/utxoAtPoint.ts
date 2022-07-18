@@ -34,15 +34,15 @@ FROM tx
     JOIN tx_out ON tx.id = tx_out.tx_id
     JOIN block ON block.id = tx.block_id
 WHERE tx.valid_contract
-    AND block.block_no <= ($3)::uinteger
-    AND NOT utxo_used_as_invalid_collateral(tx_out.tx_id, tx_out.index::smallint, ($3)::uinteger)
-    AND NOT utxo_used_as_valid_input(tx_out.tx_id, tx_out.index::smallint, ($3)::uinteger)
+    AND block.block_no <= ($3)::word31type
+    AND NOT utxo_used_as_invalid_collateral(tx_out.tx_id, tx_out.index::smallint, ($3)::word31type)
+    AND NOT utxo_used_as_valid_input(tx_out.tx_id, tx_out.index::smallint, ($3)::word31type)
     AND (
       tx_out.address = any(($1)::varchar array) 
       OR payment_cred = any(($2)::bytea array)
     )
 ORDER BY tx.hash
-LIMIT $4::uinteger OFFSET $5::uinteger;
+LIMIT $4::word31type OFFSET $5::word31type;
 `;
 
 export const utxoAtPoint =

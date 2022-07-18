@@ -3,8 +3,8 @@ import { Pool } from "pg";
 const sql = `CREATE OR REPLACE FUNCTION utxo_used_as_valid_input (
   _tx_out_tx_id bigint,
   _tx_out_index smallint,
-  _reference_block_no uinteger,
-  _after_block_no uinteger default null
+  _reference_block_no word31type,
+  _after_block_no word31type default null
 ) RETURNS bool AS $$
 BEGIN
     RETURN EXISTS((
@@ -24,8 +24,8 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION utxo_used_as_invalid_collateral (
   _tx_out_tx_id bigint,
   _tx_out_index smallint,
-  _reference_block_no uinteger,
-  _after_block_no uinteger default null
+  _reference_block_no word31type,
+  _after_block_no word31type default null
 ) RETURNS bool AS $$
 BEGIN
     RETURN EXISTS((

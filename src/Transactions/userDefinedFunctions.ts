@@ -17,7 +17,7 @@ BEGIN
         SELECT json_agg((encode(addr."hash_raw",'hex'), "amount") order by w."id" asc)
         FROM withdrawal as w
             JOIN stake_address as addr on addr.id = w.addr_id
-        WHERE tx_id = _tx_id
+        WHERE w.tx_id = _tx_id
     );
 END;
 $$ LANGUAGE plpgsql;

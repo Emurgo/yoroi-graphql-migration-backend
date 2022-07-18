@@ -937,6 +937,15 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   Retrieves on-chain metadata for assets.
 
   Input
+  ```js
+  {
+    assets: Array<{
+      nameHex: string,
+      policy: string,
+    }>
+  }
+  ```
+  or
 
   ```js
   {
@@ -946,6 +955,9 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
     }>
   }
   ```
+
+  Prefer the first one, where the asset names are passes as hex strings via the `nameHex` field.
+
 
   Output
 

@@ -150,18 +150,18 @@ const buildSelectFromForOutputs = () => {
 
 const buildWhereClause = (validContract: boolean, useItemIndex: boolean) => {
   return `WHERE ${validContract ? "" : "NOT "}tx.valid_contract
-  AND block.block_no <= ($3)::uinteger
+  AND block.block_no <= ($3)::word31type
   ${
     useItemIndex
       ? `AND (
-      block.block_no > ($4)::uinteger
+      block.block_no > ($4)::word31type
       OR (
-        block.block_no >= ($4)::uinteger
+        block.block_no >= ($4)::word31type
         AND encode(tx.hash,'hex') = ($5)::varchar
-        AND tx_out.index > ($6)::uinteger
+        AND tx_out.index > ($6)::txindex
       )
     )`
-      : "AND block.block_no > ($4)::uinteger"
+      : "AND block.block_no > ($4)::word31type"
   }
   AND (
     tx_out.address = any(($1)::varchar array) 
@@ -196,7 +196,7 @@ const buildFullQuery = (useItemIndex: boolean) => {
     ${buildOutputQuery(useItemIndex)}
   ) as q
   ORDER BY q."blockNumber", CASE q.type WHEN 'I' THEN 1 ELSE 0 END
-  LIMIT $${5 + (useItemIndex ? 2 : 0)}::uinteger;`;
+  LIMIT $${5 + (useItemIndex ? 2 : 0)}::word31type;`;
 };
 
 export const handleUtxoDiffSincePoint =
