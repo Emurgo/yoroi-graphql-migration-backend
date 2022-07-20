@@ -17,6 +17,7 @@ export default {
   },
   safeBlockDifference: process.env.SAFE_BLOCK_DIFFERENCE || "10",
   usingQueueEndpoint: process.env.USE_SIGNED_TX_QUEUE || "false",
+  catalystFundInfoPath: process.env.CATALYST_FUND_INFO_PATH || "https://dwgsvtv0ekonw.cloudfront.net/catalyst-mainnet-fund-info.json",
   aws: {
     lambda: {
       nftValidator: "{envName}NftValidatorLambda"
