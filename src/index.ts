@@ -360,65 +360,30 @@ const routes: Route[] = [
     handler: handleGetAccountState(pool),
   },
   {
-    path: "/v2.1/account/state",
-    method: "post",
-    handler: handleGetAccountState(pool),
-    interceptor: middleware.handleCamelCaseResponse,
-  },
-  {
     path: "/account/registrationHistory",
     method: "post",
     handler: handleGetRegHistory(pool),
-  },
-  {
-    path: "/v2.1/account/registrationHistory",
-    method: "post",
-    handler: handleGetRegHistory(pool),
-    interceptor: middleware.handleCamelCaseResponse,
   },
   {
     path: "/account/rewardHistory",
     method: "post",
     handler: handleGetRewardHistory(pool),
   },
-  {
-    path: "/v2.1/account/rewardHistory",
-    method: "post",
-    handler: handleGetRewardHistory(pool),
-    interceptor: middleware.handleCamelCaseResponse,
-  },
   { path: "/pool/info", method: "post", handler: handlePoolInfo(pool) },
-  { path: "/v2.1/pool/info", method: "post", handler: handlePoolInfo(pool), interceptor: middleware.handleCamelCaseResponse },
   {
     path: "/pool/delegationHistory",
     method: "post",
     handler: poolDelegationHistory(pool),
   },
-  {
-    path: "/v2.1/pool/delegationHistory",
-    method: "post",
-    handler: poolDelegationHistory(pool),
-    interceptor: middleware.handleCamelCaseResponse,
-  },
   // regular endpoints
   { path: "/v2/bestblock", method: "get", handler: bestBlock(pool) },
-  { path: "/v2.1/bestblock", method: "get", handler: bestBlock(pool), interceptor: middleware.handleCamelCaseResponse },
   { path: "/v2/tipStatus", method: "get", handler: handleTipStatusGet(pool) },
-  { path: "/v2.1/tipStatus", method: "get", handler: handleTipStatusGet(pool), interceptor: middleware.handleCamelCaseResponse },
   { path: "/v2/tipStatus", method: "post", handler: handleTipStatusPost(pool) },
-  { path: "/v2.1/tipStatus", method: "post", handler: handleTipStatusPost(pool), interceptor: middleware.handleCamelCaseResponse },
   { path: "/v2/txs/utxoAtPoint", method: "post", handler: utxoAtPoint(pool) },
-  { path: "/v2.1/txs/utxoAtPoint", method: "post", handler: utxoAtPoint(pool), interceptor: middleware.handleCamelCaseResponse },
   {
     path: "/v2/txs/utxoDiffSincePoint",
     method: "post",
     handler: handleUtxoDiffSincePoint(pool),
-  },
-  {
-    path: "/v2.1/txs/utxoDiffSincePoint",
-    method: "post",
-    handler: handleUtxoDiffSincePoint(pool),
-    interceptor: middleware.handleCamelCaseResponse,
   },
   {
     path: "/v2/addresses/filterUsed",
@@ -426,21 +391,9 @@ const routes: Route[] = [
     handler: filterUsedAddresses(pool),
   },
   {
-    path: "/v2.1/addresses/filterUsed",
-    method: "post",
-    handler: filterUsedAddresses(pool),
-    interceptor: middleware.handleCamelCaseResponse,
-  },
-  {
     path: "/v2/txs/utxoAtPoint",
     method: "post",
     handler: utxoAtPoint(pool),
-  },
-  {
-    path: "/v2.1/txs/utxoAtPoint",
-    method: "post",
-    handler: utxoAtPoint(pool),
-    interceptor: middleware.handleCamelCaseResponse,
   },
   {
     path: "/txs/utxoForAddresses",
@@ -448,51 +401,23 @@ const routes: Route[] = [
     handler: utxoForAddresses(pool),
   },
   {
-    path: "/v2.1/txs/utxoForAddresses",
-    method: "post",
-    handler: utxoForAddresses(pool),
-    interceptor: middleware.handleCamelCaseResponse,
-  },
-  {
     path: "/txs/utxoSumForAddresses",
     method: "post",
     handler: utxoSumForAddresses,
   },
-  {
-    path: "/v2.1/txs/utxoSumForAddresses",
-    method: "post",
-    handler: utxoSumForAddresses,
-    interceptor: middleware.handleCamelCaseResponse,
-  },
   { path: "/v2/txs/history", method: "post", handler: txHistory },
-  { path: "/v2.1/txs/history", method: "post", handler: txHistory, interceptor: middleware.handleCamelCaseResponse },
   { path: "/txs/io/:tx_hash", method: "get", handler: handleGetTxIO(pool) },
-  { path: "/v2.1/txs/io/:tx_hash", method: "get", handler: handleGetTxIO(pool), interceptor: middleware.handleCamelCaseResponse },
   {
     path: "/txs/io/:tx_hash/o/:index",
     method: "get",
     handler: handleGetTxOutput(pool),
   },
-  {
-    path: "/v2.1/txs/io/:tx_hash/o/:index",
-    method: "get",
-    handler: handleGetTxOutput(pool),
-    interceptor: middleware.handleCamelCaseResponse,
-  },
   { path: "/v2/txs/get", method: "post", handler: handleGetTransactions(pool) },
-  { path: "/v2.1/txs/get", method: "post", handler: handleGetTransactions(pool), interceptor: middleware.handleCamelCaseResponse },
   { path: "/txs/signed", method: "post", handler: handleSignedTx },
-  { path: "/v2.1/txs/signed", method: "post", handler: handleSignedTx, interceptor: middleware.handleCamelCaseResponse },
   {
     path: "/messages/getMessageBoard",
     method: "post",
     handler: handleMessageBoard(pool),
-  },
-  {
-    path: "/v2.1/messages/getMessageBoard",
-    method: "post",
-    handler: handleMessageBoard(pool),
-    interceptor: middleware.handleCamelCaseResponse
   },
   {
     path: "/messages/getMessageDirect",
@@ -500,21 +425,9 @@ const routes: Route[] = [
     handler: handleMessageDirect(pool),
   },
   {
-    path: "/v2.1/messages/getMessageDirect",
-    method: "post",
-    handler: handleMessageDirect(pool),
-    interceptor: middleware.handleCamelCaseResponse,
-  },
-  {
     path: "/oracles/getDatapoints",
     method: "post",
     handler: handleOracleDatapoint(pool),
-  },
-  {
-    path: "/v2.1/oracles/getDatapoints",
-    method: "post",
-    handler: handleOracleDatapoint(pool),
-    interceptor: middleware.handleCamelCaseResponse,
   },
   {
     path: "/oracles/getTickers",
@@ -522,21 +435,9 @@ const routes: Route[] = [
     handler: handleOracleTicker(pool),
   },
   {
-    path: "/v2.1/oracles/getTickers",
-    method: "post",
-    handler: handleOracleTicker(pool),
-    interceptor: middleware.handleCamelCaseResponse,
-  },
-  {
     path: "/pool/cardanoWallet",
     method: "get",
     handler: handleGetCardanoWalletPools(pool),
-  },
-  {
-    path: "/v2.1/pool/cardanoWallet",
-    method: "get",
-    handler: handleGetCardanoWalletPools(pool),
-    interceptor: middleware.handleCamelCaseResponse,
   },
   {
     path: "/multiAsset/supply",
@@ -544,21 +445,9 @@ const routes: Route[] = [
     handler: handleGetMultiAssetSupply(pool),
   },
   {
-    path: "/v2.1/multiAsset/supply",
-    method: "post",
-    handler: handleGetMultiAssetSupply(pool),
-    interceptor: middleware.handleCamelCaseResponse,
-  },
-  {
     path: "/multiAsset/metadata",
     method: "post",
     handler: handleGetMultiAssetTxMintMetadata(pool),
-  },
-  {
-    path: "/v2.1/multiAsset/metadata",
-    method: "post",
-    handler: handleGetMultiAssetTxMintMetadata(pool),
-    interceptor: middleware.handleCamelCaseResponse,
   },
   {
     path: "/asset/:fingerprint/mintTxs",
@@ -566,21 +455,9 @@ const routes: Route[] = [
     handler: handleGetAssetMintTxs(pool),
   },
   {
-    path: "/v2.1/asset/:fingerprint/mintTxs",
-    method: "get",
-    handler: handleGetAssetMintTxs(pool),
-    interceptor: middleware.handleCamelCaseResponse,
-  },
-  {
     path: "/multiAsset/validateNFT/:fingerprint",
     method: "post",
     handler: handleValidateNft(pool),
-  },
-  {
-    path: "/v2.1/multiAsset/validateNFT/:fingerprint",
-    method: "post",
-    handler: handleValidateNft(pool),
-    interceptor: middleware.handleCamelCaseResponse,
   },
   {
     path: "/tx/status",
@@ -588,21 +465,9 @@ const routes: Route[] = [
     handler: handleTxStatus(pool),
   },
   {
-    path: "/v2.1/tx/status",
-    method: "post",
-    handler: handleTxStatus(pool),
-    interceptor: middleware.handleCamelCaseResponse,
-  },
-  {
     path: "/multiAsset/policyIdExists",
     method: "post",
     handler: handlePolicyIdExists(pool),
-  },
-  {
-    path: "/v2.1/multiAsset/policyIdExists",
-    method: "post",
-    handler: handlePolicyIdExists(pool),
-    interceptor: middleware.handleCamelCaseResponse,
   },
   {
     path: "/v2/importerhealthcheck",
@@ -618,6 +483,148 @@ const routes: Route[] = [
         });
       else throw new Error(status);
     },
+  },
+  { path: "/status", method: "get", handler: getStatus },
+  {
+    path: "/v0/catalyst/fundInfo",
+    method: "get",
+    handler: getFundInfo,
+  },
+  // v2.1 endpoints
+  {
+    path: "/v2.1/account/state",
+    method: "post",
+    handler: handleGetAccountState(pool),
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/account/registrationHistory",
+    method: "post",
+    handler: handleGetRegHistory(pool),
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/account/rewardHistory",
+    method: "post",
+    handler: handleGetRewardHistory(pool),
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  { path: "/v2.1/pool/info", method: "post", handler: handlePoolInfo(pool), interceptor: middleware.handleCamelCaseResponse },
+  {
+    path: "/v2.1/pool/delegationHistory",
+    method: "post",
+    handler: poolDelegationHistory(pool),
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  { path: "/v2.1/bestblock", method: "get", handler: bestBlock(pool), interceptor: middleware.handleCamelCaseResponse },
+  { path: "/v2.1/tipStatus", method: "get", handler: handleTipStatusGet(pool), interceptor: middleware.handleCamelCaseResponse },
+  { path: "/v2.1/tipStatus", method: "post", handler: handleTipStatusPost(pool), interceptor: middleware.handleCamelCaseResponse },
+  { path: "/v2.1/txs/utxoAtPoint", method: "post", handler: utxoAtPoint(pool), interceptor: middleware.handleCamelCaseResponse },
+ {
+    path: "/v2.1/txs/utxoDiffSincePoint",
+    method: "post",
+    handler: handleUtxoDiffSincePoint(pool),
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/addresses/filterUsed",
+    method: "post",
+    handler: filterUsedAddresses(pool),
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/txs/utxoAtPoint",
+    method: "post",
+    handler: utxoAtPoint(pool),
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/txs/utxoForAddresses",
+    method: "post",
+    handler: utxoForAddresses(pool),
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/txs/utxoSumForAddresses",
+    method: "post",
+    handler: utxoSumForAddresses,
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  { path: "/v2.1/txs/history", method: "post", handler: txHistory, interceptor: middleware.handleCamelCaseResponse },
+  { path: "/v2.1/txs/io/:tx_hash", method: "get", handler: handleGetTxIO(pool), interceptor: middleware.handleCamelCaseResponse },
+  {
+    path: "/v2.1/txs/io/:tx_hash/o/:index",
+    method: "get",
+    handler: handleGetTxOutput(pool),
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  { path: "/v2.1/txs/get", method: "post", handler: handleGetTransactions(pool), interceptor: middleware.handleCamelCaseResponse },
+  { path: "/v2.1/txs/signed", method: "post", handler: handleSignedTx, interceptor: middleware.handleCamelCaseResponse },
+  {
+    path: "/v2.1/messages/getMessageBoard",
+    method: "post",
+    handler: handleMessageBoard(pool),
+    interceptor: middleware.handleCamelCaseResponse
+  },
+  {
+    path: "/v2.1/messages/getMessageDirect",
+    method: "post",
+    handler: handleMessageDirect(pool),
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/oracles/getDatapoints",
+    method: "post",
+    handler: handleOracleDatapoint(pool),
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/oracles/getTickers",
+    method: "post",
+    handler: handleOracleTicker(pool),
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/pool/cardanoWallet",
+    method: "get",
+    handler: handleGetCardanoWalletPools(pool),
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/multiAsset/supply",
+    method: "post",
+    handler: handleGetMultiAssetSupply(pool),
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/multiAsset/metadata",
+    method: "post",
+    handler: handleGetMultiAssetTxMintMetadata(pool),
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/asset/:fingerprint/mintTxs",
+    method: "get",
+    handler: handleGetAssetMintTxs(pool),
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/multiAsset/validateNFT/:fingerprint",
+    method: "post",
+    handler: handleValidateNft(pool),
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/tx/status",
+    method: "post",
+    handler: handleTxStatus(pool),
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/multiAsset/policyIdExists",
+    method: "post",
+    handler: handlePolicyIdExists(pool),
+    interceptor: middleware.handleCamelCaseResponse,
   },
   {
     path: "/v2.1/importerhealthcheck",
@@ -635,13 +642,7 @@ const routes: Route[] = [
     },
     interceptor: middleware.handleCamelCaseResponse,
   },
-  { path: "/status", method: "get", handler: getStatus },
   { path: "/v2.1/status", method: "get", handler: getStatus, interceptor: middleware.handleCamelCaseResponse },
-  {
-    path: "/v0/catalyst/fundInfo",
-    method: "get",
-    handler: getFundInfo,
-  },
   {
     path: "/v2.1/catalyst/fundInfo",
     method: "get",
