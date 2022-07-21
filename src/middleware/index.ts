@@ -2,6 +2,7 @@ import { NextFunction, Request, Response, Router } from "express";
 import cors from "cors";
 import parser from "body-parser";
 import compression from "compression";
+import camelizeKeys from "./utils";
 
 export const handleCors = (router: Router): Router =>
   router.use(cors({ credentials: true, origin: true }));
@@ -13,6 +14,23 @@ export const handleBodyRequestParsing = (router: Router): void => {
 
 export const handleCompression = (router: Router): void => {
   router.use(compression());
+};
+
+export const handleCamelCaseResponse = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
+  const send = res.send;
+  res.send = function (body?: Buffer | string | boolean | Array<any>) {
+    if (typeof body === "object" && body != null) {
+      send.call(this, camelizeKeys(body));
+    } else {
+      send.call(this, body);
+    }
+    return res;
+  };
+  next();
 };
 
 export const logErrors = (

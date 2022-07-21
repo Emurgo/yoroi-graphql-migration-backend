@@ -46,14 +46,23 @@ export interface Route {
   path: string;
   method: string;
   handler: Handler | Handler[] | Response;
+  interceptor?: (req: Request, res: Response, next: NextFunction) => void,
 }
 
 export const applyRoutes = (routes: Route[], router: Router) => {
   for (const route of routes) {
-    const { method, path, handler } = route;
-    // uncomment this line if you want to test locally
-    // (router as any)[method](`/api${path}`, handler);
-    (router as any)[method](path, handler);
+    const { method, path, handler, interceptor } = route;
+    if (interceptor) {
+      (router as any)[method](path, interceptor);
+      (router as any)[method](path, handler);
+      // uncomment these lines if you want to test locally
+      // (router as any)[method](`/api${path}`, interceptor);
+      // (router as any)[method](`/api${path}`, handler);
+    } else {
+      (router as any)[method](path, handler);
+      // uncomment this line if you want to test locally
+      // (router as any)[method](`/api${path}`, handler);
+    }
   }
 };
 
