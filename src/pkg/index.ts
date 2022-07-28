@@ -4,15 +4,15 @@ export enum Network {
 }
 
 export const createBackend = (networkOrUrl: Network | string) => {
-  if (typeof networkOrUrl === 'string') {
+  if (typeof networkOrUrl === "string") {
     return new Backend(networkOrUrl);
   }
 
   switch (networkOrUrl) {
     case Network.Mainnet:
-      return new Backend('https://api.yoroi.io');
+      return new Backend("https://api.yoroi.io");
     case Network.Testnet:
-      return new Backend('https://api.yoroi.io/testnet');
+      return new Backend("https://api.yoroi.io/testnet");
     default:
       throw new Error(`Unknown network: ${networkOrUrl}`);
   }
@@ -225,7 +225,7 @@ export interface Pointer {
   slot: number;
   txIndex: number;
   certIndex: number;
-  certType: 'StakeRegistration' | 'StakeDeregistration';
+  certType: "StakeRegistration" | "StakeDeregistration";
 }
 
 export type RegHistoryResponse = Dictionary<Pointer[]>;
@@ -297,34 +297,34 @@ export type Certificate =
   | MoveInstantaneousRewardsCert;
 
 export interface StakeRegistration {
-  kind: 'StakeRegistration';
+  kind: "StakeRegistration";
   certIndex: number;
   rewardAddress: string;
 }
 export interface StakeDeregistration {
-  kind: 'StakeDeregistration';
+  kind: "StakeDeregistration";
   certIndex: number;
   rewardAddress: string;
 }
 export interface StakeDelegation {
-  kind: 'StakeDelegation';
+  kind: "StakeDelegation";
   certIndex: number;
   rewardAddress: string;
   poolKeyHash: string;
 }
 export interface PoolRegistration {
-  kind: 'PoolRegistration';
+  kind: "PoolRegistration";
   certIndex: number;
   poolParams: PoolParams;
 }
 export interface PoolRetirement {
-  kind: 'PoolRetirement';
+  kind: "PoolRetirement";
   certIndex: number;
   poolKeyHash: string;
   epoch: number;
 }
 export interface MoveInstantaneousRewardsCert {
-  kind: 'MoveInstantaneousRewardsCert';
+  kind: "MoveInstantaneousRewardsCert";
   certIndex: number;
   pot: MirCertPot;
   rewards: null | Dictionary<string>;
@@ -467,8 +467,8 @@ export interface TxsHistoryRequest {
 }
 
 export enum BlockEra {
-  Byron = 'byron',
-  Shelley = 'shelley',
+  Byron = "byron",
+  Shelley = "shelley",
 }
 
 export interface TransOutputFrag {
@@ -522,7 +522,7 @@ export interface Input {
   assets: Asset[];
 }
 
-export type Output = Pick<Input, 'address' | 'address' | 'assets'> & {
+export type Output = Pick<Input, "address" | "address" | "assets"> & {
   dataHash: string | null;
 };
 
