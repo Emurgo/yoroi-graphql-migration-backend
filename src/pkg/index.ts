@@ -1,3 +1,6 @@
+export const MAINNET_URL = "https://backend.yoroiwallet.com/api/";
+export const TESTNET_URL = "https://testnet-backend.yoroiwallet.com/api/";
+
 export enum Network {
   Mainnet,
   Testnet,
@@ -21,7 +24,7 @@ export const createBackend = (networkOrUrl: Network | string) => {
 export class Backend {
   constructor(
     public readonly url: string,
-    public readonly version: string = ""
+    public readonly version: string = "v2.1"
   ) {}
 
   private getVersionedUrl(path: string): string {
@@ -166,7 +169,7 @@ export class Backend {
     return await response.json();
   }
 
-  public async getAssetMintTxs(fingerprint: string): Promise<any> {
+  public async getAssetMintTxs(fingerprint: string): Promise<GetAssetMinTxsResponse> {
     const response = await fetch(this.getVersionedUrl(`asset/${fingerprint}/mintTxs`));
     return await response.json();
   }
@@ -275,8 +278,8 @@ export interface DelegationRangeResponse {
   hash: string;
   epoch: number;
   slot: number;
-  tx_ordinal: number;
-  cert_ordinal: number;
+  txOrdinal: number;
+  certOrdinal: number;
   payload: Certificate | null;
   info: {
     name: string;
@@ -417,13 +420,13 @@ interface Asset {
 }
 
 export interface UTXOAtPointResponse {
-  utxo_id: string;
-  tx_hash: any;
-  tx_index: any;
+  utxoId: string;
+  txHash: any;
+  txIndex: any;
   receiver: any;
   amount: any;
   assets: Asset[];
-  block_num: any;
+  blockNum: any;
 }
 
 export interface UTXODiffSincePointResponse {
@@ -436,9 +439,9 @@ export interface UTXODiffSincePointResponse {
     amount: number;
     receiver?: string;
     assets?: Asset[];
-    block_num?: number;
-    tx_hash?: string;
-    tx_index?: any;
+    blockNum?: number;
+    txHash?: string;
+    txIndex?: any;
   };
 }
 
@@ -490,22 +493,22 @@ export interface TransInputFrag {
 export interface TransactionFragResponse {
   hash: string;
   fee: string;
-  valid_contract: boolean;
-  script_size: number;
+  validContract: boolean;
+  scriptSize: number;
   type: BlockEra;
   metadata: null | string;
   inputs: TransInputFrag[];
-  tx_ordinal: number;
+  txOrdinal: number;
   withdrawals: TransOutputFrag[];
   certificates: Certificate[];
-  tx_state: string;
-  last_update: Date;
-  block_num: number;
-  block_hash: string;
+  txState: string;
+  lastUpdate: Date;
+  blockNum: number;
+  blockHash: string;
   time: Date;
   epoch: number;
   slot: number;
-  collateral_inputs: TransInputFrag[];
+  collateralInputs: TransInputFrag[];
   outputs: TransOutputFrag[];
 }
 
@@ -646,6 +649,11 @@ export interface MultiAssetTxMintMetadata {
   metadata: any;
 }
 
+export interface GetAssetMinTxsResponse {
+  policy: any;
+  name: any;
+  txs: any;
+}
 export interface MultiAssetMetadataResponse {
   [key: string]: MultiAssetTxMintMetadata[];
 }
