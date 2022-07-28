@@ -1,3 +1,203 @@
+export enum Network {
+  Mainnet,
+  Testnet,
+}
+
+export const createBackend = (networkOrUrl: Network | string) => {
+  if (typeof networkOrUrl === 'string') {
+    return new Backend(networkOrUrl);
+  }
+
+  switch (networkOrUrl) {
+    case Network.Mainnet:
+      return new Backend('https://api.yoroi.io');
+    case Network.Testnet:
+      return new Backend('https://api.yoroi.io/testnet');
+    default:
+      throw new Error(`Unknown network: ${networkOrUrl}`);
+  }
+};
+
+export class Backend {
+  constructor(
+    public readonly url: string,
+    public readonly version: string = ""
+  ) {}
+
+  private getVersionedUrl(path: string): string {
+    return `${this.url}/${this.version && `${this.version}/`}${path}`;
+  }
+
+  private getRequestBody(
+    body: any
+  ): { method: string; body: any; headers: any } {
+    return {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    };
+  }
+
+  public async getAccountState(addresses: string[]): Promise<AccountStateResponse> {
+    const response = await fetch(this.getVersionedUrl("account/state"), this.getRequestBody({ addresses }));
+    return await response.json();
+  }
+
+  public async getRegistrationHistory(addresses: string[]): Promise<RegHistoryResponse> {
+    const response = await fetch(this.getVersionedUrl("account/registrationHistory"), this.getRequestBody({ addresses }));
+    return await response.json();
+  }
+
+  public async getRewardHistory(addresses: string[]): Promise<RewardHistoryResponse> {
+    const response = await fetch(this.getVersionedUrl("account/rewardHistory"), this.getRequestBody({ addresses }));
+    return await response.json();
+  }
+
+  public async getPoolInfo(poolIds: string[]): Promise<PoolInfoResponse> {
+    const response = await fetch(this.getVersionedUrl("pool/info"), this.getRequestBody({ poolIds }));
+    return await response.json();
+  }
+
+  public async getDelegationHistory(poolRanges: PoolDelegationRange[]): Promise<DelegationHistoryResponse> {
+    const response = await fetch(this.getVersionedUrl("pool/delegationHistory"), this.getRequestBody({ poolRanges }));
+    return await response.json();
+  }
+
+  public async getBestBlock(): Promise<BestBlockResponse> {
+    const response = await fetch(this.getVersionedUrl("bestblock"));
+    return await response.json();
+  }
+
+  public async getTipStatus(): Promise<TipStatusResponse> {
+    const response = await fetch(this.getVersionedUrl("tipStatus"));
+    return await response.json();
+  }
+
+  public async postTipStatus(data: TipStatusRequest): Promise<TipStatusResponse> {
+    const response = await fetch(this.getVersionedUrl("tipStatus"), this.getRequestBody({ data }));
+    return await response.json();
+  }
+
+  public async utxoAtPoint(data: UTXOAtPointRequest): Promise<UTXOAtPointResponse> {
+    const response = await fetch(this.getVersionedUrl("txs/utxoAtPoint"), this.getRequestBody({ data }));
+    return await response.json();
+  }
+
+  public async utxoDiffSincePoint(data: UTXODiffSincePointRequest): Promise<UTXODiffSincePointResponse> {
+    const response = await fetch(this.getVersionedUrl("txs/utxoDiffSincePoint"), this.getRequestBody({ data }));
+    return await response.json();
+  }
+
+  public async filtersUsed(addresses: string[]): Promise<string[]> {
+    const response = await fetch(this.getVersionedUrl("txs/utxoDiffSincePoint"), this.getRequestBody({ addresses }));
+    return await response.json();
+  }
+
+  public async utxoForAddresses(addresses: string[]): Promise<UTXOAtPointResponse> {
+    const response = await fetch(this.getVersionedUrl("txs/utxoForAddresses"), this.getRequestBody({ addresses }));
+    return await response.json();
+  }
+
+  public async utxoSumForAddresses(addresses: string[]): Promise<UtxoSumResponse> {
+    const response = await fetch(this.getVersionedUrl("txs/utxoSumForAddresses"), this.getRequestBody({ addresses }));
+    return await response.json();
+  }
+
+  public async txsHistory(data: TxsHistoryRequest): Promise<TransactionFragResponse[]> {
+    const response = await fetch(this.getVersionedUrl("txs/history"), this.getRequestBody({ data }));
+    return await response.json();
+  }
+
+  public async getTxIO(tx_hash: string): Promise<TXHashResponse> {
+    const response = await fetch(this.getVersionedUrl(`txs/io/${tx_hash}`));
+    return await response.json();
+  }
+
+  public async getTxOutput(tx_hash: string, index: number): Promise<TXOutputResponse> {
+    const response = await fetch(this.getVersionedUrl(`txs/io/${tx_hash}/o/${index}`));
+    return await response.json();
+  }
+
+  public async getTransactions(data: GetTransactionsRequest): Promise<{
+    [key: string]: any;
+}> {
+    const response = await fetch(this.getVersionedUrl("txs/get"), this.getRequestBody({ data }));
+    return await response.json();
+  }
+
+  public async signedTxs(data: SignedTxsRequest): Promise<any> {
+    const response = await fetch(this.getVersionedUrl("txs/signed"), this.getRequestBody({ data }));
+    return await response.json();
+  }
+
+  public async getMessageBoard(data: GetMessageBoardRequest): Promise<MessageResponse> {
+    const response = await fetch(this.getVersionedUrl("messages/getMessageBoard"), this.getRequestBody({ data }));
+    return await response.json();
+  }
+  public async getMessageDirect(data: GetMessageDirectRequest): Promise<MessageResponse> {
+    const response = await fetch(this.getVersionedUrl("messages/getMessageDirect"), this.getRequestBody({ data }));
+    return await response.json();
+  }
+
+  public async getDatapoints(data: GetOracleDataPointRequest): Promise<DatapointResponse> {
+    const response = await fetch(this.getVersionedUrl("oracles/getDatapoints"), this.getRequestBody({ data }));
+    return await response.json();
+  }
+
+  public async getTickers(addresses: string[]): Promise<TickerResponse> {
+    const response = await fetch(this.getVersionedUrl("oracles/getTickers"), this.getRequestBody({ addresses }));
+    return await response.json();
+  }
+
+  public async getCardanoWallet(data: CardanoWalletRequest): Promise<PoolInfo[]> {
+    const response = await fetch(this.getVersionedUrl("pool/cardanoWallet"), this.getRequestBody({ data }));
+    return await response.json();
+  }
+
+  public async multiAssetSupply(assets: Asset[]): Promise<MultiAssetSupplyResponse> {
+    const response = await fetch(this.getVersionedUrl("multiAsset/supply"), this.getRequestBody({ assets }));
+    return await response.json();
+  }
+
+  public async multiAssetMetadata(assets: Asset[]): Promise<MultiAssetMetadataResponse> {
+    const response = await fetch(this.getVersionedUrl("multiAsset/metadata"), this.getRequestBody({ assets }));
+    return await response.json();
+  }
+
+  public async getAssetMintTxs(fingerprint: string): Promise<any> {
+    const response = await fetch(this.getVersionedUrl(`asset/${fingerprint}/mintTxs`));
+    return await response.json();
+  }
+
+  public async validateNFT(fingerprint: string, envName: string): Promise<MultiAssetMetadataResponse> {
+    const response = await fetch(this.getVersionedUrl(`multiAsset/validateNFT/${fingerprint}`), this.getRequestBody({ envName }));
+    return await response.json();
+  }
+
+  public async txStatus(data: TxStatusRequest): Promise<TxStatusResponse> {
+    const response = await fetch(this.getVersionedUrl("tx/status"), this.getRequestBody({ data }));
+    return await response.json();
+  }
+
+  public async policyIds(data: PolicyIDRequest): Promise<PolicyIDResponse> {
+    const response = await fetch(this.getVersionedUrl("multiAsset/policyIdExists"), this.getRequestBody({ data }));
+    return await response.json();
+  }
+
+  public async getStatus(): Promise<StatusResponse> {
+    const response = await fetch(this.getVersionedUrl("status"));
+    return await response.json();
+  }
+
+  public async getFundInfo(): Promise<any> {
+    const response = await fetch(this.getVersionedUrl("catalyst/fundInfo"));
+    return await response.json();
+  }
+
+}
+
 export interface Dictionary<T> {
   [key: string]: T;
 }
@@ -65,6 +265,11 @@ export type PoolInfoResponse = Dictionary<RemotePool | null>;
 /******************************************************************************
  *  Types related to Delegation history
  ******************************************************************************/
+
+export interface PoolDelegationRange {
+  fromEpoch: number;
+  toEpoch?: number;
+}
 
 export interface DelegationRangeResponse {
   hash: string;
@@ -172,6 +377,9 @@ export type BestBlockResponse = CardanoFrag;
  *  Types related to Tip status
  ******************************************************************************/
 
+export interface TipStatusRequest {
+  reference: { bestBlocks: string[]; };
+}
 export interface TipStatusResponse {
   safeBlock: string | undefined;
   bestBlock: string | undefined;
@@ -184,6 +392,24 @@ export interface TipStatusResponse {
 /******************************************************************************
  *  Types related to UTXOs
  ******************************************************************************/
+
+export interface UTXOAtPointRequest {
+  addresses: string[];
+  referenceBlockHash: string;
+  page: number;
+  pageSize: number;
+}
+
+export interface UTXODiffSincePointRequest {
+  addresses: string[];
+    untilBlockHash: string;
+    afterPoint: {
+        blockHash: string;
+        itemIndex?: number;
+        txHash?: string;
+    };
+    diffLimit: number;
+}
 
 interface Asset {
   name: string;
@@ -229,6 +455,16 @@ export interface TokenBalace {
 /******************************************************************************
  *  Types related to TX History
  ******************************************************************************/
+
+export interface TxsHistoryRequest {
+  addresses: string[];
+  untilBlock: string;
+  after: {
+    tx: any;
+    block: any;
+  };
+  limit: number;
+}
 
 export enum BlockEra {
   Byron = 'byron',
@@ -296,6 +532,18 @@ export interface TXHashResponse {
   outputs: Output[];
 }
 
+export interface TXOutputResponse {
+  output: Output;
+}
+
+export interface GetTransactionsRequest {
+  txHashes: string[];
+}
+
+export interface SignedTxsRequest {
+  signedTx: string;
+}
+
 /******************************************************************************
  *  Types related to Messages
  ******************************************************************************/
@@ -312,6 +560,19 @@ export interface Message {
 
 export type MessageResponse = Dictionary<Message[] | null>;
 
+export interface GetMessageBoardRequest {
+  poolIds: string[];
+  fromBlock: string;
+  untilBlock: string;
+}
+
+export interface GetMessageDirectRequest {
+  poolId: string;
+  fromBlock: string;
+  untilBlock: string;
+  address: string;
+}
+
 /******************************************************************************
  *  Types related to DataPoints
  ******************************************************************************/
@@ -327,6 +588,14 @@ export interface Datapoint {
 }
 
 export type DatapointResponse = Dictionary<Datapoint[]>;
+
+export interface GetOracleDataPointRequest {
+  addresses: string[];
+  ticker: string;
+  blockNum: string;
+  source: any;
+  count: number;
+}
 
 /******************************************************************************
  *  Types related to Tickers
@@ -357,6 +626,11 @@ export interface PoolInfo {
 
 export type PoolResponse = PoolInfo[];
 
+export interface CardanoWalletRequest {
+  limit: number;
+  offset: number;
+}
+
 /******************************************************************************
  *  Types related to MultiAsset
  ******************************************************************************/
@@ -381,6 +655,11 @@ export interface PolicyIDResponse {
   fingerprintResults: { [key: string]: boolean };
 }
 
+export interface PolicyIDRequest {
+  policyIds: string[];
+  fingerprints: string[];
+}
+
 /******************************************************************************
  *  Types related to Status
  ******************************************************************************/
@@ -390,4 +669,18 @@ export interface StatusResponse {
   isMaintenance: boolean;
   serverTime: number;
   isQueueOnline: boolean;
+}
+
+export interface TxStatusRequest {
+  txHashes: string[];
+}
+
+export interface TxStatusResponse {
+  depth: number;
+  submissionStatus: {
+    [key: string]: {
+      status: string;
+      reason: string;
+    }
+  };
 }
