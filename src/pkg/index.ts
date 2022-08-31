@@ -123,14 +123,12 @@ export class Backend {
     return await response.json();
   }
 
-  public async getTransactions(data: GetTransactionsRequest): Promise<{
-    [key: string]: any;
-}> {
+  public async getTransactions(data: GetTransactionsRequest): Promise<GetTransactionsObjectResponse> {
     const response = await fetch(this.getVersionedUrl("txs/get"), this.getRequestBody({ data }));
     return await response.json();
   }
 
-  public async signedTxs(data: SignedTxsRequest): Promise<any> {
+  public async signedTxs(data: SignedTxsRequest): Promise<void> {
     const response = await fetch(this.getVersionedUrl("txs/signed"), this.getRequestBody({ data }));
     return await response.json();
   }
@@ -194,7 +192,7 @@ export class Backend {
     return await response.json();
   }
 
-  public async getFundInfo(): Promise<any> {
+  public async getFundInfo(): Promise<FundInfoResponse> {
     const response = await fetch(this.getVersionedUrl("catalyst/fundInfo"));
     return await response.json();
   }
@@ -251,7 +249,7 @@ export type RewardHistoryResponse = Dictionary<RewardForEpoch[]>;
  ******************************************************************************/
 
 export interface RemotePool {
-  readonly info: any;
+  readonly info: string;
   history: PoolHistory[];
 }
 
@@ -421,17 +419,17 @@ interface Asset {
 
 export interface UTXOAtPointResponse {
   utxoId: string;
-  txHash: any;
-  txIndex: any;
-  receiver: any;
-  amount: any;
+  txHash: string;
+  txIndex: number;
+  receiver: string;
+  amount: number;
   assets: Asset[];
-  blockNum: any;
+  blockNum: number;
 }
 
 export interface UTXODiffSincePointResponse {
   blockHash: string;
-  txHash: any;
+  txHash: string;
   itemIndex: number;
   diffItems: {
     type: string;
@@ -441,7 +439,7 @@ export interface UTXODiffSincePointResponse {
     assets?: Asset[];
     blockNum?: number;
     txHash?: string;
-    txIndex?: any;
+    txIndex?: number;
   };
 }
 
@@ -463,8 +461,8 @@ export interface TxsHistoryRequest {
   addresses: string[];
   untilBlock: string;
   after: {
-    tx: any;
-    block: any;
+    tx: string;
+    block: number;
   };
   limit: number;
 }
@@ -543,6 +541,28 @@ export interface GetTransactionsRequest {
   txHashes: string[];
 }
 
+export interface GetTransactionsObjectResponse {
+  hash: string;
+  fee: string;
+  metadata: string | null;
+  validContract: boolean;
+  scriptSize: number;
+  type: BlockEra;
+  withdrawals: TransOutputFrag[];
+  certificates: Certificate[];
+  txOrdinal: number;
+  txState: "Successful";
+  lastUpdate: Date;
+  blocNum: number;
+  blockHash: string,
+  time: Date;
+  epoch: number;
+  slot: number;
+  inputs: TransInputFrag[];
+  collateralInputs: TransInputFrag[];
+  outputs: TransOutputFrag[];
+}
+
 export interface SignedTxsRequest {
   signedTx: string;
 }
@@ -586,7 +606,7 @@ export interface Datapoint {
     blockDistance: number | null; // null if block parameter is not used
     txHash: string;
     txIndex: number;
-    payload: any;
+    payload: string;
   };
 }
 
@@ -596,7 +616,7 @@ export interface GetOracleDataPointRequest {
   addresses: string[];
   ticker: string;
   blockNum: string;
-  source: any;
+  source: string;
   count: number;
 }
 
@@ -617,7 +637,7 @@ export type TickerResponse = Dictionary<Ticker[]>;
  ******************************************************************************/
 
 export interface PoolInfo {
-  pool_info: any;
+  pool_info: string;
   pool_id: string;
   cost: string;
   margin: string;
@@ -626,8 +646,6 @@ export interface PoolInfo {
   produced_blocks: number;
   relative_stake: string;
 }
-
-export type PoolResponse = PoolInfo[];
 
 export interface CardanoWalletRequest {
   limit: number;
@@ -646,13 +664,13 @@ export interface MultiAssetSupplyResponse {
 
 export interface MultiAssetTxMintMetadata {
   key: string;
-  metadata: any;
+  metadata: string;
 }
 
 export interface GetAssetMinTxsResponse {
-  policy: any;
-  name: any;
-  txs: any;
+  policy: string;
+  name: string;
+  txs: string;
 }
 export interface MultiAssetMetadataResponse {
   [key: string]: MultiAssetTxMintMetadata[];
@@ -691,4 +709,16 @@ export interface TxStatusResponse {
       reason: string;
     }
   };
+}
+
+export interface FundInfoResponse {
+  [key: string]: {
+      id: number;
+      name: string;
+      registrationStart: Date;
+      registrationEnd: Date;
+      votingStart: Date;
+      votingEnd: Date;
+      votingPowerThreshold: string;
+  }
 }
