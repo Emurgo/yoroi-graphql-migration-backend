@@ -32,8 +32,8 @@ export class Backend {
   }
 
   private getRequestBody(
-    body: any
-  ): { method: string; body: any; headers: any } {
+    body: { [key: string]: any }
+  ): { method: string; body: string; headers: { [key: string]: string } } {
     return {
       method: "POST",
       headers: {
