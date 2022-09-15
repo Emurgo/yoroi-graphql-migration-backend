@@ -91,12 +91,12 @@ export const applyRoutes = (routes: Route[], router: Router) => {
       (router as any)[method](path, interceptor);
       (router as any)[method](path, handler);
       // uncomment these lines if you want to test locally
-      // (router as any)[method](`/api${path}`, interceptor);
-      // (router as any)[method](`/api${path}`, handler);
+      (router as any)[method](`/api${path}`, interceptor);
+      (router as any)[method](`/api${path}`, handler);
     } else {
       (router as any)[method](path, handler);
       // uncomment this line if you want to test locally
-      // (router as any)[method](`/api${path}`, handler);
+      (router as any)[method](`/api${path}`, handler);
     }
   }
 };

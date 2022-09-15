@@ -74,6 +74,8 @@ import * as Tracing from "@sentry/tracing";
 
 import installCoinPriceHandlers from "./coin-price/handler";
 
+import { v3 } from "./v3";
+
 const pool = new Pool({
   user: config.get("db.user"),
   host: config.get("db.host"),
@@ -680,6 +682,14 @@ const routes: Route[] = [
     method: "get",
     handler: getFundInfo,
     interceptor: middleware.handleCamelCaseResponse,
+  },
+
+
+  // v3
+  {
+    path: "/v3/txs/history",
+    method: "post",
+    handler: v3.txs.history.handler
   },
 ];
 
