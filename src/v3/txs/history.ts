@@ -1,5 +1,91 @@
 import neo4j, { Integer, Session } from "neo4j-driver";
 import { Request, Response } from "express";
+import {
+  Address,
+  ByronAddress,
+  Ed25519KeyHash,
+  RewardAddress,
+  StakeCredential
+} from "@emurgo/cardano-serialization-lib-nodejs";
+
+const getReceivedSpentCypherPart = (addresses: string[], paymentCreds: string[]) => {
+  if (addresses.length === 0 && paymentCreds.length === 0) return "";
+
+  const whereClause = addresses.length !== 0 && paymentCreds.length !== 0
+    ? "WHERE tx_out.payment_cred IN $payment_creds OR tx_out.address IN $addresses"
+    : addresses.length !== 0
+      ? "WHERE tx_out.address IN $addresses"
+      : "WHERE tx_out.payment_cred IN $payment_creds";
+
+  return `OPTIONAL MATCH (tx_out:TX_OUT)
+${whereClause}
+OPTIONAL MATCH (tx_out)-[:producedBy]->(received_tx:TX)
+OPTIONAL MATCH (tx_out)-[:sourceOf]->(tx_in:TX_IN)
+OPTIONAL MATCH (tx_in)-[:inputOf]->(spent_tx:TX)
+
+`;
+};
+
+const getCertificatesCypherPart = (addrKeyHashes: string[]) => {
+  if (addrKeyHashes.length === 0) return "";
+
+  return `OPTIONAL MATCH (cert:CERTIFICATE)
+WHERE cert.addrKeyHash IN $addr_key_hashes
+OPTIONAL MATCH (cert)-[:generatedAt]->(cert_tx:TX)
+
+`;
+};
+
+const getWithdrawalsCypherPart = (rewardAddresses: string[]) => {
+  if (rewardAddresses.length === 0) return "";
+
+  return `OPTIONAL MATCH (wit:WITHDRAWAL)
+WHERE wit.address IN $reward_addresses
+OPTIONAL MATCH (wit)-[:withdrewAt]->(wit_tx:TX)
+
+`;
+};
+
+const getWithTxsCypherPart = (
+  addresses: string[],
+  paymentCreds: string[],
+  addrKeyHashes: string[],
+  rewardAddresses: string[]
+) => {
+  const parts = [] as string[];
+  if (addresses.length > 0 || paymentCreds.length > 0) {
+    parts.push("collect(received_tx)");
+    parts.push("collect(spent_tx)");
+  }
+  if (addrKeyHashes.length > 0) {
+    parts.push("collect(cert_tx)");
+  }
+  if (rewardAddresses.length > 0) {
+    parts.push("collect(wit_tx)");
+  }
+  return `WITH ${parts.join("+")} as txs
+  
+  `;
+};
+
+const getTxsCypherPart = (
+  addresses: string[],
+  paymentCreds: string[],
+  addrKeyHashes: string[],
+  rewardAddresses: string[]
+) => {
+  const parts = [] as string[];
+  parts.push(getReceivedSpentCypherPart(addresses, paymentCreds));
+  parts.push(getCertificatesCypherPart(addrKeyHashes));
+  parts.push(getWithdrawalsCypherPart(rewardAddresses));
+  parts.push(getWithTxsCypherPart(
+    addresses,
+    paymentCreds,
+    addrKeyHashes,
+    rewardAddresses
+  ));
+  return parts.join("");
+};
 
 export namespace Neo4jModel {
   export type Block = {
@@ -33,6 +119,7 @@ export namespace Neo4jModel {
     assets: [] | string,
     address: string,
     id: string,
+    datum_hash: string,
     stake_cred: string,
     payment_cred: string
   }
@@ -41,56 +128,71 @@ export namespace Neo4jModel {
     index: Integer
     tx_id: string
   }
+
+  export type WITHDRAWAL = {
+    address: string
+    amount: Integer | string
+  }
 }
 
 const neo4jCast = <T>(r: any) => {
   return r.properties as T;
 };
 
-const getUntilBlock = (session: Session) => async (reqBody: any) => {
-  const response = await session.run(
-    "MATCH (block:Block{hash:$hash}) RETURN block", {
-      hash: reqBody.untilBlock
-    }
-  );
-
-  if (response.records.length === 0) throw new Error("REFERENCE_BEST_BLOCK_MISMATCH");
-
-  return response.records[0].get("block").properties as Neo4jModel.Block;
-};
-
-const getAfterBlock = (session: Session) => async (reqBody: any) => {
-  if (!reqBody.after.block) return null;
-
-  const response = await session.run(
-    "MATCH (block:Block{hash:$hash}) RETURN block", {
-      hash: reqBody.after.block
-    }
-  );
-
-  if (response.records.length === 0) throw new Error("REFERENCE_BLOCK_MISMATCH");
-
-  return response.records[0].get("block").properties as Neo4jModel.Block;
-};
-
-const getAfterTx = (session: Session) => async (reqBody: any) => {
-  if (!reqBody.after.tx) return null;
-
-  const response = await session.run(
-    "MATCH (tx:TX{hash:$hash}) RETURN tx", {
-      hash: reqBody.after.tx
-    }
-  );
-
-  if (response.records.length === 0) throw new Error("REFERENCE_TX_NOT_FOUND");
-
-  return response.records[0].get("tx").properties as Neo4jModel.TX;
-};
-
 const getPaginationParameters = (session: Session) => async (reqBody: any) => {
-  const untilBlock = await getUntilBlock(session)(reqBody);
-  const afterBlock = await getAfterBlock(session)(reqBody);
-  const afterTx = await getAfterTx(session)(reqBody);
+  const untilBlockCypher = "MATCH (untilBlock:Block{hash:$untilBlock})";
+  const afterBlockCypher = "MATCH (afterBlock:Block{hash:$afterBlock})";
+  const afterTxCypher = "MATCH (afterTx:TX{hash:$afterTx})";
+
+  const matchParts = [] as string[];
+  const returnParts = [] as string[];
+
+  matchParts.push(untilBlockCypher);
+  returnParts.push("{number: untilBlock.number} as untilBlock");
+
+  if (reqBody.after?.block) {
+    matchParts.push(afterBlockCypher);
+    returnParts.push("{number: afterBlock.number} as afterBlock");
+  }
+  if (reqBody.after?.tx) {
+    matchParts.push(afterTxCypher);
+    returnParts.push("{tx_index: afterTx.tx_index} as afterTx");
+  }
+
+  const matchPart = matchParts.join("\n");
+  const returnPart = returnParts.join(",");
+
+  const cypher = `${matchPart}
+RETURN ${returnPart}`;
+
+  const result = await session.run(cypher, {
+    untilBlock: reqBody.untilBlock,
+    afterBlock: reqBody.after?.block,
+    afterTx: reqBody.after?.tx,
+  });
+
+  const record = result.records[0];
+  const untilBlock = record.has("untilBlock")
+    ? record.get("untilBlock") as Neo4jModel.Block
+    : undefined;
+  const afterBlock = record.has("afterBlock")
+    ? record.get("afterBlock") as Neo4jModel.Block
+    : undefined;
+  const afterTx = record.has("afterTx")
+    ? record.get("afterTx") as Neo4jModel.TX
+    : undefined;
+
+  if (!untilBlock) {
+    throw new Error("REFERENCE_BEST_BLOCK_MISMATCH");
+  }
+
+  if (!afterBlock && reqBody.after?.block) {
+    throw new Error("REFERENCE_BLOCK_MISMATCH");
+  }
+
+  if (!afterTx && reqBody.after?.tx) {
+    throw new Error("REFERENCE_TX_NOT_FOUND");
+  }
 
   return {
     untilBlock: untilBlock.number.toInt(),
@@ -99,9 +201,64 @@ const getPaginationParameters = (session: Session) => async (reqBody: any) => {
   };
 };
 
+const getAddressesByType = (addresses: string[]) => {
+  const bech32OrBase58Addresses = [] as string[];
+  const paymentCreds = [] as string[];
+  const addrKeyHashes = [] as string[];
+  const rewardAddresses = [] as string[];
+
+  for (const address of addresses) {
+    if (ByronAddress.is_valid(address)) {
+      bech32OrBase58Addresses.push(address);
+      bech32OrBase58Addresses.push(ByronAddress.from_base58(address).to_address().to_bech32());
+      continue;
+    }
+
+    if (address.startsWith("addr_vkh")) {
+      const keyHash = Ed25519KeyHash.from_bech32(address);
+      const cred = StakeCredential.from_keyhash(keyHash);
+      paymentCreds.push(Buffer.from(cred.to_bytes()).toString("hex"));
+      continue;
+    }
+
+    if (address.startsWith("addr") || address.startsWith("addr_test")) {
+      bech32OrBase58Addresses.push(address);
+      continue;
+    }
+
+    if (address.startsWith("stake") || address.startsWith("stake_test")) {
+      const rewardAddress = RewardAddress.from_address(
+        Address.from_bech32(address)
+      );
+      if (rewardAddress) {
+        rewardAddresses.push(Buffer.from(rewardAddress.to_address().to_bytes()).toString("hex"));
+        const cred = rewardAddress.payment_cred();
+        const keyHash = cred.to_keyhash();
+        if (keyHash) {
+          addrKeyHashes.push(Buffer.from(keyHash.to_bytes()).toString("hex"));
+        }
+      }
+      continue;
+    }
+  }
+
+  return {
+    bech32OrBase58Addresses,
+    paymentCreds,
+    addrKeyHashes,
+    rewardAddresses
+  };
+};
+
 export const history = {
   handler: async (req: Request, res: Response) => {
-    const addresses = req.body.addresses;
+    const addresses = req.body.addresses as string[];
+    const {
+      bech32OrBase58Addresses,
+      paymentCreds,
+      addrKeyHashes,
+      rewardAddresses
+    } = getAddressesByType(addresses);
 
     const driver = neo4j.driver(
       "neo4j://dus-01.emurgo-rnd.com:7687",
@@ -111,13 +268,17 @@ export const history = {
 
     const paginationParameters = await getPaginationParameters(session)(req.body);
 
-    const response = await session.run(`MATCH (tx_out:TX_OUT)
-WHERE tx_out.address IN $addresses
-MATCH (tx_out)-[:producedBy]->(tx:TX)
-OPTIONAL MATCH (tx_out)-[:sourceOf]->(tx_in:TX_IN)
-OPTIONAL MATCH (tx_in)-[:inputOf]->(spentTx:TX)
+    const txsCypherPart = getTxsCypherPart(
+      bech32OrBase58Addresses,
+      paymentCreds,
+      addrKeyHashes,
+      rewardAddresses
+    );
 
-WITH tx
+    const cypher = `${txsCypherPart}
+
+UNWIND txs as tx
+WITH DISTINCT tx
 
 MATCH (tx)-[:isAt]->(block:Block)
 WHERE block.number <= $untilBlock AND (
@@ -128,23 +289,35 @@ WHERE block.number <= $untilBlock AND (
 )
 
 OPTIONAL MATCH (tx_out:TX_OUT)-[:producedBy]->(tx)
+WITH block, tx, collect(tx_out) as outputs
+
 OPTIONAL MATCH (tx_in:TX_IN)-[:inputOf]->(tx)
 OPTIONAL MATCH (src_tx_out:TX_OUT)-[:sourceOf]->(tx_in)
-
-WITH block, tx, collect(tx_out) as outputs, collect({
+WITH block, tx, outputs, collect({
   tx_in: tx_in,
   tx_out: src_tx_out
-}) as inputs ORDER BY block.number, tx.tx_index LIMIT 50
+}) as inputs
 
-RETURN block, tx, outputs, inputs;`, {
-  addresses,
-  ...paginationParameters
-});
+OPTIONAL MATCH (withdrawal:WITHDRAWAL)-[:withdrewAt]->(tx)
+WITH block, tx, outputs, inputs, collect(withdrawal) as withdrawals
+
+ORDER BY block.number, tx.tx_index LIMIT 50
+
+RETURN block, tx, outputs, inputs, withdrawals;`;
+
+    const response = await session.run(cypher, {
+      addresses: bech32OrBase58Addresses,
+      payment_creds: paymentCreds,
+      addr_key_hashes: addrKeyHashes,
+      reward_addresses: rewardAddresses,
+      ...paginationParameters
+    });
 
     const txs = response.records.map(r => {
       const tx = neo4jCast<Neo4jModel.TX>(r.get("tx"));
       const block = neo4jCast<Neo4jModel.Block>(r.get("block"));
       const outputs = (r.get("outputs") as any[]).map((o: any) => neo4jCast<Neo4jModel.TX_OUT>(o));
+      const withdrawals = (r.get("withdrawals") as any[]).map((o: any) => neo4jCast<Neo4jModel.WITHDRAWAL>(o));
       const inputs = (r.get("inputs") as any[]).map((i: any) => ({
         tx_in: neo4jCast<Neo4jModel.TX_IN>(i.tx_in),
         tx_out: neo4jCast<Neo4jModel.TX_OUT>(i.tx_out)
@@ -158,7 +331,12 @@ RETURN block, tx, outputs, inputs;`, {
         validContract: tx.is_valid,
         scriptSize: 0, // ToDo: missing data on Neo4j
         type: block.era === "byron" ? "byron" : "shelley",
-        withdrawals: [], // ToDo: include in the query
+        withdrawals: withdrawals.map(w => ({
+          address: w.address,
+          amount: typeof w.amount === "string" ? w.amount : w.amount.toInt().toString(),
+          dataHash: null,
+          assets: []
+        })), // ToDo: include in the query
         certificates: [], // ToDo: include in the query
         txOrdinal: tx.tx_index.toInt(),
         txState: "Successful",
@@ -170,9 +348,9 @@ RETURN block, tx, outputs, inputs;`, {
         slot: block.epoch_slot.toInt(),
         inputs: inputs.map(i => ({
           address: i.tx_out.address,
-          amount: i.tx_out.amount.toString(),
+          amount: i.tx_out.amount.toNumber().toString(),
           id: i.tx_out.id,
-          index: i.tx_in.index,
+          index: i.tx_in.index.toNumber().toString(),
           txHash: i.tx_in.tx_id,
           assets: i.tx_out.assets && typeof i.tx_out.assets === "string"
             ? JSON.parse(i.tx_out.assets)
@@ -180,8 +358,8 @@ RETURN block, tx, outputs, inputs;`, {
         })),
         outputs: outputs.map(o => ({
           address: o.address,
-          amount: o.amount.toString(),
-          id: o.id,
+          amount: o.amount.toNumber().toString(),
+          dataHash: o.datum_hash,
           assets: o.assets && typeof o.assets === "string"
             ? JSON.parse(o.assets)
             : []
