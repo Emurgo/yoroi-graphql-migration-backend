@@ -39,5 +39,6 @@ export default {
       accessKeyId: process.env.PRICE_DATA_S3_ACCESS_KEY_ID,
       secretAccessKey: process.env.PRICE_DATA_S3_SECRET_ACCESS_KEY,
     },
-  }
+  },
+  network: process.env.NETWORK || "mainnet"
 };

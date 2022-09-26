@@ -4,9 +4,11 @@ import {
   Address,
   ByronAddress,
   Ed25519KeyHash,
+  NetworkInfo,
   RewardAddress,
   StakeCredential
 } from "@emurgo/cardano-serialization-lib-nodejs";
+import config from "config";
 
 const getReceivedSpentCypherPart = (addresses: string[], paymentCreds: string[]) => {
   if (addresses.length === 0 && paymentCreds.length === 0) return "";
@@ -88,6 +90,8 @@ const getTxsCypherPart = (
 };
 
 export namespace Neo4jModel {
+  export type BigNumber = Integer | string;
+
   export type Block = {
     body_size: Integer
     number: Integer
@@ -115,7 +119,7 @@ export namespace Neo4jModel {
   }
 
   export type TX_OUT = {
-    amount: Integer,
+    amount: BigNumber,
     assets: [] | string,
     address: string,
     id: string,
@@ -131,9 +135,126 @@ export namespace Neo4jModel {
 
   export type WITHDRAWAL = {
     address: string
-    amount: Integer | string
+    amount: BigNumber
+  }
+
+  export enum CertificateType {
+    StakeRegistration = "stake_registration",
+    StakeDeregistration = "stake_deregistration",
+    StakeDelegation = "stake_delegation",
+    PoolRegistration = "pool_registration",
+    PoolRetirement = "pool_retirement",
+    GenesisKeyDelegation = "genesis_key_delegation",
+  }
+
+  export type CERTIFICATE = {
+    type: CertificateType,
+    addrKeyHash: string | null,
+    scriptHash: string | null,
+    pool_keyhash: string | null,
+    operator: string | null,
+    vrf_keyhash: string | null,
+    pledge: BigNumber | null,
+    cost: BigNumber | null,
+    reward_account: string | null,
+    pool_owners: string[] | null,
+    url: string | null,
+    pool_metadata_hash: string | null
   }
 }
+
+const certificateToKindMap: {[key in Neo4jModel.CertificateType]: string} = {
+  [Neo4jModel.CertificateType.GenesisKeyDelegation]: "StakeDelegation",
+  [Neo4jModel.CertificateType.PoolRegistration]: "PoolRegistration",
+  [Neo4jModel.CertificateType.PoolRetirement]: "PoolRetirement",
+  [Neo4jModel.CertificateType.StakeDelegation]: "StakeDelegation",
+  [Neo4jModel.CertificateType.StakeDeregistration]: "StakeDeregistration",
+  [Neo4jModel.CertificateType.StakeRegistration]: "StakeRegistration",
+};
+
+const mapCertificateKind = (certificateType: Neo4jModel.CertificateType) => {
+  return certificateToKindMap[certificateType];
+};
+
+const getRewardAddressFromCertificate = (cert: Neo4jModel.CERTIFICATE) => {
+  if (cert.addrKeyHash) {
+    const rewardAddress = RewardAddress.new(
+      config.get("network") === "mainnet"
+        ? NetworkInfo.mainnet().network_id()
+        : NetworkInfo.testnet().network_id(),
+      StakeCredential.from_keyhash(
+        Ed25519KeyHash.from_bytes(
+          Buffer.from(cert.addrKeyHash, "hex")
+        )
+      )
+    );
+
+    return Buffer.from(rewardAddress.to_address().to_bytes()).toString("hex");
+  }
+
+  return null;
+};
+
+const formatNeo4jBigNumber = (n: Neo4jModel.BigNumber | null) => {
+  if (!n) return n;
+  return typeof n === "string"
+    ? n
+    : n.toNumber().toString();
+};
+
+const formatNeo4jCertificate = (cert: Neo4jModel.CERTIFICATE) => {
+  const kind = mapCertificateKind(cert.type);
+  // ToDo: add cert index to Neo4j
+  switch (cert.type) {
+    case Neo4jModel.CertificateType.StakeRegistration:
+      return {
+        kind,
+        certIndex: 0,
+        rewardAddress: getRewardAddressFromCertificate(cert)
+      };
+    case Neo4jModel.CertificateType.StakeDeregistration:
+      return {
+        kind,
+        certIndex: 0,
+        rewardAddress: getRewardAddressFromCertificate(cert)
+      };
+    case Neo4jModel.CertificateType.StakeDelegation:
+      return {
+        kind,
+        certIndex: 0,
+        poolKeyHash: cert.pool_keyhash,
+        rewardAddress: getRewardAddressFromCertificate(cert)
+      };
+    case Neo4jModel.CertificateType.PoolRegistration:
+      return {
+        operator: cert.operator,
+        vrfKeyHash: cert.vrf_keyhash,
+        pledge: formatNeo4jBigNumber(cert.pledge),
+        cost: formatNeo4jBigNumber(cert.cost),
+        margin: null, // ToDo: add margin to Neo4j
+        rewardAccount: cert.reward_account,
+        poolOwners: cert.pool_owners,
+        relays: null, // ToDo: add relays to Neo4j
+        poolMetadata:
+          cert.url || cert.pool_metadata_hash
+            ? {
+              url: cert.url,
+              metadataHash: cert.pool_metadata_hash,
+            }
+            : null,
+      };
+    case Neo4jModel.CertificateType.PoolRetirement:
+      return {
+        kind,
+        certIndex: 0, // ToDo: add cert index to Neo4j
+        poolKeyHash: cert.pool_keyhash,
+        epoch: null, // ToDo: add epoch to Neo4j
+      };
+    // ToDo: add MoveInstantaneousRewardsCert type
+    default:
+      return null;
+  }
+};
 
 const neo4jCast = <T>(r: any) => {
   return r.properties as T;
@@ -298,12 +419,22 @@ WITH block, tx, outputs, collect({
   tx_out: src_tx_out
 }) as inputs
 
+OPTIONAL MATCH (c_tx_in:COLLATERAL_TX_IN)-[:collateralInputOf]->(tx)
+OPTIONAL MATCH (src_tx_out:TX_OUT)-[:sourceOf]->(c_tx_in)
+WITH block, tx, outputs, inputs, collect({
+  tx_in: c_tx_in,
+  tx_out: src_tx_out
+}) as collateral_inputs
+
 OPTIONAL MATCH (withdrawal:WITHDRAWAL)-[:withdrewAt]->(tx)
-WITH block, tx, outputs, inputs, collect(withdrawal) as withdrawals
+WITH block, tx, outputs, inputs, collateral_inputs, collect(withdrawal) as withdrawals
+
+OPTIONAL MATCH (cert:CERTIFICATE)-[:generatedAt]->(tx)
+WITH block, tx, outputs, inputs, collateral_inputs, withdrawals, collect(cert) as certificates
 
 ORDER BY block.number, tx.tx_index LIMIT 50
 
-RETURN block, tx, outputs, inputs, withdrawals;`;
+RETURN block, tx, outputs, inputs, collateral_inputs, withdrawals, certificates;`;
 
     const response = await session.run(cypher, {
       addresses: bech32OrBase58Addresses,
@@ -318,10 +449,26 @@ RETURN block, tx, outputs, inputs, withdrawals;`;
       const block = neo4jCast<Neo4jModel.Block>(r.get("block"));
       const outputs = (r.get("outputs") as any[]).map((o: any) => neo4jCast<Neo4jModel.TX_OUT>(o));
       const withdrawals = (r.get("withdrawals") as any[]).map((o: any) => neo4jCast<Neo4jModel.WITHDRAWAL>(o));
+      const certificates = (r.get("certificates") as any[]).map((o: any) => neo4jCast<Neo4jModel.CERTIFICATE>(o));
       const inputs = (r.get("inputs") as any[]).map((i: any) => ({
         tx_in: neo4jCast<Neo4jModel.TX_IN>(i.tx_in),
         tx_out: neo4jCast<Neo4jModel.TX_OUT>(i.tx_out)
       }));
+      const collateralInputs = (r.get("collateral_inputs") as any[]).map((i: any) => {
+        if (!i.tx_in) return null;
+        return {
+          tx_in: neo4jCast<Neo4jModel.TX_IN>(i.tx_in),
+          tx_out: neo4jCast<Neo4jModel.TX_OUT>(i.tx_out)
+        };
+      }).reduce((prev, curr) => {
+        if (curr) {
+          prev.push(curr);
+        }
+        return prev;
+      }, [] as {
+        tx_in: Neo4jModel.TX_IN,
+        tx_out: Neo4jModel.TX_OUT
+      }[]);
       
       // ToDo: include TXs where addresses submitted certificates or withdrawals as well
       return {
@@ -333,11 +480,11 @@ RETURN block, tx, outputs, inputs, withdrawals;`;
         type: block.era === "byron" ? "byron" : "shelley",
         withdrawals: withdrawals.map(w => ({
           address: w.address,
-          amount: typeof w.amount === "string" ? w.amount : w.amount.toInt().toString(),
+          amount: formatNeo4jBigNumber(w.amount),
           dataHash: null,
           assets: []
         })), // ToDo: include in the query
-        certificates: [], // ToDo: include in the query
+        certificates: certificates.map(formatNeo4jCertificate), // ToDo: include in the query
         txOrdinal: tx.tx_index.toInt(),
         txState: "Successful",
         lastUpdate: null, // ToDo: this can be calculated based on the epoch
@@ -348,7 +495,17 @@ RETURN block, tx, outputs, inputs, withdrawals;`;
         slot: block.epoch_slot.toInt(),
         inputs: inputs.map(i => ({
           address: i.tx_out.address,
-          amount: i.tx_out.amount.toNumber().toString(),
+          amount: formatNeo4jBigNumber(i.tx_out.amount),
+          id: i.tx_out.id,
+          index: i.tx_in.index.toNumber().toString(),
+          txHash: i.tx_in.tx_id,
+          assets: i.tx_out.assets && typeof i.tx_out.assets === "string"
+            ? JSON.parse(i.tx_out.assets)
+            : []
+        })),
+        collateralInputs: collateralInputs.map(i => ({
+          address: i.tx_out.address,
+          amount: formatNeo4jBigNumber(i.tx_out.amount),
           id: i.tx_out.id,
           index: i.tx_in.index.toNumber().toString(),
           txHash: i.tx_in.tx_id,
@@ -358,7 +515,7 @@ RETURN block, tx, outputs, inputs, withdrawals;`;
         })),
         outputs: outputs.map(o => ({
           address: o.address,
-          amount: o.amount.toNumber().toString(),
+          amount: formatNeo4jBigNumber(o.amount),
           dataHash: o.datum_hash,
           assets: o.assets && typeof o.assets === "string"
             ? JSON.parse(o.assets)
