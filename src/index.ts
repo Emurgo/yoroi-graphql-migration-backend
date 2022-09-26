@@ -81,11 +81,11 @@ const pool = new Pool({
   password: config.get("db.password"),
   port: config.get("db.port"),
 });
-createCertificatesView(pool);
-createValidUtxosView(pool);
-createTransactionOutputView(pool);
-createUtxoFunctions(pool);
-createTransactionUtilityFunctions(pool);
+// createCertificatesView(pool);
+// createValidUtxosView(pool);
+// createTransactionOutputView(pool);
+// createUtxoFunctions(pool);
+// createTransactionUtilityFunctions(pool);
 
 const healthChecker = new HealthChecker(() => askBestBlock(pool));
 

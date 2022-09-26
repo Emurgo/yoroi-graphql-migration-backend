@@ -398,6 +398,14 @@ export const history = (driver: Driver) => ({
 
 UNWIND txs as tx
 
+MATCH (tx)-[:isAt]->(block:Block)
+WHERE block.number <= $untilBlock AND (
+  block.number > $afterBlock
+) OR (
+  block.number = $afterBlock
+  AND tx.tx_index > $afterTx
+)
+
 WITH DISTINCT tx, block LIMIT 50
 
 OPTIONAL MATCH (tx_out:TX_OUT)-[:producedBy]->(tx)

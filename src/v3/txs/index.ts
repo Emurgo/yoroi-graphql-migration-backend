@@ -1,9 +1,10 @@
 import neo4j from "neo4j-driver";
 import { history } from "./history";
+import config from "config";
 
 const driver = neo4j.driver(
-  "neo4j://dus-01.emurgo-rnd.com:7687",
-  neo4j.auth.basic("neo4j", "neo4j")
+  config.get("neo4j.url"),
+  neo4j.auth.basic(config.get("neo4j.username"), config.get("neo4j.password"))
 );
 
 export const txs = {
