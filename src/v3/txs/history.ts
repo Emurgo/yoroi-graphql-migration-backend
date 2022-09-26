@@ -1,4 +1,4 @@
-import neo4j, { Integer, Session } from "neo4j-driver";
+import { Integer, Session } from "neo4j-driver";
 import { Request, Response } from "express";
 import {
   Address,
@@ -9,6 +9,7 @@ import {
   StakeCredential
 } from "@emurgo/cardano-serialization-lib-nodejs";
 import config from "config";
+import { Driver } from "neo4j-driver-core";
 
 const getReceivedSpentCypherPart = (addresses: string[], paymentCreds: string[]) => {
   if (addresses.length === 0 && paymentCreds.length === 0) return "";
@@ -371,9 +372,10 @@ const getAddressesByType = (addresses: string[]) => {
   };
 };
 
-export const history = {
+export const history = (driver: Driver) => ({
   handler: async (req: Request, res: Response) => {
     const addresses = req.body.addresses as string[];
+
     const {
       bech32OrBase58Addresses,
       paymentCreds,
@@ -381,10 +383,6 @@ export const history = {
       rewardAddresses
     } = getAddressesByType(addresses);
 
-    const driver = neo4j.driver(
-      "neo4j://dus-01.emurgo-rnd.com:7687",
-      neo4j.auth.basic("neo4j", "neo4j")
-    );
     const session = driver.session();
 
     const paginationParameters = await getPaginationParameters(session)(req.body);
@@ -399,15 +397,8 @@ export const history = {
     const cypher = `${txsCypherPart}
 
 UNWIND txs as tx
-WITH DISTINCT tx
 
-MATCH (tx)-[:isAt]->(block:Block)
-WHERE block.number <= $untilBlock AND (
-  block.number > $afterBlock
-) OR (
-  block.number = $afterBlock
-  AND tx.tx_index > $afterTx
-)
+WITH DISTINCT tx, block LIMIT 50
 
 OPTIONAL MATCH (tx_out:TX_OUT)-[:producedBy]->(tx)
 WITH block, tx, collect(tx_out) as outputs
@@ -432,7 +423,7 @@ WITH block, tx, outputs, inputs, collateral_inputs, collect(withdrawal) as withd
 OPTIONAL MATCH (cert:CERTIFICATE)-[:generatedAt]->(tx)
 WITH block, tx, outputs, inputs, collateral_inputs, withdrawals, collect(cert) as certificates
 
-ORDER BY block.number, tx.tx_index LIMIT 50
+ORDER BY block.number, tx.tx_index
 
 RETURN block, tx, outputs, inputs, collateral_inputs, withdrawals, certificates;`;
 
@@ -470,7 +461,6 @@ RETURN block, tx, outputs, inputs, collateral_inputs, withdrawals, certificates;
         tx_out: Neo4jModel.TX_OUT
       }[]);
       
-      // ToDo: include TXs where addresses submitted certificates or withdrawals as well
       return {
         hash: tx.hash,
         fee: tx.fee.toInt().toString(),
@@ -483,8 +473,8 @@ RETURN block, tx, outputs, inputs, collateral_inputs, withdrawals, certificates;
           amount: formatNeo4jBigNumber(w.amount),
           dataHash: null,
           assets: []
-        })), // ToDo: include in the query
-        certificates: certificates.map(formatNeo4jCertificate), // ToDo: include in the query
+        })),
+        certificates: certificates.map(formatNeo4jCertificate),
         txOrdinal: tx.tx_index.toInt(),
         txState: "Successful",
         lastUpdate: null, // ToDo: this can be calculated based on the epoch
@@ -526,4 +516,4 @@ RETURN block, tx, outputs, inputs, collateral_inputs, withdrawals, certificates;
 
     return res.send(txs);
   }
-};
+});
