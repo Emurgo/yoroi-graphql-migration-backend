@@ -501,6 +501,8 @@ RETURN block, tx, outputs, inputs, collateral_inputs, withdrawals, certificates,
       ...paginationParameters
     });
 
+    await session.close();
+
     const txs = response.records.map(r => {
       const tx = neo4jCast<Neo4jModel.TX>(r.get("tx"));
       const block = neo4jCast<Neo4jModel.Block>(r.get("block"));
