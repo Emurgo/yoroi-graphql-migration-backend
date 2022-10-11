@@ -45,5 +45,12 @@ export default {
     url: process.env.NEO4J_URL || "neo4j://dus-01.emurgo-rnd.com:7687",
     username: process.env.NEO4J_URL || "neo4j",
     password: process.env.NEO4J_URL || "neo4j"
-  }
+  },
+  carp: {
+    host: process.env.CARP_HOST || "",
+    user: process.env.CARP_USER || "",
+    password: process.env.CARP_PASSWORD || "",
+    database: process.env.CARP_DB || "",
+    port: process.env.CARP_PORT || 0
+  },
 };

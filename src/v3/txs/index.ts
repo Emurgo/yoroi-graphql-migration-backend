@@ -1,12 +1,15 @@
-import neo4j from "neo4j-driver";
 import { history } from "./history";
 import config from "config";
+import { Pool } from "pg";
 
-const driver = neo4j.driver(
-  config.get("neo4j.url"),
-  neo4j.auth.basic(config.get("neo4j.username"), config.get("neo4j.password"))
-);
+const pool = new Pool({
+  user: config.get("carp.user"),
+  host: config.get("carp.host"),
+  database: config.get("carp.database"),
+  password: config.get("carp.password"),
+  port: config.get("carp.port"),
+});
 
 export const txs = {
-  history: history(driver)
+  history: history(pool)
 };
