@@ -53,14 +53,8 @@ const getReceivedCypherPart = (addresses: string[], paymentCreds: string[]) => {
   return `MATCH (o:TX_OUT)
 ${whereClause}
 MATCH (o)-[:producedBy]->(tx:TX)-[:isAt]->(block:Block)
-WHERE block.number <= $untilBlock AND (
-  block.number > $afterBlock
-) OR (
-  block.number = $afterBlock
-  AND tx.tx_index > $afterTx
-)
 
-RETURN tx.hash as tx_hash ORDER BY block.number, tx.tx_index LIMIT 50
+RETURN tx.hash as tx_hash
 `;
 };
 
@@ -76,14 +70,8 @@ const getSpentCypherPart = (addresses: string[], paymentCreds: string[]) => {
   return `MATCH (o:TX_OUT)
 ${whereClause}
 MATCH (o)-[:sourceOf]->(:TX_IN)-[:inputOf]->(tx:TX)-[:isAt]->(block:Block)
-WHERE block.number <= $untilBlock AND (
-  block.number > $afterBlock
-) OR (
-  block.number = $afterBlock
-  AND tx.tx_index > $afterTx
-)
 
-RETURN tx.hash as tx_hash ORDER BY block.number, tx.tx_index LIMIT 50
+RETURN tx.hash as tx_hash
 `;
 };
 
@@ -93,14 +81,8 @@ const getCertificatesCypherPart = (addrKeyHashes: string[]) => {
   return `MATCH (cert:CERTIFICATE)
 WHERE cert.addrKeyHash IN $addr_key_hashes
 MATCH (cert)-[:generatedAt]->(tx:TX)
-WHERE block.number <= $untilBlock AND (
-  block.number > $afterBlock
-) OR (
-  block.number = $afterBlock
-  AND tx.tx_index > $afterTx
-)
 
-RETURN tx.hash as tx_hash ORDER BY block.number, tx.tx_index LIMIT 50
+RETURN tx.hash as tx_hash
 
 `;
 };
@@ -111,14 +93,8 @@ const getWithdrawalsCypherPart = (rewardAddresses: string[]) => {
   return `OPTIONAL MATCH (wit:WITHDRAWAL)
 WHERE wit.address IN $reward_addresses
 MATCH (wit)-[:withdrewAt]->(tx:TX)
-WHERE block.number <= $untilBlock AND (
-  block.number > $afterBlock
-) OR (
-  block.number = $afterBlock
-  AND tx.tx_index > $afterTx
-)
 
-RETURN tx.hash as tx_hash ORDER BY block.number, tx.tx_index LIMIT 50
+RETURN tx.hash as tx_hash
 
 `;
 };
