@@ -43,7 +43,7 @@ export default {
   network: process.env.NETWORK || "mainnet",
   neo4j: {
     url: process.env.NEO4J_URL || "neo4j://dus-01.emurgo-rnd.com:7687",
-    username: process.env.NEO4J_URL || "neo4j",
-    password: process.env.NEO4J_URL || "neo4j"
+    username: process.env.NEO4J_USERNAME || "neo4j",
+    password: process.env.NEO4J_PASSWORD || "neo4j"
   }
 };
