@@ -72,6 +72,9 @@ import * as Tracing from "@sentry/tracing";
 
 import installCoinPriceHandlers from "./coin-price/handler";
 
+import fs from "fs";
+import path from "path";
+
 import { v3 } from "./v3";
 
 const pool = new Pool({
@@ -86,6 +89,30 @@ const pool = new Pool({
 // createTransactionOutputView(pool);
 // createUtxoFunctions(pool);
 // createTransactionUtilityFunctions(pool);
+
+/*(async () => {
+  const query = `SELECT address
+  FROM tx_out
+  GROUP BY address
+  HAVING COUNT(*) <= 100
+  AND COUNT(*) <= 1000
+  ORDER BY random () LIMIT 50000`;
+
+  const array_chunks = (array: any[], chunk_size: number) => Array(Math.ceil(array.length / chunk_size)).fill(null).map((_, index) => index * chunk_size).map(begin => array.slice(begin, begin + chunk_size));
+
+  console.log("running...");
+  const results = await pool.query(query);
+  console.log("finished running...");
+
+  const addresses = results.rows.map(r => r.address);
+  const chunks = array_chunks(addresses, 50);
+  const filePath = path.join(__dirname, "addresses_chunks.json");
+  fs.writeFileSync(
+    filePath,
+    JSON.stringify(chunks)
+  );
+  console.log("filePath", filePath);
+})();*/
 
 const healthChecker = new HealthChecker(() => askBestBlock(pool));
 
