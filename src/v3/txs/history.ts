@@ -511,13 +511,17 @@ RETURN block, tx, outputs, inputs, collateral_inputs, withdrawals, certificates,
       const certificates = (r.get("certificates") as any[]).map((o: any) => neo4jCast<Neo4jModel.CERTIFICATE>(o));
       const inputs = (r.get("inputs") as any[]).map((i: any) => ({
         tx_in: neo4jCast<Neo4jModel.TX_IN>(i.tx_in),
-        tx_out: neo4jCast<Neo4jModel.TX_OUT>(i.tx_out)
+        tx_out: i.tx_out
+          ? neo4jCast<Neo4jModel.TX_OUT>(i.tx_out)
+          : null
       }));
       const collateralInputs = (r.get("collateral_inputs") as any[]).map((i: any) => {
         if (!i.tx_in) return null;
         return {
           tx_in: neo4jCast<Neo4jModel.TX_IN>(i.tx_in),
-          tx_out: neo4jCast<Neo4jModel.TX_OUT>(i.tx_out)
+          tx_out: i.tx_out
+            ? neo4jCast<Neo4jModel.TX_OUT>(i.tx_out)
+            : null
         };
       }).reduce((prev, curr) => {
         if (curr) {
@@ -526,7 +530,7 @@ RETURN block, tx, outputs, inputs, collateral_inputs, withdrawals, certificates,
         return prev;
       }, [] as {
         tx_in: Neo4jModel.TX_IN,
-        tx_out: Neo4jModel.TX_OUT
+        tx_out: Neo4jModel.TX_OUT | null
       }[]);
       const scripts = (r.get("scripts") as any[]).map((o: any) => neo4jCast<Neo4jModel.SCRIPT>(o));
       
@@ -553,12 +557,14 @@ RETURN block, tx, outputs, inputs, collateral_inputs, withdrawals, certificates,
         epoch: neo4jBigNumberAsNumber(block.epoch),
         slot: neo4jBigNumberAsNumber(block.epoch_slot),
         inputs: inputs.map(i => ({
-          address: i.tx_out.address,
-          amount: formatNeo4jBigNumber(i.tx_out.amount),
+          address: i.tx_out?.address,
+          amount: i.tx_out ?
+            formatNeo4jBigNumber(i.tx_out.amount)
+            : null,
           id: `${i.tx_in.tx_id}${neo4jBigNumberAsNumber(i.tx_in.index)}`,
           index: neo4jBigNumberAsNumber(i.tx_in.index),
           txHash: i.tx_in.tx_id,
-          assets: i.tx_out.assets && typeof i.tx_out.assets === "string"
+          assets: i.tx_out?.assets && typeof i.tx_out.assets === "string"
             ? JSON.parse(i.tx_out.assets).map((a: any) => ({
               assetId: `${a.policy}.${a.asset}`,
               policyId: a.policy,
@@ -568,12 +574,14 @@ RETURN block, tx, outputs, inputs, collateral_inputs, withdrawals, certificates,
             : []
         })),
         collateralInputs: collateralInputs.map(i => ({
-          address: i.tx_out.address,
-          amount: formatNeo4jBigNumber(i.tx_out.amount),
-          id: i.tx_out.id,
+          address: i.tx_out?.address,
+          amount: i.tx_out
+            ? formatNeo4jBigNumber(i.tx_out.amount)
+            : null,
+          id: i.tx_out?.id,
           index: neo4jBigNumberAsNumber(i.tx_in.index).toString(),
           txHash: i.tx_in.tx_id,
-          assets: i.tx_out.assets && typeof i.tx_out.assets === "string"
+          assets: i.tx_out?.assets && typeof i.tx_out.assets === "string"
             ? JSON.parse(i.tx_out.assets).map((a: any) => ({
               assetId: `${a.policy}.${a.asset}`,
               policyId: a.policy,
