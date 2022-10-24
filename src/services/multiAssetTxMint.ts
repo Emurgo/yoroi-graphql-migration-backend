@@ -87,16 +87,22 @@ function createGetMultiAssetTxMintMetadataQuery(assets: Asset[]) {
     .join(" or ");
 
   const query = `
-  select encode(ma.policy, 'hex') as policy,
-    ma.name as asset,
+WITH mint_detail AS (
+  SELECT max(mint.id) id, name, policy
+    FROM ma_tx_mint mint
+    JOIN multi_asset ma on mint.ident = ma.id
+   where ${whereConditions}
+   GROUP BY name, policy),
+     mint_tx AS (
+  SELECT tx_id, name, policy
+    FROM ma_tx_mint mint 
+    JOIN mint_detail d ON mint.id = d.id)
+  select encode(mint.policy, 'hex') as policy,
+    mint.name as asset,
     meta.key,
-    meta.json
-  from ma_tx_mint mint
-    join multi_asset ma on mint.ident = ma.id
-    join tx on mint.tx_id = tx.id
-    join block on block.id = tx.block_id
-    join tx_metadata meta on tx.id = meta.tx_id
-  where ${whereConditions}
-  order by block.epoch_no desc, block.slot_no desc, tx.block_index desc`;
+    meta.json, mint.tx_id
+  from mint_tx mint
+    join tx tx on mint.tx_id = tx.id
+    join tx_metadata meta on tx.id = meta.tx_id`;
   return query;
 }
