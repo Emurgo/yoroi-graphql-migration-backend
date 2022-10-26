@@ -245,6 +245,7 @@ export const handleUtxoDiffSincePoint =
         if (result.rows.length === 0) {
           apiResponse.diffItems = [];
           res.send(apiResponse);
+          return;
         }
 
         const linearized = [];
