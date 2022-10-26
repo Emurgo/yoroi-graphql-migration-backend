@@ -130,8 +130,10 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
 
 <details>
   <summary>v2/txs/utxoDiffSincePoint</summary>
+
   Returns a diff of inputs and outputs between two points. See the comments next to the request parameters for more information.
-  This endpoint is better used in combination with `v2/txs/utxoAtPoint`. After making a request to `v2/txs/utxoAtPoint`, the clients can keep their local copy of the UTxO state by calling `v2/txs/utxoDiffSincePoint` with `afterPoint` or `afterBestBlocks` being built using the block from the previous request as a reference point and making any changes established by the diff, so essentially discarding outputs which have been returned in the diff as inputs and including the new outputs returned by the diff.
+
+  This endpoint is better used in combination with `v2/txs/utxoAtPoint`. After making a request to `v2/txs/utxoAtPoint`, the clients can keep their local copy of the UTxO state by calling `v2/txs/utxoDiffSincePoint` with `afterBlockHash` being the block from the previous request as a reference point and making any changes established by the diff, so essentially discarding outputs which have been returned in the diff as inputs and including the new outputs returned by the diff.
 
 
   Input
@@ -141,11 +143,8 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
     // byron addresses, bech32 address, bech32 stake addresses or addr_vkh
     addresses: Array<string>,
     untilBlockHash: string, // only transactions up to this block (including it) will be considered for generating the diff
-    afterPoint?: {
-      blockHash: string, // only transactions AFTER this clock will be considered for generating the diff
-      itemIndex?: number // if `itemIndex` is supplied, we will also consider transactions from `blockHash`, but only the outputs which have a bigger index than `itemIndex`
-    },
-    afterBestBlocks?: Array<string> // only transactions after the latest block from this array will be included. The inclusion of `afterBestBlocks` in the request will also add 2 new fields to the response (see the response bellow for more details)
+    afterBlockHash: string, // only transactions AFTER this block will be considered for generating the diff
+    blockCount: number, // only this count of blocks will be considered. Note this means the last block considered may not reach `untilBlockHash` and repeated calls should be made, with `afterBlockHash` being the `lastBlockHash` of previous return value.
   }
   ```
 
@@ -160,8 +159,7 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
       assets?: Asset[], // only included for outputs
       block_num?: number // only included for outputs
     }>,
-    lastFoundBestBlock?: string, // only included if `afterBestBlocks` was supplied. This will be the latest found block from `afterBestBlocks`
-    lastFoundSafeBlock?: string // only included if `afterBestBlocks` was supplied. This will be the latest safe block from `afterBestBlocks`, safe block being the block with the highest depth up to a maximum, determined at runtime by configuration
+    lastBlockHash: string, // the last block considered. If it equals `untilBlockHash`, it means the number of blocks from `afterBlockHash` to `untilBlock` is less than or equal to `blockCount` and all these blocks are considerd when generating the diff.
   }
   ```
 </details>
