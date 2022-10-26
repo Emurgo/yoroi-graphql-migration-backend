@@ -2,7 +2,7 @@ import { Pool } from "pg";
 
 import { BlockFrag } from "../../Transactions/types";
 
-const baseGetBlockQuery = `SELECT encode(hash, 'hex'),
+const baseGetBlockQuery = `SELECT encode(hash, 'hex') as hash,
   epoch_no,
   slot_no,
   block_no
@@ -43,6 +43,28 @@ export const getBlock =
 
     const row = result.rows[0];
 
+    return {
+      epochNo: row.epoch_no,
+      hash: row.hash,
+      slotNo: row.slot_no,
+      number: row.block_no,
+    };
+  };
+
+export const getBlockByNumber =
+  (pool: Pool) =>
+  async (blockNumber: number): Promise<BlockFrag | undefined> => {
+    const result = await pool.query(
+      `${baseGetBlockQuery}
+       WHERE block_no = $1`,
+      [blockNumber]
+    );
+
+    if (!result.rows || result.rows.length === 0) {
+      return undefined;
+    }
+
+    const row = result.rows[0];
     return {
       epochNo: row.epoch_no,
       hash: row.hash,

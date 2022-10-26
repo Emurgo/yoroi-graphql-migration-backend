@@ -4,7 +4,10 @@ import { Pool } from "pg";
 import { Request, Response } from "express";
 import { isNaN } from "lodash";
 
-import { getBlock } from "../utils/queries/block";
+import {
+  getBlock,
+  getBlockByNumber,
+} from "../utils/queries/block";
 import {
   assertNever,
   validateAddressesReq,
@@ -24,8 +27,8 @@ const extractBodyParameters = async (
 ): Promise<{
   addresses: string[];
   untilBlockHash: string;
-  afterPoint: { blockHash: string; itemIndex?: number; txHash?: string };
-  diffLimit: number;
+  afterBlockHash: string;
+  blockCount: number;
 }> => {
   if (!body) {
     throw new Error("error, missing request body.");
@@ -41,68 +44,21 @@ const extractBodyParameters = async (
     throw new Error("error, no untilBlockHash.");
   }
 
-  if (!body.diffLimit) {
-    throw new Error("error, no diffLimit.");
+  if (!body.blockCount) {
+    throw new Error("error, no blockCount.");
   }
+  const blockCount: number = body.blockCount;
 
-  const diffLimit: number = body.diffLimit;
-
-  const afterPointFromBody: {
-    blockHash: string;
-    itemIndex?: number | string;
-    txHash?: string;
-  } = body.afterPoint;
-
-  if (!afterPointFromBody) {
-    throw new Error("error, empty afterBestBlocks.");
+  if (!body.afterBlockHash) {
+    throw new Error("error, no afterBlockHash.");
   }
-
-  if (!afterPointFromBody.blockHash) {
-    throw new Error("error, missing blockHash in afterPoint.");
-  }
-
-  const afterPoint: { blockHash: string; itemIndex?: number; txHash?: string } =
-    {
-      blockHash: afterPointFromBody.blockHash,
-    };
-
-  if (afterPointFromBody.itemIndex !== undefined || afterPointFromBody.txHash) {
-    if (
-      !(afterPointFromBody.itemIndex !== undefined && afterPointFromBody.txHash)
-    ) {
-      throw new Error(
-        "error, if itemIndex or txHash are informed, both should be."
-      );
-    }
-  }
-
-  if (
-    afterPointFromBody.itemIndex !== undefined &&
-    afterPointFromBody.itemIndex !== null
-  ) {
-    if (isNaN(afterPointFromBody.itemIndex)) {
-      throw new Error("error, itemIndex at afterPoint should be a number.");
-    }
-
-    afterPoint.itemIndex =
-      typeof afterPointFromBody.itemIndex === "number"
-        ? afterPointFromBody.itemIndex
-        : parseInt(afterPointFromBody.itemIndex);
-
-    if (afterPoint.itemIndex < 0) {
-      throw new Error(
-        "error, itemIndex at afterPoint should be a positive number or zero."
-      );
-    }
-
-    afterPoint.txHash = afterPointFromBody.txHash;
-  }
+  const afterBlockHash: string = body.afterBlockHash;
 
   return {
     addresses,
     untilBlockHash,
-    afterPoint,
-    diffLimit,
+    afterBlockHash,
+    blockCount,
   };
 };
 
@@ -148,60 +104,48 @@ const buildSelectFromForOutputs = () => {
   INNER JOIN tx_out ON tx.id = tx_out.tx_id`;
 };
 
-const buildWhereClause = (validContract: boolean, useItemIndex: boolean) => {
+const buildWhereClause = (validContract: boolean) => {
   return `WHERE ${validContract ? "" : "NOT "}tx.valid_contract
   AND block.block_no <= ($3)::word31type
-  ${
-    useItemIndex
-      ? `AND (
-      block.block_no > ($4)::word31type
-      OR (
-        block.block_no >= ($4)::word31type
-        AND encode(tx.hash,'hex') = ($5)::varchar
-        AND tx_out.index > ($6)::txindex
-      )
-    )`
-      : "AND block.block_no > ($4)::word31type"
-  }
+  AND block.block_no > ($4)::word31type
   AND (
     tx_out.address = any(($1)::varchar array) 
     OR tx_out.payment_cred = any(($2)::bytea array)
   )`;
 };
 
-const buildInputQuery = (useItemIndex: boolean) => {
+const buildInputQuery = () => {
   return `${buildSelectColumns(DiffType.INPUT)}
   ${buildSelectFromForInputs()}
-  ${buildWhereClause(true, useItemIndex)}`;
+  ${buildWhereClause(true)}`;
 };
 
-const buildCollateralQuery = (useItemIndex: boolean) => {
+const buildCollateralQuery = () => {
   return `${buildSelectColumns(DiffType.INPUT)}
   ${buildSelectFromForCollaterals()}
-  ${buildWhereClause(false, useItemIndex)}`;
+  ${buildWhereClause(false)}`;
 };
 
-const buildOutputQuery = (useItemIndex: boolean) => {
+const buildOutputQuery = () => {
   return `${buildSelectColumns(DiffType.OUTPUT)}
   ${buildSelectFromForOutputs()}
-  ${buildWhereClause(true, useItemIndex)}`;
+  ${buildWhereClause(true)}`;
 };
 
-const buildFullQuery = (useItemIndex: boolean) => {
+const buildFullQuery = () => {
   return `SELECT * FROM (
-    ${buildInputQuery(useItemIndex)}
+    ${buildInputQuery()}
     UNION ALL
-    ${buildCollateralQuery(useItemIndex)}
+    ${buildCollateralQuery()}
     UNION ALL
-    ${buildOutputQuery(useItemIndex)}
+    ${buildOutputQuery()}
   ) as q
-  ORDER BY q."blockNumber", CASE q.type WHEN 'I' THEN 1 ELSE 0 END
-  LIMIT $${5 + (useItemIndex ? 2 : 0)}::word31type;`;
+  ORDER BY q."blockNumber", CASE q.type WHEN 'I' THEN 1 ELSE 0 END;`;
 };
 
 export const handleUtxoDiffSincePoint =
   (pool: Pool) => async (req: Request, res: Response) => {
-    const { addresses, untilBlockHash, afterPoint, diffLimit } =
+    const { addresses, untilBlockHash, afterBlockHash, blockCount } =
       await extractBodyParameters(req.body);
 
     const untilBlock = await getBlock(pool)(untilBlockHash);
@@ -209,7 +153,7 @@ export const handleUtxoDiffSincePoint =
       throw new Error("REFERENCE_BESTBLOCK_NOT_FOUND");
     }
 
-    const afterBlock = await getBlock(pool)(afterPoint.blockHash);
+    const afterBlock = await getBlock(pool)(afterBlockHash);
     if (!afterBlock) {
       throw new Error("REFERENCE_POINT_BLOCK_NOT_FOUND");
     }
@@ -220,23 +164,16 @@ export const handleUtxoDiffSincePoint =
       addresses
     );
 
-    const fullQuery = buildFullQuery(afterPoint.itemIndex !== undefined);
+    const fullQuery = buildFullQuery();
 
     switch (verifiedAddresses.kind) {
       case "ok": {
         const queryParameters: any[] = [
           [...addressTypes.legacyAddr, ...addressTypes.bech32],
           addressTypes.paymentCreds,
-          untilBlock.number,
+          Math.min(untilBlock.number, afterBlock.number + blockCount),
           afterBlock.number,
         ];
-
-        if (afterPoint.itemIndex !== undefined) {
-          queryParameters.push(afterPoint.txHash);
-          queryParameters.push(afterPoint.itemIndex);
-        }
-
-        queryParameters.push(diffLimit);
 
         const result = await pool.query(fullQuery, queryParameters);
 
@@ -271,13 +208,20 @@ export const handleUtxoDiffSincePoint =
           }
         }
 
-        const lastRow = result.rows[result.rowCount - 1];
+        let lastBlockHash;
+        if (afterBlock.number + blockCount < untilBlock.number) {
+          const lastBlock = await getBlockByNumber(pool)(
+            afterBlock.number + blockCount
+          );
+          if (!lastBlock) {
+            throw new Error(`could not find block number ${afterBlock.number + blockCount}`);
+          }
+          lastBlockHash = lastBlock.hash;
+        } else {
+          lastBlockHash = afterBlock.hash;
+        }
 
-        apiResponse.lastDiffPointSelected = {
-          blockHash: lastRow.blockHash,
-          txHash: lastRow.hash,
-          itemIndex: lastRow.index,
-        };
+        apiResponse.lastBlockHash = lastBlockHash;
         apiResponse.diffItems = linearized;
 
         res.send(apiResponse);
