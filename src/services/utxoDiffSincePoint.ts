@@ -308,7 +308,7 @@ const buildFullQuery = (paginationPoinType: DiffItemType | null) => {
   ORDER BY
     q."blockNumber",
     q."blockIndex",
-    CASE q."diffItemType" WHEN 'input' THEN 2 WHEN 'collateral' THEN 1  ELSE 0 END,
+    CASE q."diffItemType" WHEN 'input' THEN 0 WHEN 'collateral' THEN 1  ELSE 2 END,
     q."paginationPointValue"
   LIMIT $${5 + (paginationPoinType !== null ? 2 : 0)}::word31type;`;
 };
