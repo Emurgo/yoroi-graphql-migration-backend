@@ -1,8 +1,6 @@
 import { Integer, Session } from "neo4j-driver";
 import { Request, Response } from "express";
 import {
-  Address,
-  ByronAddress,
   Ed25519KeyHash,
   NetworkInfo,
   RewardAddress,
@@ -10,6 +8,7 @@ import {
 } from "@emurgo/cardano-serialization-lib-nodejs";
 import config from "config";
 import { Driver } from "neo4j-driver-core";
+import { getAddressesByType, mapNeo4jAssets } from "../utils";
 
 const GENESIS_UNIX_TIMESTAMP = 1506243091;
 const SHELLEY_UNIX_TIMESTAMP = 1596491091;
@@ -315,23 +314,24 @@ const neo4jCast = <T>(r: any) => {
 };
 
 const getPaginationParameters = (session: Session) => async (reqBody: any) => {
-  const untilBlockCypher = "MATCH (untilBlock:Block{hash:$untilBlock})";
-  const afterBlockCypher = "MATCH (afterBlock:Block{hash:$afterBlock})";
-  const afterTxCypher = "MATCH (afterTx:TX{hash:$afterTx})";
+  const untilCypher = `CALL {
+  MATCH (:Block{hash:$untilBlock})<-[:isAt]-(untilTx:TX)
+  RETURN untilTx ORDER BY untilTx.tx_index LIMIT 1
+}`;
+  const afterCypher = `CALL {
+  MATCH (:Block{hash:$afterBlock})<-[:isAt]-(afterTx:TX{hash:$afterTx})
+  RETURN afterTx
+}`;
 
   const matchParts = [] as string[];
   const returnParts = [] as string[];
 
-  matchParts.push(untilBlockCypher);
-  returnParts.push("{number: untilBlock.number} as untilBlock");
+  matchParts.push(untilCypher);
+  returnParts.push("ID(untilTx) as untilTx");
 
-  if (reqBody.after?.block) {
-    matchParts.push(afterBlockCypher);
-    returnParts.push("{number: afterBlock.number} as afterBlock");
-  }
-  if (reqBody.after?.tx) {
-    matchParts.push(afterTxCypher);
-    returnParts.push("{tx_index: afterTx.tx_index} as afterTx");
+  if (reqBody.after?.block && reqBody.after?.tx) {
+    matchParts.push(afterCypher);
+    returnParts.push("ID(afterTx) as afterTx");
   }
 
   const matchPart = matchParts.join("\n");
@@ -346,86 +346,31 @@ RETURN ${returnPart}`;
     afterTx: reqBody.after?.tx,
   });
 
-  const record = result.records[0];
-  const untilBlock = record.has("untilBlock")
-    ? record.get("untilBlock") as Neo4jModel.Block
-    : undefined;
-  const afterBlock = record.has("afterBlock")
-    ? record.get("afterBlock") as Neo4jModel.Block
-    : undefined;
-  const afterTx = record.has("afterTx")
-    ? record.get("afterTx") as Neo4jModel.TX
-    : undefined;
-
-  if (!untilBlock) {
+  if (result.records.length === 0) {
     throw new Error("REFERENCE_BEST_BLOCK_MISMATCH");
   }
 
-  if (!afterBlock && reqBody.after?.block) {
+  const record = result.records[0];
+  const untilTx = record.has("untilTx")
+    ? record.get("untilTx") as Integer
+    : undefined;
+  const afterTx = record.has("afterTx")
+    ? record.get("afterTx") as Integer
+    : undefined;
+
+  if (!untilTx) {
+    throw new Error("REFERENCE_BEST_BLOCK_MISMATCH");
+  }
+
+  if (!afterTx && reqBody.after) {
     throw new Error("REFERENCE_BLOCK_MISMATCH");
   }
 
-  if (!afterTx && reqBody.after?.tx) {
-    throw new Error("REFERENCE_TX_NOT_FOUND");
-  }
-
   return {
-    untilBlock: neo4jBigNumberAsNumber(untilBlock.number),
-    afterBlock: afterBlock
-      ? neo4jBigNumberAsNumber(afterBlock.number)
-      : 0,
+    untilTx: neo4jBigNumberAsNumber(untilTx),
     afterTx: afterTx
-      ? neo4jBigNumberAsNumber(afterTx.tx_index)
+      ? neo4jBigNumberAsNumber(afterTx)
       : 0
-  };
-};
-
-const getAddressesByType = (addresses: string[]) => {
-  const bech32OrBase58Addresses = [] as string[];
-  const paymentCreds = [] as string[];
-  const addrKeyHashes = [] as string[];
-  const rewardAddresses = [] as string[];
-
-  for (const address of addresses) {
-    if (ByronAddress.is_valid(address)) {
-      bech32OrBase58Addresses.push(address);
-      bech32OrBase58Addresses.push(ByronAddress.from_base58(address).to_address().to_bech32());
-      continue;
-    }
-
-    if (address.startsWith("addr_vkh")) {
-      const keyHash = Ed25519KeyHash.from_bech32(address);
-      const cred = StakeCredential.from_keyhash(keyHash);
-      paymentCreds.push(Buffer.from(cred.to_bytes()).toString("hex"));
-      continue;
-    }
-
-    if (address.startsWith("addr") || address.startsWith("addr_test")) {
-      bech32OrBase58Addresses.push(address);
-      continue;
-    }
-
-    if (address.startsWith("stake") || address.startsWith("stake_test")) {
-      const rewardAddress = RewardAddress.from_address(
-        Address.from_bech32(address)
-      );
-      if (rewardAddress) {
-        rewardAddresses.push(Buffer.from(rewardAddress.to_address().to_bytes()).toString("hex"));
-        const cred = rewardAddress.payment_cred();
-        const keyHash = cred.to_keyhash();
-        if (keyHash) {
-          addrKeyHashes.push(Buffer.from(keyHash.to_bytes()).toString("hex"));
-        }
-      }
-      continue;
-    }
-  }
-
-  return {
-    bech32OrBase58Addresses,
-    paymentCreds,
-    addrKeyHashes,
-    rewardAddresses
   };
 };
 
@@ -462,18 +407,20 @@ MATCH (tx:TX)
 WHERE tx.hash IN tx_hashes
 
 MATCH (tx)-[:isAt]->(block:Block)
+WHERE Id(tx) <= $untilTx AND Id(tx) > $afterTx
 
 WITH DISTINCT tx, block ORDER BY block.number, tx.tx_index LIMIT 50
 
+
 OPTIONAL MATCH (tx_out:TX_OUT)-[:producedBy]->(tx)
-WITH block, tx, collect(tx_out) as outputs
+WITH block, tx, apoc.coll.sortNodes(collect(tx_out), '^output_index') as outputs
 
 OPTIONAL MATCH (tx_in:TX_IN)-[:inputOf]->(tx)
 OPTIONAL MATCH (src_tx_out:TX_OUT)-[:sourceOf]->(tx_in)
-WITH block, tx, outputs, collect({
+WITH block, tx, outputs, apoc.coll.sortMaps(collect({
   tx_in: tx_in,
   tx_out: src_tx_out
-}) as inputs
+}), '^tx_in.input_index') as inputs
 
 OPTIONAL MATCH (c_tx_in:COLLATERAL_TX_IN)-[:collateralInputOf]->(tx)
 OPTIONAL MATCH (src_tx_out:TX_OUT)-[:sourceOf]->(c_tx_in)
@@ -538,8 +485,8 @@ RETURN block, tx, outputs, inputs, collateral_inputs, withdrawals, certificates,
         hash: tx.hash,
         fee: neo4jBigNumberAsNumber(tx.fee).toString(),
         metadata: tx.metadata ? JSON.parse(tx.metadata) : null,
-        validContract: tx.is_valid,
-        scriptSize: getScriptsSize(scripts),
+        valid_contract: tx.is_valid,
+        script_size: getScriptsSize(scripts),
         type: block.era === "byron" ? "byron" : "shelley",
         withdrawals: withdrawals.map(w => ({
           address: w.address,
@@ -548,11 +495,11 @@ RETURN block, tx, outputs, inputs, collateral_inputs, withdrawals, certificates,
           assets: []
         })),
         certificates: certificates.map(c => formatNeo4jCertificate(c, block)),
-        txOrdinal: neo4jBigNumberAsNumber(tx.tx_index),
-        txState: "Successful",
-        lastUpdate: blockDate(block),
-        blockNum: neo4jBigNumberAsNumber(block.number),
-        blockHash: block.hash,
+        tx_ordinal: neo4jBigNumberAsNumber(tx.tx_index),
+        tx_state: "Successful",
+        last_update: blockDate(block),
+        block_num: neo4jBigNumberAsNumber(block.number),
+        block_hash: block.hash,
         time: blockDate(block),
         epoch: neo4jBigNumberAsNumber(block.epoch),
         slot: neo4jBigNumberAsNumber(block.epoch_slot),
@@ -564,16 +511,9 @@ RETURN block, tx, outputs, inputs, collateral_inputs, withdrawals, certificates,
           id: `${i.tx_in.tx_id}${neo4jBigNumberAsNumber(i.tx_in.index)}`,
           index: neo4jBigNumberAsNumber(i.tx_in.index),
           txHash: i.tx_in.tx_id,
-          assets: i.tx_out?.assets && typeof i.tx_out.assets === "string"
-            ? JSON.parse(i.tx_out.assets).map((a: any) => ({
-              assetId: `${a.policy}.${a.asset}`,
-              policyId: a.policy,
-              name: a.asset,
-              amount: a.amount.toString()
-            }))
-            : []
+          assets: mapNeo4jAssets(i.tx_out?.assets)
         })),
-        collateralInputs: collateralInputs.map(i => ({
+        collateral_inputs: collateralInputs.map(i => ({
           address: i.tx_out?.address,
           amount: i.tx_out
             ? formatNeo4jBigNumber(i.tx_out.amount)
@@ -581,27 +521,13 @@ RETURN block, tx, outputs, inputs, collateral_inputs, withdrawals, certificates,
           id: i.tx_out?.id,
           index: neo4jBigNumberAsNumber(i.tx_in.index).toString(),
           txHash: i.tx_in.tx_id,
-          assets: i.tx_out?.assets && typeof i.tx_out.assets === "string"
-            ? JSON.parse(i.tx_out.assets).map((a: any) => ({
-              assetId: `${a.policy}.${a.asset}`,
-              policyId: a.policy,
-              name: a.asset,
-              amount: a.amount.toString()
-            }))
-            : []
+          assets: mapNeo4jAssets(i.tx_out?.assets)
         })),
         outputs: outputs.map(o => ({
           address: o.address,
           amount: formatNeo4jBigNumber(o.amount),
           dataHash: o.datum_hash ?? null,
-          assets: o.assets && typeof o.assets === "string"
-            ? JSON.parse(o.assets).map((a: any) => ({
-              assetId: `${a.policy}.${a.asset}`,
-              policyId: a.policy,
-              name: a.asset,
-              amount: a.amount.toString()
-            }))
-            : []
+          assets: mapNeo4jAssets(o.assets)
         })),
       };
     });
