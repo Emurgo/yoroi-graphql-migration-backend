@@ -703,9 +703,29 @@ const routes: Route[] = [
 
   // v3
   {
+    path: "/v3/addresses/filterUsed",
+    method: "post",
+    handler: v3.addresses.filterUsed.handler
+  },
+  {
     path: "/v3/txs/history",
     method: "post",
     handler: v3.txs.history.handler
+  },
+  {
+    path: "/v3/txs/utxoForAddresses",
+    method: "post",
+    handler: v3.txs.utxoForAddresses.handler
+  },
+  {
+    path: "/v3/bestblock",
+    method: "get",
+    handler: v3.bestblock.handler
+  },
+  {
+    path: "/v3/multiAsset/metadata",
+    method: "post",
+    handler: v3.multiAsset.metadata.handler
   },
 ];
 
