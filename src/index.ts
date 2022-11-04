@@ -520,7 +520,7 @@ const routes: Route[] = [
   { path: "/v2.1/tipStatus", method: "get", handler: handleTipStatusGet(pool), interceptor: middleware.handleCamelCaseResponse },
   { path: "/v2.1/tipStatus", method: "post", handler: handleTipStatusPost(pool), interceptor: middleware.handleCamelCaseResponse },
   { path: "/v2.1/txs/utxoAtPoint", method: "post", handler: utxoAtPoint(pool), interceptor: middleware.handleCamelCaseResponse },
- {
+  {
     path: "/v2.1/txs/utxoDiffSincePoint",
     method: "post",
     handler: handleUtxoDiffSincePoint(pool),
@@ -666,6 +666,11 @@ const routes: Route[] = [
     path: "/v3/txs/utxoForAddresses",
     method: "post",
     handler: v3.txs.utxoForAddresses.handler
+  },
+  {
+    path: "/v3/txs/io/:tx_hash",
+    method: "get",
+    handler: v3.txs.io.handler
   },
   {
     path: "/v3/bestblock",
