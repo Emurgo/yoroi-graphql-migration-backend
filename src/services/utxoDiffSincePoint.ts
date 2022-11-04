@@ -143,7 +143,9 @@ const buildSelectFromForInputs = () => {
   INNER JOIN tx_in ON tx.id = tx_in.tx_in_id
   INNER JOIN tx_out
     ON tx_out.tx_id = tx_in.tx_out_id
-    AND tx_out.index::smallint = tx_in.tx_out_index::smallint`;
+    AND tx_out.index::smallint = tx_in.tx_out_index::smallint
+  INNER JOIN tx src_tx
+    ON tx_out.tx_id = src_tx.id`;
 };
 
 const buildSelectFromForCollaterals = () => {
@@ -152,7 +154,9 @@ const buildSelectFromForCollaterals = () => {
   INNER JOIN collateral_tx_in ON tx.id = collateral_tx_in.tx_in_id
   INNER JOIN tx_out
     ON tx_out.tx_id = collateral_tx_in.tx_out_id
-    AND tx_out.index::smallint = collateral_tx_in.tx_out_index::smallint`;
+    AND tx_out.index::smallint = collateral_tx_in.tx_out_index::smallint
+  INNER JOIN tx src_tx
+    ON tx_out.tx_id = src_tx.id`;
 };
 
 const buildSelectFromForOutputs = () => {
@@ -281,18 +285,21 @@ const buildWhereClause = (
 
 const buildInputQuery = (paginationPoinType: DiffItemType | null) => {
   return `${buildSelectColumns(DiffItemType.INPUT)}
+  , encode(src_tx.hash,'hex') as src_hash
   ${buildSelectFromForInputs()}
   ${buildWhereClause(true, DiffItemType.INPUT, paginationPoinType)}`;
 };
 
 const buildCollateralQuery = (paginationPoinType: DiffItemType | null) => {
   return `${buildSelectColumns(DiffItemType.COLLATERAL)}
+  , encode(src_tx.hash,'hex') as src_hash
   ${buildSelectFromForCollaterals()}
   ${buildWhereClause(false, DiffItemType.COLLATERAL, paginationPoinType)}`;
 };
 
 const buildOutputQuery = (paginationPointType: DiffItemType | null) => {
   return `${buildSelectColumns(DiffItemType.OUTPUT)}
+  , null as src_hash
   ${buildSelectFromForOutputs()}
   ${buildWhereClause(true, DiffItemType.OUTPUT, paginationPointType)}`;
 };
@@ -372,17 +379,16 @@ export const handleUtxoDiffSincePoint =
 
         const linearized = [];
         for (const row of result.rows) {
-          const id = `${row.hash}:${row.index}`;
           if ([DiffItemType.INPUT, DiffItemType.COLLATERAL].includes(row.diffItemType)) {
             linearized.push({
               type: DiffItemType.INPUT,
-              id,
+              id: `${row.src_hash}:${row.index}`,
               amount: row.value,
             });
           } else {
             linearized.push({
               type: DiffItemType.OUTPUT,
-              id,
+              id: `${row.hash}:${row.index}`,
               receiver: row.address,
               amount: row.value,
               assets: extractAssets(row.assets),
