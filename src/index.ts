@@ -718,6 +718,11 @@ const routes: Route[] = [
     handler: v3.txs.utxoForAddresses.handler
   },
   {
+    path: "/v3/txs/io/:tx_hash",
+    method: "get",
+    handler: v3.txs.io.handler
+  },
+  {
     path: "/v3/bestblock",
     method: "get",
     handler: v3.bestblock.handler
