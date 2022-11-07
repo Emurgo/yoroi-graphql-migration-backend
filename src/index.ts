@@ -723,6 +723,11 @@ const routes: Route[] = [
     handler: v3.txs.io.handler
   },
   {
+    path: "/v3/txs/ioByIndex/:tx_hash/o/:output_index",
+    method: "get",
+    handler: v3.txs.ioByIndex.handler
+  },
+  {
     path: "/v3/bestblock",
     method: "get",
     handler: v3.bestblock.handler
