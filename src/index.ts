@@ -737,6 +737,11 @@ const routes: Route[] = [
     method: "post",
     handler: v3.multiAsset.metadata.handler
   },
+  {
+    path: "/v3/account/registrationHistory",
+    method: "post",
+    handler: v3.account.registrationHistory.handler
+  }
 ];
 
 applyRoutes(routes, router);

@@ -5,6 +5,7 @@ import { addresses } from "./addresses";
 import { txs } from "./txs";
 import { bestblock } from "./bestblock";
 import { multiAsset } from "./multiAsset";
+import { account } from "./account";
 
 const driver = neo4j.driver(
   config.get("neo4j.url"),
@@ -15,5 +16,6 @@ export const v3 = {
   txs: txs(driver),
   bestblock: bestblock(driver),
   addresses: addresses(driver),
-  multiAsset: multiAsset(driver)
+  multiAsset: multiAsset(driver),
+  account: account(driver)
 };
