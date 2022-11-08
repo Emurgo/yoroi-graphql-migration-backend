@@ -741,6 +741,11 @@ const routes: Route[] = [
     path: "/v3/account/registrationHistory",
     method: "post",
     handler: v3.account.registrationHistory.handler
+  },
+  {
+    path: "/v3/multiAsset/policyIdExists",
+    method: "post",
+    handler: v3.multiAsset.policyIdExists.handler
   }
 ];
 
