@@ -1,14 +1,14 @@
 import { Pool } from "pg";
 
 type TransactionRow = {
-  id: string,
-  hash: string,
-  blockId: string,
-  blockIndex: number,
-  outSum: string,
-  fee: string,
-  deposit: string,
-  size: number,
+  id: string;
+  hash: string;
+  blockId: string;
+  blockIndex: number;
+  outSum: string;
+  fee: string;
+  deposit: string;
+  size: number;
 };
 
 export const getTransactionRowByHash =

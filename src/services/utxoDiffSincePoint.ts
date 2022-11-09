@@ -17,7 +17,7 @@ const addressesRequestLimit: number = config.get("server.addressRequestLimit");
 enum DiffItemType {
   INPUT = "input",
   COLLATERAL = "collateral",
-  OUTPUT = "output"
+  OUTPUT = "output",
 }
 
 const extractBodyParameters = async (
@@ -80,7 +80,7 @@ const extractBodyParameters = async (
     ![
       DiffItemType.INPUT,
       DiffItemType.COLLATERAL,
-      DiffItemType.OUTPUT
+      DiffItemType.OUTPUT,
     ].includes(afterPoint.paginationPointType)
   ) {
     throw new Error("error, unexpected paginationPointType in afterPoint.");
@@ -170,7 +170,7 @@ const buildWhereClause = (
   // for which diff item we are building the where clause
   diffItemType: DiffItemType,
   // the type of pagination point passed in by the client
-  paginationPoinType: DiffItemType | null,
+  paginationPoinType: DiffItemType | null
 ) => {
   let linearizedOrderCond;
   if (paginationPoinType === null) {
@@ -192,7 +192,8 @@ const buildWhereClause = (
           AND tx_in.id > ($5)::integer
         )
       )`;
-    } else { // diffItemType === DiffItemType.COLLATERAL || diffItemType === DiffItemType.OUTPUT
+    } else {
+      // diffItemType === DiffItemType.COLLATERAL || diffItemType === DiffItemType.OUTPUT
       linearizedOrderCond = `(
           /* following blocks */
           block.block_no > ($4)::word31type
@@ -231,7 +232,8 @@ const buildWhereClause = (
           AND collateral_tx_in.id > ($5)::integer
         )
       )`;
-    } else { // diffItemType === DiffItemType.OUTPUT
+    } else {
+      // diffItemType === DiffItemType.OUTPUT
       linearizedOrderCond = `(
           /* following blocks */
           block.block_no > ($4)::word31type
@@ -244,8 +246,12 @@ const buildWhereClause = (
         )
       )`;
     }
-  } else { // paginationPoinType === DiffItemType.OUTPUT
-    if (diffItemType === DiffItemType.INPUT || diffItemType === DiffItemType.COLLATERAL) {
+  } else {
+    // paginationPoinType === DiffItemType.OUTPUT
+    if (
+      diffItemType === DiffItemType.INPUT ||
+      diffItemType === DiffItemType.COLLATERAL
+    ) {
       linearizedOrderCond = `(
           /* following blocks */
           block.block_no > ($4)::word31type
@@ -256,7 +262,8 @@ const buildWhereClause = (
         ) /* because inputs and collerals follow outputs,
         inputs and collerals of the same tx are before the pagination point */
       )`;
-    } else { // (diffItemType === DiffItemType.OUTPUT)
+    } else {
+      // (diffItemType === DiffItemType.OUTPUT)
       linearizedOrderCond = `(
           /* following blocks */
           block.block_no > ($4)::word31type
@@ -356,7 +363,9 @@ export const handleUtxoDiffSincePoint =
           if (afterPoint.txHash == null) {
             throw new Error("won't happen");
           }
-          const afterPointTx = await getTransactionRowByHash(pool)(afterPoint.txHash);
+          const afterPointTx = await getTransactionRowByHash(pool)(
+            afterPoint.txHash
+          );
           if (!afterPointTx) {
             throw new Error("afterPoint.txHash not found");
           }
@@ -379,7 +388,11 @@ export const handleUtxoDiffSincePoint =
 
         const linearized = [];
         for (const row of result.rows) {
-          if ([DiffItemType.INPUT, DiffItemType.COLLATERAL].includes(row.diffItemType)) {
+          if (
+            [DiffItemType.INPUT, DiffItemType.COLLATERAL].includes(
+              row.diffItemType
+            )
+          ) {
             linearized.push({
               type: DiffItemType.INPUT,
               id: `${row.src_hash}:${row.index}`,
