@@ -706,6 +706,11 @@ const routes: Route[] = [
     path: "/v3/multiAsset/policyIdExists",
     method: "post",
     handler: v3.multiAsset.policyIdExists.handler
+  },
+  {
+    path: "/v3/pool/info",
+    method: "post",
+    handler: v3.pool.info.handler
   }
 ];
 
