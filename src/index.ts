@@ -719,6 +719,11 @@ const routes: Route[] = [
     handler: v3.addresses.filterUsed.handler
   },
   {
+    path: "/v3/txs/get",
+    method: "post",
+    handler: v3.txs.get.handler
+  },
+  {
     path: "/v3/txs/history",
     method: "post",
     handler: v3.txs.history.handler
