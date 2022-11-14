@@ -766,6 +766,11 @@ const routes: Route[] = [
     path: "/v3/asset/:fingerprint/mintTxs",
     method: "get",
     handler: v3.asset.mintTxs.handler
+  },
+  {
+    path: "/v3/pool/delegationHistory",
+    method: "post",
+    handler: v3.pool.delegationHistory.handler
   }
 ];
 
