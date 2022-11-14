@@ -2,9 +2,9 @@ import config from "config";
 
 import { Pool } from "pg";
 import { Request, Response } from "express";
-import { isNaN } from "lodash";
 
 import { getBlock } from "../utils/queries/block";
+import { getTransactionRowByHash } from "../utils/queries/transaction";
 import {
   assertNever,
   validateAddressesReq,
@@ -14,8 +14,9 @@ import {
 
 const addressesRequestLimit: number = config.get("server.addressRequestLimit");
 
-enum DiffType {
+enum DiffItemType {
   INPUT = "input",
+  COLLATERAL = "collateral",
   OUTPUT = "output",
 }
 
@@ -24,7 +25,18 @@ const extractBodyParameters = async (
 ): Promise<{
   addresses: string[];
   untilBlockHash: string;
-  afterPoint: { blockHash: string; itemIndex?: number; txHash?: string };
+  afterPoint: {
+    blockHash: string;
+    paginationPointType: DiffItemType | null;
+    // if paginationPointType is not null, these two fields must be present
+    txHash?: string;
+    /*
+      if paginationPointType is INPUT, this is `tx_in.id`;
+      if paginationPointType is COLLATERAL, this is `collateral_tx_id.id`;
+      if paginationPointType is OUTPU, this is `tx_out.index`;
+    */
+    paginationPointValue?: string;
+  };
   diffLimit: number;
 }> => {
   if (!body) {
@@ -47,55 +59,45 @@ const extractBodyParameters = async (
 
   const diffLimit: number = body.diffLimit;
 
-  const afterPointFromBody: {
+  const afterPoint: {
     blockHash: string;
-    itemIndex?: number | string;
+    paginationPointType: DiffItemType | null;
     txHash?: string;
+    paginationPointValue?: string;
   } = body.afterPoint;
 
-  if (!afterPointFromBody) {
+  if (!afterPoint) {
     throw new Error("error, empty afterBestBlocks.");
   }
 
-  if (!afterPointFromBody.blockHash) {
+  if (!afterPoint.blockHash) {
     throw new Error("error, missing blockHash in afterPoint.");
   }
 
-  const afterPoint: { blockHash: string; itemIndex?: number; txHash?: string } =
-    {
-      blockHash: afterPointFromBody.blockHash,
-    };
-
-  if (afterPointFromBody.itemIndex !== undefined || afterPointFromBody.txHash) {
-    if (
-      !(afterPointFromBody.itemIndex !== undefined && afterPointFromBody.txHash)
-    ) {
-      throw new Error(
-        "error, if itemIndex or txHash are informed, both should be."
-      );
-    }
+  if (!afterPoint.paginationPointType) {
+    afterPoint.paginationPointType = null;
+  } else if (
+    ![
+      DiffItemType.INPUT,
+      DiffItemType.COLLATERAL,
+      DiffItemType.OUTPUT,
+    ].includes(afterPoint.paginationPointType)
+  ) {
+    throw new Error("error, unexpected paginationPointType in afterPoint.");
   }
 
   if (
-    afterPointFromBody.itemIndex !== undefined &&
-    afterPointFromBody.itemIndex !== null
+    afterPoint.paginationPointType !== null &&
+    typeof afterPoint.txHash !== "string"
   ) {
-    if (isNaN(afterPointFromBody.itemIndex)) {
-      throw new Error("error, itemIndex at afterPoint should be a number.");
-    }
+    throw new Error("error, missing txHash in afterPoint.");
+  }
 
-    afterPoint.itemIndex =
-      typeof afterPointFromBody.itemIndex === "number"
-        ? afterPointFromBody.itemIndex
-        : parseInt(afterPointFromBody.itemIndex);
-
-    if (afterPoint.itemIndex < 0) {
-      throw new Error(
-        "error, itemIndex at afterPoint should be a positive number or zero."
-      );
-    }
-
-    afterPoint.txHash = afterPointFromBody.txHash;
+  if (
+    afterPoint.paginationPointType !== null &&
+    typeof afterPoint.paginationPointValue !== "string"
+  ) {
+    throw new Error("error, missing paginationPointValue in afterPoint.");
   }
 
   return {
@@ -106,7 +108,16 @@ const extractBodyParameters = async (
   };
 };
 
-const buildSelectColumns = (type: DiffType) => {
+const buildSelectColumns = (diffItemType: DiffItemType) => {
+  let paginationPointColumn;
+  if (diffItemType === DiffItemType.INPUT) {
+    paginationPointColumn = "tx_in.id";
+  } else if (diffItemType === DiffItemType.COLLATERAL) {
+    paginationPointColumn = "collateral_tx_in.id";
+  } else {
+    paginationPointColumn = "tx_out.index";
+  }
+
   return `SELECT tx_out.address
   , encode(block.hash, 'hex') as "blockHash"
   , tx_out.address
@@ -115,13 +126,15 @@ const buildSelectColumns = (type: DiffType) => {
   , tx_out.index
   , tx_out.value
   , block.block_no as "blockNumber"
+  , tx.block_index as "blockIndex"
   , (
     select json_agg(ROW (encode(multi_asset."policy", 'hex'), encode(multi_asset."name", 'hex'), "quantity"))
     from ma_tx_out
       inner join multi_asset on ma_tx_out.ident = multi_asset.id
     where ma_tx_out."tx_out_id" = tx_out.id
   ) as assets
-  , '${type === DiffType.OUTPUT ? "O" : "I"}' as "type"`;
+  , '${diffItemType}' as "diffItemType"
+  , ${paginationPointColumn} as "paginationPointValue"`;
 };
 
 const buildSelectFromForInputs = () => {
@@ -130,7 +143,9 @@ const buildSelectFromForInputs = () => {
   INNER JOIN tx_in ON tx.id = tx_in.tx_in_id
   INNER JOIN tx_out
     ON tx_out.tx_id = tx_in.tx_out_id
-    AND tx_out.index::smallint = tx_in.tx_out_index::smallint`;
+    AND tx_out.index::smallint = tx_in.tx_out_index::smallint
+  INNER JOIN tx src_tx
+    ON tx_out.tx_id = src_tx.id`;
 };
 
 const buildSelectFromForCollaterals = () => {
@@ -139,7 +154,9 @@ const buildSelectFromForCollaterals = () => {
   INNER JOIN collateral_tx_in ON tx.id = collateral_tx_in.tx_in_id
   INNER JOIN tx_out
     ON tx_out.tx_id = collateral_tx_in.tx_out_id
-    AND tx_out.index::smallint = collateral_tx_in.tx_out_index::smallint`;
+    AND tx_out.index::smallint = collateral_tx_in.tx_out_index::smallint
+  INNER JOIN tx src_tx
+    ON tx_out.tx_id = src_tx.id`;
 };
 
 const buildSelectFromForOutputs = () => {
@@ -148,55 +165,166 @@ const buildSelectFromForOutputs = () => {
   INNER JOIN tx_out ON tx.id = tx_out.tx_id`;
 };
 
-const buildWhereClause = (validContract: boolean, useItemIndex: boolean) => {
-  return `WHERE ${validContract ? "" : "NOT "}tx.valid_contract
-  AND block.block_no <= ($3)::word31type
-  ${
-    useItemIndex
-      ? `AND (
-      block.block_no > ($4)::word31type
-      OR (
-        block.block_no >= ($4)::word31type
-        AND encode(tx.hash,'hex') = ($5)::varchar
-        AND tx_out.index > ($6)::txindex
-      )
-    )`
-      : "AND block.block_no > ($4)::word31type"
+const buildWhereClause = (
+  validContract: boolean,
+  // for which diff item we are building the where clause
+  diffItemType: DiffItemType,
+  // the type of pagination point passed in by the client
+  paginationPoinType: DiffItemType | null
+) => {
+  let linearizedOrderCond;
+  if (paginationPoinType === null) {
+    linearizedOrderCond = "(block.block_no > ($4)::word31type)";
+  } else if (paginationPoinType === DiffItemType.INPUT) {
+    // the linear order is input < collateral < output
+    if (diffItemType === DiffItemType.INPUT) {
+      linearizedOrderCond = `(
+          /* following blocks */
+          block.block_no > ($4)::word31type
+        OR (
+          /* the same block, following txs */
+          block.block_no = ($4)::word31type
+          AND tx.block_index > ($6)::word31type
+        ) OR (
+          /* the same tx, following inputs */
+          block.block_no = ($4)::word31type
+          AND tx.block_index = ($6)::word31type
+          AND tx_in.id > ($5)::integer
+        )
+      )`;
+    } else {
+      // diffItemType === DiffItemType.COLLATERAL || diffItemType === DiffItemType.OUTPUT
+      linearizedOrderCond = `(
+          /* following blocks */
+          block.block_no > ($4)::word31type
+        OR (
+          /* the same block, following txs,
+             or the same tx (because collaterals and outputs follow inputs)
+          */
+          block.block_no = ($4)::word31type
+          AND tx.block_index >= ($6)::word31type
+        )
+      )`;
+    }
+  } else if (paginationPoinType === DiffItemType.COLLATERAL) {
+    if (diffItemType === DiffItemType.INPUT) {
+      linearizedOrderCond = `(
+          /* following blocks */
+          block.block_no > ($4)::word31type
+        OR (
+          /* the same block, following txs */
+          block.block_no = ($4)::word31type
+          AND tx.block_index > ($6)::word31type
+        ) /* because collaterals follow input, inputs of the same tx are before the pagination point */
+      )`;
+    } else if (diffItemType === DiffItemType.COLLATERAL) {
+      linearizedOrderCond = `(
+          /* following blocks */
+          block.block_no > ($4)::word31type
+        OR (
+          /* the same block, following txs */
+          block.block_no = ($4)::word31type
+          AND tx.block_index > ($6)::word31type
+        ) OR (
+          /* the same tx, following collaterals */
+          block.block_no = ($4)::word31type
+          AND tx.block_index = ($6)::word31type
+          AND collateral_tx_in.id > ($5)::integer
+        )
+      )`;
+    } else {
+      // diffItemType === DiffItemType.OUTPUT
+      linearizedOrderCond = `(
+          /* following blocks */
+          block.block_no > ($4)::word31type
+        OR (
+          /* the same block, following txs,
+             or the same tx (because outputs follow collaterals)
+          */
+          block.block_no = ($4)::word31type
+          AND tx.block_index >= ($6)::word31type
+        )
+      )`;
+    }
+  } else {
+    // paginationPoinType === DiffItemType.OUTPUT
+    if (
+      diffItemType === DiffItemType.INPUT ||
+      diffItemType === DiffItemType.COLLATERAL
+    ) {
+      linearizedOrderCond = `(
+          /* following blocks */
+          block.block_no > ($4)::word31type
+        OR (
+          /* the same block, following txs */
+          block.block_no = ($4)::word31type
+          AND tx.block_index > ($6)::word31type
+        ) /* because inputs and collerals follow outputs,
+        inputs and collerals of the same tx are before the pagination point */
+      )`;
+    } else {
+      // (diffItemType === DiffItemType.OUTPUT)
+      linearizedOrderCond = `(
+          /* following blocks */
+          block.block_no > ($4)::word31type
+        OR (
+          /* the same block, following txs */
+          block.block_no = ($4)::word31type
+          AND tx.block_index > ($6)::word31type
+        ) OR (
+          /* the same tx, following collaterals */
+          block.block_no = ($4)::word31type
+          AND tx.block_index = ($6)::word31type
+          AND tx_out.index > ($5)::txindex
+        )
+      )`;
+    }
   }
-  AND (
-    tx_out.address = any(($1)::varchar array) 
-    OR tx_out.payment_cred = any(($2)::bytea array)
-  )`;
+
+  return `WHERE ${validContract ? "" : "NOT "}tx.valid_contract
+    AND block.block_no <= ($3)::word31type
+    AND ${linearizedOrderCond}
+    AND (
+      tx_out.address = any(($1)::varchar array) 
+      OR tx_out.payment_cred = any(($2)::bytea array)
+    )`;
 };
 
-const buildInputQuery = (useItemIndex: boolean) => {
-  return `${buildSelectColumns(DiffType.INPUT)}
+const buildInputQuery = (paginationPoinType: DiffItemType | null) => {
+  return `${buildSelectColumns(DiffItemType.INPUT)}
+  , encode(src_tx.hash,'hex') as src_hash
   ${buildSelectFromForInputs()}
-  ${buildWhereClause(true, useItemIndex)}`;
+  ${buildWhereClause(true, DiffItemType.INPUT, paginationPoinType)}`;
 };
 
-const buildCollateralQuery = (useItemIndex: boolean) => {
-  return `${buildSelectColumns(DiffType.INPUT)}
+const buildCollateralQuery = (paginationPoinType: DiffItemType | null) => {
+  return `${buildSelectColumns(DiffItemType.COLLATERAL)}
+  , encode(src_tx.hash,'hex') as src_hash
   ${buildSelectFromForCollaterals()}
-  ${buildWhereClause(false, useItemIndex)}`;
+  ${buildWhereClause(false, DiffItemType.COLLATERAL, paginationPoinType)}`;
 };
 
-const buildOutputQuery = (useItemIndex: boolean) => {
-  return `${buildSelectColumns(DiffType.OUTPUT)}
+const buildOutputQuery = (paginationPointType: DiffItemType | null) => {
+  return `${buildSelectColumns(DiffItemType.OUTPUT)}
+  , null as src_hash
   ${buildSelectFromForOutputs()}
-  ${buildWhereClause(true, useItemIndex)}`;
+  ${buildWhereClause(true, DiffItemType.OUTPUT, paginationPointType)}`;
 };
 
-const buildFullQuery = (useItemIndex: boolean) => {
+const buildFullQuery = (paginationPoinType: DiffItemType | null) => {
   return `SELECT * FROM (
-    ${buildInputQuery(useItemIndex)}
+    ${buildInputQuery(paginationPoinType)}
     UNION ALL
-    ${buildCollateralQuery(useItemIndex)}
+    ${buildCollateralQuery(paginationPoinType)}
     UNION ALL
-    ${buildOutputQuery(useItemIndex)}
+    ${buildOutputQuery(paginationPoinType)}
   ) as q
-  ORDER BY q."blockNumber", CASE q.type WHEN 'I' THEN 1 ELSE 0 END
-  LIMIT $${5 + (useItemIndex ? 2 : 0)}::word31type;`;
+  ORDER BY
+    q."blockNumber",
+    q."blockIndex",
+    CASE q."diffItemType" WHEN 'input' THEN 0 WHEN 'collateral' THEN 1  ELSE 2 END,
+    q."paginationPointValue"
+  LIMIT $${5 + (paginationPoinType !== null ? 2 : 0)}::word31type;`;
 };
 
 export const handleUtxoDiffSincePoint =
@@ -220,7 +348,7 @@ export const handleUtxoDiffSincePoint =
       addresses
     );
 
-    const fullQuery = buildFullQuery(afterPoint.itemIndex !== undefined);
+    const fullQuery = buildFullQuery(afterPoint.paginationPointType);
 
     switch (verifiedAddresses.kind) {
       case "ok": {
@@ -231,9 +359,19 @@ export const handleUtxoDiffSincePoint =
           afterBlock.number,
         ];
 
-        if (afterPoint.itemIndex !== undefined) {
-          queryParameters.push(afterPoint.txHash);
-          queryParameters.push(afterPoint.itemIndex);
+        if (afterPoint.paginationPointType !== null) {
+          if (afterPoint.txHash == null) {
+            throw new Error("won't happen");
+          }
+          const afterPointTx = await getTransactionRowByHash(pool)(
+            afterPoint.txHash
+          );
+          if (!afterPointTx) {
+            throw new Error("afterPoint.txHash not found");
+          }
+
+          queryParameters.push(afterPoint.paginationPointValue);
+          queryParameters.push(afterPointTx.blockIndex);
         }
 
         queryParameters.push(diffLimit);
@@ -245,21 +383,25 @@ export const handleUtxoDiffSincePoint =
         if (result.rows.length === 0) {
           apiResponse.diffItems = [];
           res.send(apiResponse);
+          return;
         }
 
         const linearized = [];
         for (const row of result.rows) {
-          const id = `${row.hash}:${row.index}`;
-          if (row.type === "I") {
+          if (
+            [DiffItemType.INPUT, DiffItemType.COLLATERAL].includes(
+              row.diffItemType
+            )
+          ) {
             linearized.push({
-              type: DiffType.INPUT,
-              id,
+              type: DiffItemType.INPUT,
+              id: `${row.src_hash}:${row.index}`,
               amount: row.value,
             });
           } else {
             linearized.push({
-              type: DiffType.OUTPUT,
-              id,
+              type: DiffItemType.OUTPUT,
+              id: `${row.hash}:${row.index}`,
               receiver: row.address,
               amount: row.value,
               assets: extractAssets(row.assets),
@@ -275,7 +417,8 @@ export const handleUtxoDiffSincePoint =
         apiResponse.lastDiffPointSelected = {
           blockHash: lastRow.blockHash,
           txHash: lastRow.hash,
-          itemIndex: lastRow.index,
+          paginationPointType: lastRow.diffItemType,
+          paginationPointValue: lastRow.paginationPointValue,
         };
         apiResponse.diffItems = linearized;
 

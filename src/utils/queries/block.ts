@@ -2,7 +2,7 @@ import { Pool } from "pg";
 
 import { BlockFrag } from "../../Transactions/types";
 
-const baseGetBlockQuery = `SELECT encode(hash, 'hex'),
+const baseGetBlockQuery = `SELECT encode(hash, 'hex') as hash,
   epoch_no,
   slot_no,
   block_no

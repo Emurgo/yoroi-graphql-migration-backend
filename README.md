@@ -141,11 +141,13 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
     // byron addresses, bech32 address, bech32 stake addresses or addr_vkh
     addresses: Array<string>,
     untilBlockHash: string, // only transactions up to this block (including it) will be considered for generating the diff
-    afterPoint?: {
+    // when starting to call this endpoint, the client should set the `blockHash` field. Then the client should pass the returned `lastDiffPointSelected` as `afterPoint` for the next page.
+    afterPoint: {
       blockHash: string, // only transactions AFTER this clock will be considered for generating the diff
-      itemIndex?: number // if `itemIndex` is supplied, we will also consider transactions from `blockHash`, but only the outputs which have a bigger index than `itemIndex`
+      ...
     },
     afterBestBlocks?: Array<string> // only transactions after the latest block from this array will be included. The inclusion of `afterBestBlocks` in the request will also add 2 new fields to the response (see the response bellow for more details)
+    diffLimit: number // number of diff items to return
   }
   ```
 
@@ -160,6 +162,8 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
       assets?: Asset[], // only included for outputs
       block_num?: number // only included for outputs
     }>,
+    // An opaque object to mark the end of the returned page (whose size is limited by `diffLimit` of the input). The client should pass this object as the `afterPoint` input for the next page.
+    lastDiffPointSelected: Object,
     lastFoundBestBlock?: string, // only included if `afterBestBlocks` was supplied. This will be the latest found block from `afterBestBlocks`
     lastFoundSafeBlock?: string // only included if `afterBestBlocks` was supplied. This will be the latest safe block from `afterBestBlocks`, safe block being the block with the highest depth up to a maximum, determined at runtime by configuration
   }
