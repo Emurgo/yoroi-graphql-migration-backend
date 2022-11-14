@@ -711,6 +711,11 @@ const routes: Route[] = [
     path: "/v3/pool/info",
     method: "post",
     handler: v3.pool.info.handler
+  },
+  {
+    path: "/v3/asset/:fingerprint/mintTxs",
+    method: "get",
+    handler: v3.asset.mintTxs.handler
   }
 ];
 
