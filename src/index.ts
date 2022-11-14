@@ -734,6 +734,11 @@ const routes: Route[] = [
     handler: v3.txs.utxoForAddresses.handler
   },
   {
+    path: "/v3/txs/utxoSumForAddresses",
+    method: "post",
+    handler: v3.txs.utxoSumForAddresses.handler
+  },
+  {
     path: "/v3/txs/io/:tx_hash",
     method: "get",
     handler: v3.txs.io.handler
