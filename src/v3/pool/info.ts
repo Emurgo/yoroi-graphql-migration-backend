@@ -1,12 +1,9 @@
+import config from "config";
 import { Request, Response } from "express";
 import { Driver } from "neo4j-driver-core";
-import axios from "axios";
+import { getPayload, getSmashInfo } from "./utils";
 
-import config from "config";
-
-const smashEndpoint: string = config.get("server.smashEndpoint");
 const addressesRequestLimit: number = config.get("server.addressRequestLimit");
-
 
 export const info = (driver: Driver) => ({
   handler: async (req: Request, res: Response) => {
@@ -24,56 +21,6 @@ export const info = (driver: Driver) => ({
     WITH c
     MATCH (c)-[:generatedAt]->(tx:TX)-[:isAt]->(b:Block)
     RETURN c, tx, b`;
-
-    const payload = (cert: any, block: any) => {
-      switch (cert.type) {
-        case "pool_registration":
-          return {
-            kind: "PoolRegistration",
-            certIndex: cert.cert_index.toNumber(),
-            poolParams: {
-              operator: cert.operator,
-              vrfKeyHash: cert.vrf_keyhash,
-              pledge: cert.pledge.toNumber().toString(),
-              cost: cert.cost.toNumber().toString(),
-              margin: cert.margin,
-              rewardAccount: cert.reward_account,
-              poolOwners: cert.pool_owners.map((owner: any) => { return "e1" + owner; }),
-              relays: JSON.parse(cert.relays).map((r: any) => ({
-                ipv4: (r.ipv4) ? r.ipv4.data.join(".") : null,
-                ipv6: r.ipv6,
-                dnsName: (r.dnsName) ? r.dnsName.toString() : null,
-                dnsSrvName: (r.dns_srv_name) ? r.dns_srv_name.data.toString() : null,
-                port: r.port.toString(),
-              })),
-              poolMetadata: {
-                url: cert.url,
-                metadataHash: cert.pool_metadata_hash
-              }
-            }
-          };
-        case "pool_retirement":
-          return {
-            kind: "PoolRetirement",
-            certIndex: cert.cert_index.toNumber(),
-            poolKeyHash: cert.pool_keyhash,
-            epoch: cert.epoch.toNumber(),
-          };
-      }
-    };
-
-    const getSmasheInfo = async (hash: string, metadataHash: string) => {
-      try {
-        const endpointResponse = await axios.get(`${smashEndpoint}${hash}/${metadataHash}`);
-        if (endpointResponse.status === 200) {
-          return endpointResponse.data;
-        } else {
-          console.log(`SMASH did not respond to user submitted hash: ${hash}`);
-        }
-      } catch (e) {
-        console.log(`SMASH did not respond with hash ${hash}, giving error ${e}`);
-      }
-    };
 
 
     const session = driver.session();
@@ -105,7 +52,7 @@ export const info = (driver: Driver) => ({
             slot: block.epoch_slot.toNumber(),
             tx_ordinal: tx.tx_index.toNumber(),
             cert_ordinal: cert.cert_index.toNumber(),
-            payload: payload(cert, block)
+            payload: getPayload(cert)
           }
         );
       }
@@ -131,7 +78,7 @@ export const info = (driver: Driver) => ({
         if (metadataHashRecord) {
           const metadataHash = metadataHashRecord.get("metadataHash").metadataHash;
 
-          const infoFromSmash = await getSmasheInfo(hash, metadataHash);
+          const infoFromSmash = await getSmashInfo(hash, metadataHash);
           if (infoFromSmash) {
             poolsForResponse[hash].info = infoFromSmash;
           }
