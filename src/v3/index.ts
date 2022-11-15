@@ -8,6 +8,7 @@ import { multiAsset } from "./multiAsset";
 import { account } from "./account";
 import { pool } from "./pool";
 import { asset } from "./asset";
+import { tipStatus } from "./tipStatus";
 
 const driver = neo4j.driver(
   config.get("neo4j.url"),
@@ -21,5 +22,6 @@ export const v3 = {
   multiAsset: multiAsset(driver),
   account: account(driver),
   pool: pool(driver),
-  asset: asset(driver)
+  asset: asset(driver),
+  tipStatus: tipStatus(driver),
 };

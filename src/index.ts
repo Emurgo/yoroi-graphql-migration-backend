@@ -797,7 +797,17 @@ const routes: Route[] = [
     path: "/v3/pool/delegationHistory",
     method: "post",
     handler: v3.pool.delegationHistory.handler
-  }
+  },
+  {
+    path: "/v3/tipStatus",
+    method: "get",
+    handler: v3.tipStatus.get.handler
+  },
+  {
+    path: "/v3/tipStatus",
+    method: "post",
+    handler: v3.tipStatus.post.handler
+  },
 ];
 
 applyRoutes(routes, router);
