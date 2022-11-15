@@ -3,7 +3,8 @@ import { utxoForAddresses } from "./utxoForAddresses";
 import { history } from "./history";
 import { io } from "./io";
 import { ioByIndex } from "./ioByIndex";
-import {get} from "./get";
+import { get } from "./get";
+import { utxoDiffSincePoint } from "./utxoDiffSincePoint";
 
 export const txs = (driver: Driver) => ({
   history: history(driver),
@@ -11,4 +12,5 @@ export const txs = (driver: Driver) => ({
   io: io(driver),
   ioByIndex: ioByIndex(driver),
   get: get(driver),
+  utxoDiffSincePoint: utxoDiffSincePoint(driver),
 });
