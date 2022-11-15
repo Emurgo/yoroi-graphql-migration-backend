@@ -46,7 +46,7 @@ export interface Route {
   path: string;
   method: string;
   handler: Handler | Handler[] | Response;
-  interceptor?: (req: Request, res: Response, next: NextFunction) => void,
+  interceptor?: (req: Request, res: Response, next: NextFunction) => void;
 }
 
 export const applyRoutes = (routes: Route[], router: Router) => {
