@@ -698,6 +698,11 @@ const routes: Route[] = [
     handler: v3.multiAsset.metadata.handler
   },
   {
+    path: "/v3/multiAsset/supply",
+    method: "post",
+    handler: v3.multiAsset.supply.handler
+  },
+  {
     path: "/v3/multiAsset/validateNFT/:fingerprint",
     method: "post",
     handler: v3.multiAsset.validateNFT.handler,
