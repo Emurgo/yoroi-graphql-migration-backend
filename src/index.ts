@@ -808,6 +808,11 @@ const routes: Route[] = [
     method: "post",
     handler: v3.tipStatus.post.handler
   },
+  {
+    path: "/v3/txs/utxoDiffSincePoint",
+    method: "post",
+    handler: v3.txs.utxoDiffSincePoint.handler
+  },
 ];
 
 applyRoutes(routes, router);

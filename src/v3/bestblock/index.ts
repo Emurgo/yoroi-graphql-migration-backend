@@ -2,7 +2,7 @@ import { Driver } from "neo4j-driver";
 import { Request, Response } from "express";
 
 export const bestblock = (driver: Driver) => ({
-  handler: async (req: Request, res: Response) => {
+  handler: async (_: Request, res: Response) => {
     const cypher = `MATCH (b:Block)
     WITH MAX(ID(b)) as max_block_id
     
