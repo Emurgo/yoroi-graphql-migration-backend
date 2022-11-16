@@ -1,4 +1,5 @@
 import { Integer } from "neo4j-driver";
+import { Driver } from "neo4j-driver-core";
 import config from "config";
 import {
   Ed25519KeyHash,
@@ -310,4 +311,90 @@ const certificateToKindMap: { [key in Neo4jModel.CertificateType]: string } = {
   [Neo4jModel.CertificateType.StakeDelegation]: "StakeDelegation",
   [Neo4jModel.CertificateType.StakeDeregistration]: "StakeDeregistration",
   [Neo4jModel.CertificateType.StakeRegistration]: "StakeRegistration",
+};
+
+export const getPaginationParameters = (driver: Driver) => async (args: {
+  untilBlock: string,
+  after?: {
+    block: string,
+    tx: string
+  }
+}) => {
+  const untilCypher = `CALL {
+  MATCH (untilBlock:Block{hash:$untilBlock})<-[:isAt]-(untilTx:TX)
+  RETURN untilTx, untilBlock ORDER BY untilTx.tx_index LIMIT 1
+}`;
+  const afterCypher = `CALL {
+  MATCH (afterBlock:Block{hash:$afterBlock})<-[:isAt]-(afterTx:TX{hash:$afterTx})
+  RETURN afterTx, afterBlock
+}`;
+
+  const matchParts = [] as string[];
+  const returnParts = [] as string[];
+
+  matchParts.push(untilCypher);
+  returnParts.push("ID(untilTx) as untilTx");
+  returnParts.push("untilBlock.number as untilBlock");
+
+  if (args.after?.block && args.after?.tx) {
+    matchParts.push(afterCypher);
+    returnParts.push("ID(afterTx) as afterTx");
+    returnParts.push("afterTx.tx_index as afterTxIndex");
+    returnParts.push("afterBlock.number as afterBlock");
+  }
+
+  const matchPart = matchParts.join("\n");
+  const returnPart = returnParts.join(",");
+
+  const cypher = `${matchPart}
+RETURN ${returnPart}`;
+
+  const session = driver.session();
+
+  const result = await session.run(cypher, {
+    untilBlock: args.untilBlock,
+    afterBlock: args.after?.block,
+    afterTx: args.after?.tx,
+  });
+
+  await session.close();
+
+  if (result.records.length === 0) {
+    throw new Error("REFERENCE_BEST_BLOCK_MISMATCH");
+  }
+
+  const record = result.records[0];
+  const untilTx = record.has("untilTx")
+    ? record.get("untilTx") as Integer
+    : undefined;
+    const afterTx = record.has("afterTx")
+    ? record.get("afterTx") as Integer
+    : undefined;
+  const afterTxIndex = record.has("afterTxIndex")
+    ? record.get("afterTxIndex") as Integer
+    : undefined;
+  const untilBlock = record.has("untilBlock")
+    ? record.get("untilBlock") as string
+    : undefined;
+  const afterBlock = record.has("afterBlock")
+    ? record.get("afterBlock") as string
+    : undefined;
+
+  if (!untilTx || !untilBlock) {
+    throw new Error("REFERENCE_BEST_BLOCK_MISMATCH");
+  }
+
+  if ((!afterTx || !afterBlock || !afterTxIndex) && args.after) {
+    throw new Error("REFERENCE_BLOCK_MISMATCH");
+  }
+
+  return {
+    untilTx: neo4jBigNumberAsNumber(untilTx),
+    afterTx: afterTx
+      ? neo4jBigNumberAsNumber(afterTx)
+      : 0,
+    untilBlock,
+    afterBlock,
+    afterTxIndex
+  };
 };
