@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { Driver } from "neo4j-driver-core";
+import { Integer, Driver } from "neo4j-driver-core";
 import { mapNeo4jAssets } from "../utils";
 
 export const utxoAtPoint = (driver: Driver) => ({
@@ -57,11 +57,16 @@ export const utxoAtPoint = (driver: Driver) => ({
             amount: o.amount,
             assets: o.assets,
             block_num: b.number
-        } as utxo`;
+        } as utxo
+    ORDER BY tx.hash
+    SKIP $pageSize * ($pageNumber-1)
+    LIMIT $pageSize`;
 
     const result = await session.run(cypher, {
       hashes: addresses,
       referenceBlockNumber: referenceBlockNumber,
+      pageSize: Integer.fromNumber(req.body.pageSize),
+      pageNumber: Integer.fromNumber(req.body.page),
     });
 
     const r = result.records.map(r => {
