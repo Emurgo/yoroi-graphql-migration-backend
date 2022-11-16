@@ -5,6 +5,7 @@ import { history } from "./history";
 import { io } from "./io";
 import { ioByIndex } from "./ioByIndex";
 import {get} from "./get";
+import {utxoAtPoint} from "./utxoAtPoint";
 
 export const txs = (driver: Driver) => ({
   history: history(driver),
@@ -13,4 +14,5 @@ export const txs = (driver: Driver) => ({
   io: io(driver),
   ioByIndex: ioByIndex(driver),
   get: get(driver),
+  utxoAtPoint: utxoAtPoint(driver),
 });
