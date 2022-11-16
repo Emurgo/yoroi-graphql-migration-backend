@@ -509,17 +509,42 @@ const routes: Route[] = [
     handler: handleGetRewardHistory(pool),
     interceptor: middleware.handleCamelCaseResponse,
   },
-  { path: "/v2.1/pool/info", method: "post", handler: handlePoolInfo(pool), interceptor: middleware.handleCamelCaseResponse },
+  {
+    path: "/v2.1/pool/info",
+    method: "post",
+    handler: handlePoolInfo(pool),
+    interceptor: middleware.handleCamelCaseResponse,
+  },
   {
     path: "/v2.1/pool/delegationHistory",
     method: "post",
     handler: poolDelegationHistory(pool),
     interceptor: middleware.handleCamelCaseResponse,
   },
-  { path: "/v2.1/bestblock", method: "get", handler: bestBlock(pool), interceptor: middleware.handleCamelCaseResponse },
-  { path: "/v2.1/tipStatus", method: "get", handler: handleTipStatusGet(pool), interceptor: middleware.handleCamelCaseResponse },
-  { path: "/v2.1/tipStatus", method: "post", handler: handleTipStatusPost(pool), interceptor: middleware.handleCamelCaseResponse },
-  { path: "/v2.1/txs/utxoAtPoint", method: "post", handler: utxoAtPoint(pool), interceptor: middleware.handleCamelCaseResponse },
+  {
+    path: "/v2.1/bestblock",
+    method: "get",
+    handler: bestBlock(pool),
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/tipStatus",
+    method: "get",
+    handler: handleTipStatusGet(pool),
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/tipStatus",
+    method: "post",
+    handler: handleTipStatusPost(pool),
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/txs/utxoAtPoint",
+    method: "post",
+    handler: utxoAtPoint(pool),
+    interceptor: middleware.handleCamelCaseResponse,
+  },
   {
     path: "/v2.1/txs/utxoDiffSincePoint",
     method: "post",
@@ -550,21 +575,41 @@ const routes: Route[] = [
     handler: utxoSumForAddresses,
     interceptor: middleware.handleCamelCaseResponse,
   },
-  { path: "/v2.1/txs/history", method: "post", handler: txHistory, interceptor: middleware.handleCamelCaseResponse },
-  { path: "/v2.1/txs/io/:tx_hash", method: "get", handler: handleGetTxIO(pool), interceptor: middleware.handleCamelCaseResponse },
+  {
+    path: "/v2.1/txs/history",
+    method: "post",
+    handler: txHistory,
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/txs/io/:tx_hash",
+    method: "get",
+    handler: handleGetTxIO(pool),
+    interceptor: middleware.handleCamelCaseResponse,
+  },
   {
     path: "/v2.1/txs/io/:tx_hash/o/:index",
     method: "get",
     handler: handleGetTxOutput(pool),
     interceptor: middleware.handleCamelCaseResponse,
   },
-  { path: "/v2.1/txs/get", method: "post", handler: handleGetTransactions(pool), interceptor: middleware.handleCamelCaseResponse },
-  { path: "/v2.1/txs/signed", method: "post", handler: handleSignedTx, interceptor: middleware.handleCamelCaseResponse },
+  {
+    path: "/v2.1/txs/get",
+    method: "post",
+    handler: handleGetTransactions(pool),
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/txs/signed",
+    method: "post",
+    handler: handleSignedTx,
+    interceptor: middleware.handleCamelCaseResponse,
+  },
   {
     path: "/v2.1/messages/getMessageBoard",
     method: "post",
     handler: handleMessageBoard(pool),
-    interceptor: middleware.handleCamelCaseResponse
+    interceptor: middleware.handleCamelCaseResponse,
   },
   {
     path: "/v2.1/messages/getMessageDirect",
@@ -642,7 +687,12 @@ const routes: Route[] = [
     },
     interceptor: middleware.handleCamelCaseResponse,
   },
-  { path: "/v2.1/status", method: "get", handler: getStatus, interceptor: middleware.handleCamelCaseResponse },
+  {
+    path: "/v2.1/status",
+    method: "get",
+    handler: getStatus,
+    interceptor: middleware.handleCamelCaseResponse,
+  },
   {
     path: "/v2.1/catalyst/fundInfo",
     method: "get",
@@ -736,7 +786,22 @@ const routes: Route[] = [
     path: "/v3/pool/delegationHistory",
     method: "post",
     handler: v3.pool.delegationHistory.handler
-  }
+  },
+  {
+    path: "/v3/tipStatus",
+    method: "get",
+    handler: v3.tipStatus.get.handler
+  },
+  {
+    path: "/v3/tipStatus",
+    method: "post",
+    handler: v3.tipStatus.post.handler
+  },
+  {
+    path: "/v3/txs/utxoDiffSincePoint",
+    method: "post",
+    handler: v3.txs.utxoDiffSincePoint.handler
+  },
 ];
 
 applyRoutes(routes, router);
