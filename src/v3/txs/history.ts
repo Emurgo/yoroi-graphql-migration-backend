@@ -1,9 +1,8 @@
-import { Integer, Session } from "neo4j-driver";
 import { Request, Response } from "express";
 import { Driver } from "neo4j-driver-core";
 import { getAddressesByType } from "../utils";
 import {
-  neo4jBigNumberAsNumber,
+  getPaginationParameters,
   neo4jTxDataToResponseTxData} from "./utils";
 
 const getReceivedCypherPart = (addresses: string[], paymentCreds: string[]) => {
@@ -90,67 +89,6 @@ UNION
 `);
 };
 
-const getPaginationParameters = (session: Session) => async (reqBody: any) => {
-  const untilCypher = `CALL {
-  MATCH (:Block{hash:$untilBlock})<-[:isAt]-(untilTx:TX)
-  RETURN untilTx ORDER BY untilTx.tx_index LIMIT 1
-}`;
-  const afterCypher = `CALL {
-  MATCH (:Block{hash:$afterBlock})<-[:isAt]-(afterTx:TX{hash:$afterTx})
-  RETURN afterTx
-}`;
-
-  const matchParts = [] as string[];
-  const returnParts = [] as string[];
-
-  matchParts.push(untilCypher);
-  returnParts.push("ID(untilTx) as untilTx");
-
-  if (reqBody.after?.block && reqBody.after?.tx) {
-    matchParts.push(afterCypher);
-    returnParts.push("ID(afterTx) as afterTx");
-  }
-
-  const matchPart = matchParts.join("\n");
-  const returnPart = returnParts.join(",");
-
-  const cypher = `${matchPart}
-RETURN ${returnPart}`;
-
-  const result = await session.run(cypher, {
-    untilBlock: reqBody.untilBlock,
-    afterBlock: reqBody.after?.block,
-    afterTx: reqBody.after?.tx,
-  });
-
-  if (result.records.length === 0) {
-    throw new Error("REFERENCE_BEST_BLOCK_MISMATCH");
-  }
-
-  const record = result.records[0];
-  const untilTx = record.has("untilTx")
-    ? record.get("untilTx") as Integer
-    : undefined;
-  const afterTx = record.has("afterTx")
-    ? record.get("afterTx") as Integer
-    : undefined;
-
-  if (!untilTx) {
-    throw new Error("REFERENCE_BEST_BLOCK_MISMATCH");
-  }
-
-  if (!afterTx && reqBody.after) {
-    throw new Error("REFERENCE_BLOCK_MISMATCH");
-  }
-
-  return {
-    untilTx: neo4jBigNumberAsNumber(untilTx),
-    afterTx: afterTx
-      ? neo4jBigNumberAsNumber(afterTx)
-      : 0
-  };
-};
-
 export const history = (driver: Driver) => ({
   handler: async (req: Request, res: Response) => {
     const addresses = req.body.addresses as string[];
@@ -164,7 +102,7 @@ export const history = (driver: Driver) => ({
 
     const session = driver.session();
 
-    const paginationParameters = await getPaginationParameters(session)(req.body);
+    const paginationParameters = await getPaginationParameters(driver)(req.body);
 
     const txsCypherPart = getTxsCypherPart(
       bech32OrBase58Addresses,
