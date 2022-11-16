@@ -678,6 +678,11 @@ const routes: Route[] = [
     handler: v3.txs.utxoSumForAddresses.handler
   },
   {
+    path: "/v3/txs/utxoAtPoint",
+    method: "post",
+    handler: v3.txs.utxoAtPoint.handler
+  },
+  {
     path: "/v3/txs/io/:tx_hash",
     method: "get",
     handler: v3.txs.io.handler
