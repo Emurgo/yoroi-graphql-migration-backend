@@ -328,7 +328,7 @@ export const utxoDiffSincePoint = (driver: Driver) => ({
       afterTxIndex
     } = await getPaginationParameters(driver)({
       untilBlock: untilBlockHash,
-      after: afterPoint.txHash && afterPoint.blockHash ? {
+      after: afterPoint ? {
         block: afterPoint.blockHash,
         tx: afterPoint.txHash,
       } : undefined
@@ -366,7 +366,7 @@ export const utxoDiffSincePoint = (driver: Driver) => ({
       return res.send(apiResponse);
     }
 
-    const linearized = [];
+    const linearized = [] as any[];
     for (const record of result.records) {
       const obj = record.get("obj");
       if (
