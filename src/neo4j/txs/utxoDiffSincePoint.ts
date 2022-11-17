@@ -10,6 +10,7 @@ enum DiffItemType {
 }
 
 const buildWhereClause = (
+  filterBy: ("address" | "payment_cred")[],
   validContract: boolean,
   // for which diff item we are building the where clause
   diffItemType: DiffItemType,
@@ -103,22 +104,34 @@ const buildWhereClause = (
     }
   }
 
+  const addrFilter = [] as string[];
+  if (filterBy.includes("address")) {
+    addrFilter.push("o.address IN $addresses");
+  }
+  if (filterBy.includes("payment_cred")) {
+    addrFilter.push("o.payment_cred IN $paymentCreds");
+  }
+  const addrFilterStr = `${addrFilter.join(" OR ")}`;
+
   return `WHERE ${validContract ? "" : "NOT "}tx.is_valid
     AND b.number <= $untilBlock
     AND ${linearizedOrderCond}
     AND (
-      o.address IN $addresses
+      ${addrFilterStr}
     )
   `;
 };
 
-const buildInputQuery = (paginationPoinType: DiffItemType | null) => {
+const buildInputQuery = (
+  filterBy: ("address" | "payment_cred")[],
+  paginationPoinType: DiffItemType | null
+) => {
   return `
   MATCH (s_tx:TX)<-[:producedBy]-(o:TX_OUT)-[:sourceOf]
     ->(i:TX_IN)-[:inputOf]
     ->(tx:TX)-[:isAt]
     ->(b:Block)
-  ${buildWhereClause(true, DiffItemType.INPUT, paginationPoinType)}
+  ${buildWhereClause(filterBy, true, DiffItemType.INPUT, paginationPoinType)}
   RETURN {
     address: o.address,
     blockHash: b.hash,
@@ -137,13 +150,16 @@ const buildInputQuery = (paginationPoinType: DiffItemType | null) => {
   `;
 };
 
-const buildCollateralQuery = (paginationPoinType: DiffItemType | null) => {
+const buildCollateralQuery = (
+  filterBy: ("address" | "payment_cred")[],
+  paginationPoinType: DiffItemType | null
+) => {
   return `
   MATCH (s_tx:TX)<-[:producedBy]-(o:TX_OUT)-[:sourceOf]
     ->(c:COLLATERAL_TX_IN)-[:collateralInputOf]
     ->(tx:TX)-[:isAt]
     ->(b:Block)
-  ${buildWhereClause(false, DiffItemType.COLLATERAL, paginationPoinType)}
+  ${buildWhereClause(filterBy, false, DiffItemType.COLLATERAL, paginationPoinType)}
   RETURN {
     address: o.address,
     blockHash: b.hash,
@@ -162,9 +178,12 @@ const buildCollateralQuery = (paginationPoinType: DiffItemType | null) => {
   `;
 };
 
-const buildOutputQuery = (paginationPoinType: DiffItemType | null) => {
+const buildOutputQuery = (
+  filterBy: ("address" | "payment_cred")[],
+  paginationPoinType: DiffItemType | null
+) => {
   return `MATCH (o:TX_OUT)-[:producedBy]->(tx:TX)-[:isAt]->(b:Block)
-  ${buildWhereClause(true, DiffItemType.OUTPUT, paginationPoinType)}
+  ${buildWhereClause(filterBy, true, DiffItemType.OUTPUT, paginationPoinType)}
   RETURN {
     address: o.address,
     blockHash: b.hash,
@@ -188,11 +207,11 @@ const buildFullQuery = (
   paginationPoinType: DiffItemType | null,
 ) => {
   return `CALL {
-    ${buildOutputQuery(paginationPoinType)}
+    ${buildOutputQuery(filterBy, paginationPoinType)}
     UNION ALL
-    ${buildInputQuery(paginationPoinType)}
+    ${buildInputQuery(filterBy, paginationPoinType)}
     UNION ALL
-    ${buildCollateralQuery(paginationPoinType)}
+    ${buildCollateralQuery(filterBy, paginationPoinType)}
   }
   RETURN obj
   ORDER BY
@@ -315,8 +334,16 @@ export const utxoDiffSincePoint = (driver: Driver) => ({
       } : undefined
     });
 
+    const filterBy = [] as ("address" | "payment_cred")[];
+    if (bech32OrBase58Addresses.length > 0) {
+      filterBy.push("address");
+    }
+    if (paymentCreds.length > 0) {
+      filterBy.push("payment_cred");
+    }
+
     const query = buildFullQuery(
-      ["address", "payment_cred"],
+      filterBy,
       afterPoint.paginationPointType
     );
 
