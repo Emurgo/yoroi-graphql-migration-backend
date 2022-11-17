@@ -21,10 +21,10 @@ export const ioByIndex = (driver: Driver) => ({
     if (result.records && result.records.length > 0) {
       const outputs = result.records[0].get("outputs");
 
-      const reqIndexNumber = Number(req.params.output_index);
+      const reqIndexNumber = Number(req.params.index);
       
       const foundInInputs = outputs.find((output: any) => {
-        return output.properties.output_index.toNumber() === reqIndexNumber;
+        return output.properties.index.toNumber() === reqIndexNumber;
       });
 
       const outputsForResponse = {

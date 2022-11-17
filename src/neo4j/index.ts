@@ -15,7 +15,7 @@ const driver = neo4j.driver(
   neo4j.auth.basic(config.get("neo4j.username"), config.get("neo4j.password")),
 );
 
-export const v3 = {
+export const neo = {
   txs: txs(driver),
   bestblock: bestblock(driver),
   addresses: addresses(driver),
