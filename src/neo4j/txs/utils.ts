@@ -337,7 +337,7 @@ export const getPaginationParameters = (driver: Driver) => async (args: {
   returnParts.push("ID(untilTx) as untilTx");
   returnParts.push("untilBlock.number as untilBlock");
 
-  if (args.after?.block && args.after?.tx) {
+  if (args.after?.block) {
     matchParts.push(afterCypher);
     returnParts.push("ID(afterTx) as afterTx");
     returnParts.push("afterTx.tx_index as afterTxIndex");
@@ -355,7 +355,7 @@ RETURN ${returnPart}`;
   const result = await session.run(cypher, {
     untilBlock: args.untilBlock,
     afterBlock: args.after?.block,
-    afterTx: args.after?.tx,
+    afterTx: args.after?.tx ?? "",
   });
 
   await session.close();
