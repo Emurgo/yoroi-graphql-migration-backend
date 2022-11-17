@@ -317,7 +317,7 @@ export const getPaginationParameters = (driver: Driver) => async (args: {
   untilBlock: string,
   after?: {
     block: string,
-    tx: string
+    tx?: string
   }
 }) => {
   const untilCypher = `CALL {
@@ -325,7 +325,8 @@ export const getPaginationParameters = (driver: Driver) => async (args: {
   RETURN untilTx, untilBlock ORDER BY untilTx.tx_index LIMIT 1
 }`;
   const afterCypher = `CALL {
-  MATCH (afterBlock:Block{hash:$afterBlock})<-[:isAt]-(afterTx:TX{hash:$afterTx})
+  MATCH (afterBlock:Block{hash:$afterBlock})
+  OPTIONAL MATCH (afterTx:TX{hash:$afterTx})-[:isAt]->(b)
   RETURN afterTx, afterBlock
 }`;
 
@@ -374,17 +375,21 @@ RETURN ${returnPart}`;
     ? record.get("afterTxIndex") as Integer
     : undefined;
   const untilBlock = record.has("untilBlock")
-    ? record.get("untilBlock") as string
+    ? record.get("untilBlock") as Integer
     : undefined;
   const afterBlock = record.has("afterBlock")
-    ? record.get("afterBlock") as string
+    ? record.get("afterBlock") as Integer
     : undefined;
 
   if (!untilTx || !untilBlock) {
     throw new Error("REFERENCE_BEST_BLOCK_MISMATCH");
   }
 
-  if ((!afterTx || !afterBlock || !afterTxIndex) && args.after) {
+  if ((!afterTx || !afterTxIndex) && args.after?.tx) {
+    throw new Error("REFERENCE_BLOCK_MISMATCH");
+  }
+
+  if (!afterBlock && args.after) {
     throw new Error("REFERENCE_BLOCK_MISMATCH");
   }
 
@@ -393,8 +398,12 @@ RETURN ${returnPart}`;
     afterTx: afterTx
       ? neo4jBigNumberAsNumber(afterTx)
       : 0,
-    untilBlock,
-    afterBlock,
-    afterTxIndex
+    untilBlock: neo4jBigNumberAsNumber(untilBlock),
+    afterBlock: afterBlock
+      ? neo4jBigNumberAsNumber(afterBlock)
+      : 0,
+    afterTxIndex: afterTxIndex
+      ? neo4jBigNumberAsNumber(afterTxIndex)
+      : 0
   };
 };
