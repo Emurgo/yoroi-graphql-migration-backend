@@ -386,7 +386,7 @@ export const handleUtxoDiffSincePoint =
           return;
         }
 
-        const linearized = [];
+        const linearized = [] as any[];
         for (const row of result.rows) {
           if (
             [DiffItemType.INPUT, DiffItemType.COLLATERAL].includes(
