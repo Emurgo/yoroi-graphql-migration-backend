@@ -41,7 +41,8 @@ export const metadata = (driver: Driver) => ({
 
     const cypher = `MATCH (m:MINT)-[:mintedAt]->(tx:TX)
     WHERE (${whereParts.join(" OR ")}) AND tx.metadata IS NOT NULL
-    WITH DISTINCT m.asset as asset, m.policy as policy, [apoc.coll.reverse(collect(tx.metadata))[0]] as metadatas
+    WITH DISTINCT m.asset as asset, m.policy as policy, collect(tx.metadata) as metadatas
+    WITH DISTINCT asset, policy, [metadatas[size(metadatas) - 1]] as metadatas
     RETURN asset, policy, metadatas
     `;
 
