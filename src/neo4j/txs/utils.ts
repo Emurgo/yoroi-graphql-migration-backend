@@ -321,7 +321,11 @@ export const getPaginationParameters = (driver: Driver) => async (args: {
   }
 }) => {
   const untilCypher = `CALL {
-  MATCH (untilBlock:Block{hash:$untilBlock})<-[:isAt]-(untilTx:TX)
+  MATCH (untilBlock:Block{hash:$untilBlock})<-[:next*]-(prevBlock:Block)
+  WHERE untilBlock.tx_count > 0 OR prevBlock.tx_count > 0
+  WITH CASE WHEN untilBlock.tx_count > 0 THEN untilBlock ELSE prevBlock END as untilBlockTx, untilBlock LIMIT 1
+
+  MATCH (untilBlockTx)<-[:isAt]-(untilTx:TX)
   RETURN untilTx, untilBlock ORDER BY untilTx.tx_index LIMIT 1
 }`;
   const afterCypher = `CALL {
