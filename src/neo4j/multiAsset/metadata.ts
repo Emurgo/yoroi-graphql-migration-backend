@@ -16,43 +16,55 @@ export const metadata = (driver: Driver) => ({
 
     const assets: any[] = req.body.assets;
 
-    const params: {[key: string]: string} = {};
-    const whereParts = [] as string[];
-
-    let c = 0;
-
-    for (const asset of assets) {
-      const name = asset.nameHex
-        ? asset.nameHex
-        : Buffer.from(asset?.name ?? "").toString("hex");
-
-      const assetKey = `asset${c}`;
-      const policyKey = `policy${c}`;
-
-      params[assetKey] = name;
-      params[policyKey] = asset.policy;
-
-      whereParts.push(`(m.asset = $${assetKey} AND m.policy = $${policyKey})`);
-
-      c++;
-    }
-
-    const session = driver.session();
-
-    const cypher = `MATCH (m:MINT)-[:mintedAt]->(tx:TX)
-    WHERE (${whereParts.join(" OR ")}) AND tx.metadata IS NOT NULL
+    const cypher = `
+    MATCH (m:MINT)-[:mintedAt]->(tx:TX)
+    WHERE m.asset = $asset AND m.policy = $policy AND tx.metadata IS NOT NULL
     WITH DISTINCT m.asset as asset, m.policy as policy, collect(tx.metadata) as metadatas
     WITH DISTINCT asset, policy, [metadatas[size(metadatas) - 1]] as metadatas
     RETURN asset, policy, metadatas
     `;
 
-    const result = await session.run(cypher, params);
+    const getForAsset = async (asset: any) => {
+      const name = asset.nameHex
+        ? asset.nameHex
+        : Buffer.from(asset?.name ?? "").toString("hex");
 
-    const r = result.records.reduce((prev, curr) => {
-      
-      const assetName = Buffer.from(curr.get("asset"), "hex").toString();
-      const policy = curr.get("policy");
-      const metadatas = curr.get("metadatas") as any[];
+      const session = driver.session();
+
+      const result = await session.run(cypher, {
+        asset: name,
+        policy: asset.policy,
+      });
+
+      session.close();
+
+      if (result.records.length === 0) return null;
+
+      const record = result.records[0];
+
+      const assetName = Buffer.from(record.get("asset"), "hex").toString();
+      const policy = record.get("policy");
+      const metadatas = record.get("metadatas") as any[];
+
+      return {
+        assetName: assetName,
+        policy: policy,
+        metadatas: metadatas,
+      };
+    };
+    
+    const promises = assets.map((asset) => getForAsset(asset));
+    const results = await Promise.all(promises);
+
+    const r = results.reduce((prev, curr) => {
+    
+      if (!curr) return prev;
+
+      const {
+        assetName,
+        policy,
+        metadatas,
+      } = curr;
 
       if (metadatas.length > 0) {
         const key = `${policy}.${assetName}`;
@@ -76,8 +88,6 @@ export const metadata = (driver: Driver) => ({
 
       return prev;
     }, {} as {[key: string]: any[]});
-
-    await session.close();
 
     return res.send(r);
   }
