@@ -2,6 +2,8 @@ import { Integer } from "neo4j-driver";
 import { Driver } from "neo4j-driver-core";
 import config from "config";
 import {
+  Address,
+  ByronAddress,
   Ed25519KeyHash,
   NetworkInfo,
   RewardAddress,
@@ -138,6 +140,30 @@ export const formatNeo4jCertificate = (cert: Neo4jModel.CERTIFICATE, block: Neo4
   }
 };
 
+export const formatIOAddress = (addr?: string) => {
+  if (!addr) return addr;
+
+  if (ByronAddress.is_valid(addr)) {
+    return addr;
+  }
+
+  if (addr.startsWith("addr") || addr.startsWith("addr_test")) {
+    const address = Address.from_bech32(addr);
+    const hex = Buffer.from(address.to_bytes()).toString("hex");
+
+    if (hex.startsWith("8")) {
+      const byronAddress = ByronAddress.from_address(address);
+      if (!byronAddress) return addr;
+
+      return byronAddress.to_base58();
+    }
+
+    return addr;
+  }
+
+  return addr;
+};
+
 export const neo4jTxDataToResponseTxData = (records: any) => {
   return records.map((r: any) => {
     const tx = neo4jCast<Neo4jModel.TX>(r.get("tx"));
@@ -193,7 +219,7 @@ export const neo4jTxDataToResponseTxData = (records: any) => {
       epoch: neo4jBigNumberAsNumber(block.epoch),
       slot: neo4jBigNumberAsNumber(block.epoch_slot),
       inputs: inputs.map(i => ({
-        address: i.tx_out?.address,
+        address: formatIOAddress(i.tx_out?.address),
         amount: i.tx_out ?
           formatNeo4jBigNumber(i.tx_out.amount)
           : null,
@@ -203,7 +229,7 @@ export const neo4jTxDataToResponseTxData = (records: any) => {
         assets: mapNeo4jAssets(i.tx_out?.assets)
       })),
       collateral_inputs: collateralInputs.map(i => ({
-        address: i.tx_out?.address,
+        address: formatIOAddress(i.tx_out?.address),
         amount: i.tx_out
           ? formatNeo4jBigNumber(i.tx_out.amount)
           : null,
@@ -213,7 +239,7 @@ export const neo4jTxDataToResponseTxData = (records: any) => {
         assets: mapNeo4jAssets(i.tx_out?.assets)
       })),
       outputs: outputs.map(o => ({
-        address: o.address,
+        address: formatIOAddress(o.address),
         amount: formatNeo4jBigNumber(o.amount),
         dataHash: o.datum_hash ?? null,
         assets: mapNeo4jAssets(o.assets)

@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { Driver } from "neo4j-driver-core";
 import { mapNeo4jAssets } from "../utils";
+import { formatIOAddress } from "./utils";
 
 
 export const ioByIndex = (driver: Driver) => ({
@@ -28,7 +29,7 @@ export const ioByIndex = (driver: Driver) => ({
       });
 
       const outputsForResponse = {
-        address: foundInInputs.properties.address,
+        address: formatIOAddress(foundInInputs.properties.address),
         amount: foundInInputs.properties.amount.toNumber().toString(),
         dataHash: (foundInInputs.properties.datum_hash === undefined) ? null : foundInInputs.properties.datum_hash,
         assets: mapNeo4jAssets(foundInInputs.properties.assets),

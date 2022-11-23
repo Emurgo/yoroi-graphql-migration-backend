@@ -1,7 +1,7 @@
 import { Driver, Integer } from "neo4j-driver";
 import { Request, Response } from "express";
 import { getAddressesByType, mapNeo4jAssets } from "../utils";
-import { formatNeo4jBigNumber, getPaginationParameters } from "./utils";
+import { formatIOAddress, formatNeo4jBigNumber, getPaginationParameters } from "./utils";
 
 enum DiffItemType {
   INPUT = "input",
@@ -383,7 +383,7 @@ export const utxoDiffSincePoint = (driver: Driver) => ({
         linearized.push({
           type: DiffItemType.OUTPUT,
           id: `${obj.hash}:${obj.index}`,
-          receiver: obj.address,
+          receiver: formatIOAddress(obj.address),
           amount: formatNeo4jBigNumber(obj.value),
           assets: mapNeo4jAssets(obj.assets),
           block_num: obj.blockNumber.toNumber(),
