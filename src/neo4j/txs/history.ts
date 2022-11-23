@@ -3,7 +3,8 @@ import { Driver } from "neo4j-driver-core";
 import { getAddressesByType } from "../utils";
 import {
   getPaginationParameters,
-  neo4jTxDataToResponseTxData} from "./utils";
+  neo4jTxDataToResponseTxData
+} from "./utils";
 
 const getReceivedCypherPart = (addresses: string[], paymentCreds: string[]) => {
   if (addresses.length === 0 && paymentCreds.length === 0) return "";
