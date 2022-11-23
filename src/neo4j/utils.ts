@@ -62,6 +62,8 @@ export const getAddressesByType = (addresses: string[]) => {
               addrKeyHashes.push(Buffer.from(keyHash.to_bytes()).toString("hex"));
             }
           }
+        } else if (/^[0-8]/.test(address)) {
+          bech32OrBase58Addresses.push(wasmAddr.to_bech32());
         }
         wasmAddr.free();
         continue;
