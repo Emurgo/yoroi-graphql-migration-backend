@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { Driver } from "neo4j-driver-core";
 import { mapNeo4jAssets } from "../utils";
+import { formatIOAddress } from "./utils";
 
 
 export const io = (driver: Driver) => ({
@@ -33,7 +34,7 @@ export const io = (driver: Driver) => ({
 
       const inputsForResponse = inputs.map((input: any) => {
         return {
-          address: input.tx_out.properties.address,
+          address: formatIOAddress(input.tx_out.properties.address),
           amount: input.tx_out.properties.amount.toNumber().toString(),
           id: input.tx_out.properties.id.toString().replace(":", ""),
           index: input.tx_out.properties.output_index.toNumber(),
@@ -46,7 +47,7 @@ export const io = (driver: Driver) => ({
       const collateralInputsForResponse = collateralInputs.map((collateralInput: any) => {
         if (collateralInput.tx_out) {
           return {
-            address: collateralInput.tx_out.properties.address,
+            address: formatIOAddress(collateralInput.tx_out.properties.address),
             amount: collateralInput.tx_out.properties.amount.toNumber().toString(),
             id: collateralInput.tx_out.properties.id.toString().replace(":", ""),
             index: collateralInput.tx_out.properties.output_index.toNumber(),
@@ -58,7 +59,7 @@ export const io = (driver: Driver) => ({
 
       const outputsForResponse = outputs.map((output: any) => {
         return {
-          address: output.properties.address,
+          address: formatIOAddress(output.properties.address),
           amount: output.properties.amount.toNumber().toString(),
           dataHash: (output.properties.datum_hash === undefined) ? null : output.properties.datum_hash,
           assets: mapNeo4jAssets(output.properties.assets),

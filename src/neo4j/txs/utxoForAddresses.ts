@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { Driver } from "neo4j-driver-core";
 import { getAddressesByType, mapNeo4jAssets } from "../utils";
+import { formatIOAddress } from "./utils";
 
 export const utxoForAddresses = (driver: Driver) => ({
   handler: async (req: Request, res: Response) => {
@@ -48,7 +49,7 @@ export const utxoForAddresses = (driver: Driver) => ({
         utxo_id: utxo.utxo_id,
         tx_hash: utxo.tx_hash,
         tx_index: utxo.tx_index.toNumber(),
-        receiver: utxo.receiver,
+        receiver: formatIOAddress(utxo.receiver),
         amount: utxo.amount.toNumber().toString(),
         dataHash: utxo.dataHash,
         assets: mapNeo4jAssets(utxo.assets),
