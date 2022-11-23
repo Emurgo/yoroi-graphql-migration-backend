@@ -17,7 +17,6 @@ import {
 } from "./utils";
 import * as middleware from "./middleware";
 
-import { askBestBlock } from "./services/bestblock";
 import { handleSignedTx } from "./services/signedTransaction";
 import { handlePoolInfo } from "./services/poolInfo";
 import { handleGetAccountState } from "./services/accountState";
@@ -62,7 +61,7 @@ createTransactionOutputView(pool);
 createUtxoFunctions(pool);
 createTransactionUtilityFunctions(pool);
 
-const healthChecker = new HealthChecker(() => askBestBlock(pool));
+const healthChecker = new HealthChecker(() => neo.bestblock.getBestBlock());
 
 const router = express();
 
