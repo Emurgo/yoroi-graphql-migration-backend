@@ -45,8 +45,8 @@ import { handleGetTxIO, handleGetTxOutput } from "./services/txIO";
 import { handleTipStatusGet, handleTipStatusPost } from "./services/tipStatus";
 import { handleGetTransactions } from "./services/transactions";
 import { handleValidateNft } from "./services/validateNft";
-
 import { handlePolicyIdExists } from "./services/policyIdExists";
+import { handleTxSummariesForAddresses } from "./services/txSummariesForAddresses";
 
 import { HealthChecker } from "./HealthChecker";
 
@@ -669,6 +669,11 @@ const routes: Route[] = [
     method: "get",
     handler: getFundInfo,
     interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/txs/summaries",
+    method: "post",
+    handler: handleTxSummariesForAddresses(pool),
   },
 ];
 
