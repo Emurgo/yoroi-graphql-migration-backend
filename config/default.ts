@@ -1,10 +1,10 @@
 export default { 
   db: {
-    user: process.env.POSTGRES_USER || "hasura",
-    host: process.env.POSTGRES_HOST || "/tmp/",
-    database: process.env.POSTGRES_DB || "cexplorer",
-    password: process.env.POSTGRES_PASSWORD || "",
-    port: process.env.POSTGRES_PORT || 5432
+    user: process.env.POSTGRES_USER || "cardano_usr",
+    host: process.env.POSTGRES_HOST || "sgp-06.emurgo-rnd.com",
+    database: process.env.POSTGRES_DB || "cardano_db",
+    password: process.env.POSTGRES_PASSWORD || "cafr9dLH6gOzot7tu0TE",
+    port: process.env.POSTGRES_PORT || 30000
   },
   server: {
     addressRequestLimit: 50,
@@ -42,8 +42,8 @@ export default {
   },
   network: process.env.NETWORK || "mainnet",
   neo4j: {
-    url: process.env.NEO4J_URL || "neo4j://dus-01.emurgo-rnd.com:7687",
+    url: process.env.NEO4J_URL || "neo4j://eu-04.emurgo-rnd.com:7687",
     username: process.env.NEO4J_USERNAME || "neo4j",
-    password: process.env.NEO4J_PASSWORD || "neo4j"
+    password: process.env.NEO4J_PASSWORD || "AcAfdm54Afji3acdnCydwnjC"
   }
 };
