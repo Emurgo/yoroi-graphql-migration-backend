@@ -36,7 +36,7 @@ npm install
 npm run dev
 ```
 
-The server will then run at http://localhost:8082. You can query using curl (ex: `curl http://localhost:8082/bestblock`)
+The server will then run at http://localhost:8082. You can query using curl (ex: `curl http://localhost:8082/v2/bestblock`)
 
 This is no easy way to configure runtime settings. However, you can edit lines 23-26 of src/index.ts to change port settings, graphql uri, et cetera.
 
