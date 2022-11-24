@@ -11,10 +11,12 @@ import {
 } from "@emurgo/cardano-serialization-lib-nodejs";
 import { mapNeo4jAssets } from "../utils";
 
+const network = config.get("network");
 
-const GENESIS_UNIX_TIMESTAMP = 1506243091;
-const SHELLEY_UNIX_TIMESTAMP = 1596491091;
-const SHELLEY_INITIAL_SLOT = 4924800;
+
+const GENESIS_UNIX_TIMESTAMP = network === "mainnet" ? 1506243091 : 1654048800;
+const SHELLEY_UNIX_TIMESTAMP = network === "mainnet" ? 1596491091 : 1655776800;
+const SHELLEY_INITIAL_SLOT = network === "mainnet" ? 4924800 : 86400;
 const BYRON_SLOT_DURATION_IN_SECONDS = 20;
 
 export const neo4jCast = <T>(r: any) => {
