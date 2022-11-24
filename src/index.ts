@@ -45,6 +45,7 @@ import { handleGetTxIO, handleGetTxOutput } from "./services/txIO";
 import { handleTipStatusGet, handleTipStatusPost } from "./services/tipStatus";
 import { handleGetTransactions } from "./services/transactions";
 import { handleValidateNft } from "./services/validateNft";
+import {  hanldeGetBlockHashBySlot } from "./services/getBlockHash";
 
 import { handlePolicyIdExists } from "./services/policyIdExists";
 
@@ -348,6 +349,7 @@ const routes: Route[] = [
   },
   // regular endpoints
   { path: "/v2/bestblock", method: "get", handler: bestBlock(pool) },
+  { path: "/v2.1/lastBlockBySlot", method: "post", handler: hanldeGetBlockHashBySlot(pool) },
   { path: "/v2/tipStatus", method: "get", handler: handleTipStatusGet(pool) },
   { path: "/v2/tipStatus", method: "post", handler: handleTipStatusPost(pool) },
   { path: "/v2/txs/utxoAtPoint", method: "post", handler: utxoAtPoint(pool) },
