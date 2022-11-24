@@ -1,3 +1,7 @@
+import dotenv from "dotenv";
+
+dotenv.config({ path: "./.env" });
+
 export default { 
   db: {
     user: process.env.POSTGRES_USER || "hasura",
