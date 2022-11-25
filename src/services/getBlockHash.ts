@@ -14,7 +14,7 @@ type SlotNo = number;
 type Slot = [EpochNo, SlotNo];
 const MAX_SLOTS = 50;
 
-export const hanldeGetBlockHashBySlot =
+export const handleGetBlockHashBySlot =
   (pool: Pool) =>
   async (
     req: Request<any, any, { slots: Array<Slot> }>,
