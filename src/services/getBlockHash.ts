@@ -24,10 +24,20 @@ export const handleGetBlockHashBySlot =
 
     let err: string | null = null;
     if (!slots) err = "Missing 'slots' in the request body";
-    else if (!(slots instanceof Array)) err = "'slots' is required to be an array";
+    else if (!(slots instanceof Array))
+      err = "'slots' is required to be an array";
     else if (slots.length === 0) err = "'slots' is required to be non-empty";
-    else if (slots.length > MAX_SLOTS) err = "The maximum number of slots allowed is " + MAX_SLOTS;
-    else if (slots.some((s) => !(s instanceof Array) || s.length != 2))
+    else if (slots.length > MAX_SLOTS)
+      err = "The maximum number of slots allowed is " + MAX_SLOTS;
+    else if (
+      slots.some(
+        (s) =>
+          !(s instanceof Array) ||
+          s.length != 2 ||
+          typeof s[0] !== "number" ||
+          typeof s[1] !== "number"
+      )
+    )
       err = "Each slot entry should be a tuple of two numbers: epoch and slot.";
     if (err !== null) throw new Error(err);
 
