@@ -5,25 +5,20 @@ import config from "config";
 const SAFE_BLOCK_DEPTH = parseInt(config.get("safeBlockDifference"));
 
 const getBestAndSafeBlocks = async (driver: Driver) => {
-  const bestBlockCypher = `MATCH (b:Block)
-  WITH MAX(b.number) as maxBlockNumber
-  
-  MATCH (b:Block)
-  WHERE b.number = maxBlockNumber
+  const bestBlockCypher = `MATCH (block:BESTBLOCK)
   RETURN {
-      epoch: b.epoch,
-      slot: b.epoch_slot,
-      globalSlot: b.slot,
-      hash: b.hash,
-      height: b.number
-  } as block
-  LIMIT 1`;
+      epoch: block.epoch,
+      slot: block.epoch_slot,
+      globalSlot: block.slot,
+      hash: block.hash,
+      height: block.number
+  } as block`;
 
-  const safeBlockCypher = `MATCH (b:Block)
-  WITH MAX(b.number) as maxBlockNumber
+  const safeBlockCypher = `MATCH (bestBlock:BESTBLOCK)
+  WITH bestBlock
   
   MATCH (b:Block)
-  WHERE b.number <= maxBlockNumber - $safeBlockDepth
+  WHERE b.number = bestBlock.number - $safeBlockDepth
   RETURN {
       epoch: b.epoch,
       slot: b.epoch_slot,
@@ -50,18 +45,18 @@ const getBestAndSafeBlocks = async (driver: Driver) => {
 
   return {
     bestBlock: {
-      epoch: bestBlock.epoch.toNumber(),
-      slot: bestBlock.slot.toNumber(),
-      globalSlot: bestBlock.globalSlot.toNumber(),
+      epoch: bestBlock.epoch,
+      slot: bestBlock.slot,
+      globalSlot: bestBlock.globalSlot,
       hash: bestBlock.hash,
-      height: bestBlock.height.toNumber(),
+      height: bestBlock.height,
     },
     safeBlock: {
       epoch: safeBlock.epoch.toNumber(),
       slot: safeBlock.slot.toNumber(),
       globalSlot: safeBlock.globalSlot.toNumber(),
       hash: safeBlock.hash,
-      height: safeBlock.height.toNumber(),
+      height: safeBlock.height,
     },
   };
 };
@@ -109,7 +104,7 @@ export const tipStatus = (driver: Driver) => ({
       
       MATCH (b:Block)
       WHERE b.hash IN $hashes
-        AND b.number <= maxBlockNumber - $safeBlockDepth
+        AND b.number = maxBlockNumber - $safeBlockDepth
       RETURN {
           hash: b.hash,
           blockNumber: b.number

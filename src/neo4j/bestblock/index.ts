@@ -8,11 +8,7 @@ export const bestblock = (driver: Driver) => ({
     const session = driver.session();
   
     const result = await session.run(`
-    MATCH (b:Block)
-    WITH MAX(ID(b)) as max_block_id
-    
-    MATCH (block:Block)
-    WHERE ID(block) = max_block_id
+    MATCH (block:BESTBLOCK)
     RETURN {
         epoch: block.epoch,
         slot: block.epoch_slot,
@@ -27,20 +23,16 @@ export const bestblock = (driver: Driver) => ({
     return {
       kind: "ok",
       value: {
-        epoch: bestBlock.epoch.toNumber(),
-        slot: bestBlock.slot.toNumber(),
-        globalSlot: bestBlock.globalSlot.toNumber(),
+        epoch: bestBlock.epoch,
+        slot: bestBlock.slot,
+        globalSlot: bestBlock.globalSlot,
         hash: bestBlock.hash,
-        height: bestBlock.height.toNumber()
+        height: bestBlock.height
       } as any
     };
   },
   handler: async (_: Request, res: Response) => {
-    const cypher = `MATCH (b:Block)
-    WITH MAX(ID(b)) as max_block_id
-    
-    MATCH (block:Block)
-    WHERE ID(block) = max_block_id
+    const cypher = `MATCH (block:BESTBLOCK)
     RETURN {
         epoch: block.epoch,
         slot: block.epoch_slot,
@@ -58,11 +50,11 @@ export const bestblock = (driver: Driver) => ({
     const block = results.records[0].get("block");
 
     return res.send({
-      epoch: block.epoch.toNumber(),
-      slot: block.slot.toNumber(),
-      globalSlot: block.globalSlot.toNumber(),
+      epoch: block.epoch,
+      slot: block.slot,
+      globalSlot: block.globalSlot,
       hash: block.hash,
-      height: block.height.toNumber()
+      height: block.height
     });
   }
 });

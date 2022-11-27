@@ -2,6 +2,7 @@ import { Driver, Integer } from "neo4j-driver";
 import { Request, Response } from "express";
 import { getAddressesByType, mapNeo4jAssets } from "../utils";
 import { formatIOAddress, formatNeo4jBigNumber, getPaginationParameters } from "./utils";
+import { getTxHistory } from './history';
 
 enum DiffItemType {
   INPUT = "input",
@@ -310,100 +311,170 @@ const extractBodyParameters = async (
   };
 };
 
+// export const utxoDiffSincePoint = (driver: Driver) => ({
+//   handler: async (req: Request, res: Response) => {
+//     const { addresses, untilBlockHash, afterPoint, diffLimit } =
+//       await extractBodyParameters(req.body);
+    
+//     const {
+//       bech32OrBase58Addresses,
+//       paymentCreds,
+//     } = getAddressesByType(addresses);
+
+//     const session = driver.session();
+
+//     const {
+//       afterBlock,
+//       untilBlock,
+//       afterTxIndex
+//     } = await getPaginationParameters(driver)({
+//       untilBlock: untilBlockHash,
+//       after: afterPoint ? {
+//         block: afterPoint.blockHash,
+//         tx: afterPoint.txHash,
+//       } : undefined
+//     });
+
+//     const filterBy = [] as ("address" | "payment_cred")[];
+//     if (bech32OrBase58Addresses.length > 0) {
+//       filterBy.push("address");
+//     }
+//     if (paymentCreds.length > 0) {
+//       filterBy.push("payment_cred");
+//     }
+
+//     const query = buildFullQuery(
+//       filterBy,
+//       afterPoint.paginationPointType
+//     );
+
+//     const result = await session.run(query, {
+//       addresses: bech32OrBase58Addresses,
+//       paymentCreds,
+//       paginationPointValue: afterPoint.paginationPointValue,
+//       afterBlock,
+//       untilBlock,
+//       afterTxIndex: afterTxIndex,
+//       diffLimit: Integer.fromNumber(diffLimit),
+//     });
+
+//     await session.close();
+
+//     const apiResponse = {} as any;
+
+//     if (result.records.length === 0) {
+//       apiResponse.diffItems = [];
+//       return res.send(apiResponse);
+//     }
+
+//     const linearized = [] as any[];
+//     for (const record of result.records) {
+//       const obj = record.get("obj");
+//       if (
+//         [DiffItemType.INPUT, DiffItemType.COLLATERAL].includes(
+//           obj.diffItemType
+//         )
+//       ) {
+//         linearized.push({
+//           type: DiffItemType.INPUT,
+//           id: `${obj.src_hash}:${obj.index}`,
+//           amount: formatNeo4jBigNumber(obj.value),
+//         });
+//       } else {
+//         linearized.push({
+//           type: DiffItemType.OUTPUT,
+//           id: `${obj.hash}:${obj.index}`,
+//           receiver: formatIOAddress(obj.address),
+//           amount: formatNeo4jBigNumber(obj.value),
+//           assets: mapNeo4jAssets(obj.assets),
+//           block_num: obj.blockNumber.toNumber(),
+//           tx_hash: obj.hash,
+//           tx_index: obj.index.toNumber(),
+//         });
+//       }
+//     }
+
+//     const lastRecord = result.records[result.records.length - 1];
+//     const lastObj = lastRecord.get("obj");
+
+//     apiResponse.lastDiffPointSelected = {
+//       blockHash: lastObj.blockHash,
+//       txHash: lastObj.hash,
+//       paginationPointType: lastObj.diffItemType,
+//       paginationPointValue: lastObj.paginationPointValue.toNumber().toString(),
+//     };
+//     apiResponse.diffItems = linearized;
+
+//     return res.send(apiResponse);
+//   }
+// });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 export const utxoDiffSincePoint = (driver: Driver) => ({
   handler: async (req: Request, res: Response) => {
-    const { addresses, untilBlockHash, afterPoint, diffLimit } =
-      await extractBodyParameters(req.body);
-    
-    const {
-      bech32OrBase58Addresses,
-      paymentCreds,
-    } = getAddressesByType(addresses);
+    const addresses = req.body.addresses as string[];
+    const txs = await getTxHistory(driver)(addresses, req.body);
 
-    const session = driver.session();
+    const diff: any[] = [];
+    for (const tx of txs) {
+      const inputs = tx.inputs?.filter((i: any) => addresses.some((address: string) => address === i.address)) || [];
+      const collaterals = tx.collateral_inputs?.filter((i: any) => addresses.some((address: string) => address === i.address)) || [];
+      const outputs = tx.outputs?.filter((o: any) => addresses.some((address: string) => address === o.address)) || [];
 
-    const {
-      afterBlock,
-      untilBlock,
-      afterTxIndex
-    } = await getPaginationParameters(driver)({
-      untilBlock: untilBlockHash,
-      after: afterPoint ? {
-        block: afterPoint.blockHash,
-        tx: afterPoint.txHash,
-      } : undefined
-    });
-
-    const filterBy = [] as ("address" | "payment_cred")[];
-    if (bech32OrBase58Addresses.length > 0) {
-      filterBy.push("address");
-    }
-    if (paymentCreds.length > 0) {
-      filterBy.push("payment_cred");
-    }
-
-    const query = buildFullQuery(
-      filterBy,
-      afterPoint.paginationPointType
-    );
-
-    const result = await session.run(query, {
-      addresses: bech32OrBase58Addresses,
-      paymentCreds,
-      paginationPointValue: afterPoint.paginationPointValue,
-      afterBlock,
-      untilBlock,
-      afterTxIndex: afterTxIndex,
-      diffLimit: Integer.fromNumber(diffLimit),
-    });
-
-    await session.close();
-
-    const apiResponse = {} as any;
-
-    if (result.records.length === 0) {
-      apiResponse.diffItems = [];
-      return res.send(apiResponse);
-    }
-
-    const linearized = [] as any[];
-    for (const record of result.records) {
-      const obj = record.get("obj");
-      if (
-        [DiffItemType.INPUT, DiffItemType.COLLATERAL].includes(
-          obj.diffItemType
-        )
-      ) {
-        linearized.push({
+      for (const input of inputs) {
+        diff.push({
           type: DiffItemType.INPUT,
-          id: `${obj.src_hash}:${obj.index}`,
-          amount: formatNeo4jBigNumber(obj.value),
+          id: `${tx.hash}:${input.index}`,
+          amount: input.value,
         });
-      } else {
-        linearized.push({
+      }
+
+      for (const collateral of collaterals) {
+        diff.push({
+          type: DiffItemType.COLLATERAL,
+          id: `${tx.hash}:${collateral.index}`,
+          amount: collateral.value,
+        });
+      }
+
+      for (const output of outputs) {
+        diff.push({
           type: DiffItemType.OUTPUT,
-          id: `${obj.hash}:${obj.index}`,
-          receiver: formatIOAddress(obj.address),
-          amount: formatNeo4jBigNumber(obj.value),
-          assets: mapNeo4jAssets(obj.assets),
-          block_num: obj.blockNumber.toNumber(),
-          tx_hash: obj.hash,
-          tx_index: obj.index.toNumber(),
+          id: `${tx.hash}:${output.index}`,
+          receiver: output.address,
+          amount: output.value,
+          assets: output.assets,
+          block_num: tx.block_num,
+          tx_hash: tx.hash,
+          tx_index: output.index,
         });
       }
     }
 
-    const lastRecord = result.records[result.records.length - 1];
-    const lastObj = lastRecord.get("obj");
-
-    apiResponse.lastDiffPointSelected = {
-      blockHash: lastObj.blockHash,
-      txHash: lastObj.hash,
-      paginationPointType: lastObj.diffItemType,
-      paginationPointValue: lastObj.paginationPointValue.toNumber().toString(),
-    };
-    apiResponse.diffItems = linearized;
-
-    return res.send(apiResponse);
+    return res.send({
+      lastDiffPointSelected: {
+        blockHash: txs[txs.length - 1].block_hash,
+        txHash: txs[txs.length - 1].hash,
+      },
+      diffItems: diff,
+    });
   }
 });

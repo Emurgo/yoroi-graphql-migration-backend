@@ -166,7 +166,7 @@ export const formatIOAddress = (addr?: string) => {
   return addr;
 };
 
-export const neo4jTxDataToResponseTxData = (records: any) => {
+export const neo4jTxDataToResponseTxData = (records: any): any[] => {
   return records.map((r: any) => {
     const tx = neo4jCast<Neo4jModel.TX>(r.get("tx"));
     const block = neo4jCast<Neo4jModel.Block>(r.get("block"));

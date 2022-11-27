@@ -90,30 +90,33 @@ UNION
 `);
 };
 
-export const history = (driver: Driver) => ({
-  handler: async (req: Request, res: Response) => {
-    const addresses = req.body.addresses as string[];
+export const getTxHistory = (driver: Driver) => async (addresses: string[], pagination: {
+  untilBlock: string,
+  after?: {
+    block: string,
+    tx?: string
+  }
+}) => {
+  const {
+    bech32OrBase58Addresses,
+    paymentCreds,
+    addrKeyHashes,
+    rewardAddresses
+  } = getAddressesByType(addresses);
 
-    const {
-      bech32OrBase58Addresses,
-      paymentCreds,
-      addrKeyHashes,
-      rewardAddresses
-    } = getAddressesByType(addresses);
+  const session = driver.session();
 
-    const session = driver.session();
+  const paginationParameters = await getPaginationParameters(driver)(pagination);
 
-    const paginationParameters = await getPaginationParameters(driver)(req.body);
+  const txsCypherPart = getTxsCypherPart(
+    bech32OrBase58Addresses,
+    paymentCreds,
+    addrKeyHashes,
+    rewardAddresses
+  );
 
-    const txsCypherPart = getTxsCypherPart(
-      bech32OrBase58Addresses,
-      paymentCreds,
-      addrKeyHashes,
-      rewardAddresses
-    );
-
-    const cypher = `CALL {
-  ${txsCypherPart}
+  const cypher = `CALL {
+${txsCypherPart}
 }
 
 WITH tx_hash
@@ -134,15 +137,15 @@ WITH block, tx, apoc.coll.sortNodes(collect(tx_out), '^output_index') as outputs
 OPTIONAL MATCH (tx_in:TX_IN)-[:inputOf]->(tx)
 OPTIONAL MATCH (src_tx_out:TX_OUT)-[:sourceOf]->(tx_in)
 WITH block, tx, outputs, apoc.coll.sortMaps(collect({
-  tx_in: tx_in,
-  tx_out: src_tx_out
+tx_in: tx_in,
+tx_out: src_tx_out
 }), '^tx_in.input_index') as inputs
 
 OPTIONAL MATCH (c_tx_in:COLLATERAL_TX_IN)-[:collateralInputOf]->(tx)
 OPTIONAL MATCH (src_tx_out:TX_OUT)-[:sourceOf]->(c_tx_in)
 WITH block, tx, outputs, inputs, collect({
-  tx_in: c_tx_in,
-  tx_out: src_tx_out
+tx_in: c_tx_in,
+tx_out: src_tx_out
 }) as collateral_inputs
 
 OPTIONAL MATCH (withdrawal:WITHDRAWAL)-[:withdrewAt]->(tx)
@@ -156,17 +159,22 @@ WITH block, tx, outputs, inputs, collateral_inputs, withdrawals, certificates, c
 
 RETURN block, tx, outputs, inputs, collateral_inputs, withdrawals, certificates, scripts;`;
 
-    const response = await session.run(cypher, {
-      addresses: bech32OrBase58Addresses,
-      payment_creds: paymentCreds,
-      addr_key_hashes: addrKeyHashes,
-      reward_addresses: rewardAddresses,
-      ...paginationParameters
-    });
+  const response = await session.run(cypher, {
+    addresses: bech32OrBase58Addresses,
+    payment_creds: paymentCreds,
+    addr_key_hashes: addrKeyHashes,
+    reward_addresses: rewardAddresses,
+    ...paginationParameters
+  });
 
-    await session.close();
+  await session.close();
 
-    const txs = neo4jTxDataToResponseTxData(response.records);
+  return neo4jTxDataToResponseTxData(response.records);
+};
+
+export const history = (driver: Driver) => ({
+  handler: async (req: Request, res: Response) => {
+    const txs = await getTxHistory(driver)(req.body.addresses, req.body);
 
     return res.send(txs);
   }
