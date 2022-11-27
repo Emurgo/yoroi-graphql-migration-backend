@@ -32,7 +32,8 @@ async function currentPrice(
       `max-age=${config.get("coinPrice.currentPriceHttpCacheControlMaxAge")}`
     );
     res.send(result);
-  } catch (error) {
+  } catch (e) {
+    const error: Error = e instanceof Error ? e : new Error(String(e));
     const result = { error: error.message };
     res.status(500);
     res.send(result);
@@ -82,7 +83,8 @@ async function historicalPrice(
     );
     const result = { error: null, tickers };
     res.send(result);
-  } catch (error) {
+  } catch (e) {
+    const error: Error = e instanceof Error ? e : new Error(String(e));
     const result = { error: error.message };
     res.status(500);
     res.send(result);
