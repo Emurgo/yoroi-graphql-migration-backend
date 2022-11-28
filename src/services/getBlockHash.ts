@@ -39,7 +39,10 @@ export const handleGetBlockHashBySlot =
       )
     )
       err = "Each slot entry should be a tuple of two numbers: epoch and slot.";
-    if (err !== null) throw new Error(err);
+    if (err !== null) {
+      res.status(400).json({ error: err });
+      return;
+    }
 
     const blockHashes: { [key: string]: string | null } = {};
 
