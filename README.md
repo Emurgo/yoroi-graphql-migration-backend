@@ -1034,7 +1034,7 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
 
   #### Request 
 
-  The field slots is required to be a non-empty array. Each entry is a tuple of two numbers: epoch and slot.
+  The field slots are required to be a non-empty array. Each entry is a tuple of two numbers: epoch and slot.
 
   ```ts
   type SlotNo = number;
