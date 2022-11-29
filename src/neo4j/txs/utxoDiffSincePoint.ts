@@ -1,7 +1,11 @@
-import { Driver, Integer } from "neo4j-driver";
+import { Driver, Integer, Transaction } from "neo4j-driver";
 import { Request, Response } from "express";
 import { getAddressesByType, mapNeo4jAssets } from "../utils";
 import { formatIOAddress, formatNeo4jBigNumber, getPaginationParameters } from "./utils";
+import config from "config";
+import { BlockFrag } from "../../Transactions/types";
+
+const SAFE_BLOCK_DEPTH = parseInt(config.get("safeBlockDifference"));
 
 enum DiffItemType {
   INPUT = "input",
@@ -227,7 +231,8 @@ const extractBodyParameters = async (
 ): Promise<{
   addresses: string[];
   untilBlockHash: string;
-  afterPoint: {
+  afterBestblocks?: Array<string>;
+  afterPoint?: {
     blockHash: string;
     paginationPointType: DiffItemType | null;
     // if paginationPointType is not null, these two fields must be present
@@ -261,58 +266,153 @@ const extractBodyParameters = async (
 
   const diffLimit: number = body.diffLimit;
 
+  const afterBestblocks: Array<string> | undefined = body.afterBestblocks;
   const afterPoint: {
     blockHash: string;
     paginationPointType: DiffItemType | null;
     txHash?: string;
     paginationPointValue?: string;
-  } = body.afterPoint;
+  } | undefined = body.afterPoint;
 
-  if (!afterPoint) {
-    throw new Error("error, empty afterBestBlocks.");
-  }
+  
+  if (afterPoint == null) {
+    if (afterBestblocks == null) {
+      throw new Error("error, one of `afterBestblocks` or `afterPoint` is required");
+    }
+    if (!Array.isArray(afterBestblocks) || afterBestblocks.length === 0) {
+      throw new Error("error, `afterBestblocks` is expected to be a non empty array of block hashes");
+    }
+  } else {
+    if (afterBestblocks != null) {
+      throw new Error("error, only one of `afterBestblocks` or `afterPoint` is expected");
+    }
+    if (afterPoint.blockHash == null) {
+      throw new Error("error, missing blockHash in afterPoint.");
+    }
+    if (afterPoint.paginationPointType == null) {
+      afterPoint.paginationPointType = null;
+    } else if (
+      ![
+        DiffItemType.INPUT,
+        DiffItemType.COLLATERAL,
+        DiffItemType.OUTPUT,
+      ].includes(afterPoint.paginationPointType)
+    ) {
+      throw new Error("error, unexpected paginationPointType in afterPoint.");
+    }
 
-  if (!afterPoint.blockHash) {
-    throw new Error("error, missing blockHash in afterPoint.");
-  }
+    if (
+      afterPoint.paginationPointType !== null &&
+      typeof afterPoint.txHash !== "string"
+    ) {
+      throw new Error("error, missing txHash in afterPoint.");
+    }
 
-  if (!afterPoint.paginationPointType) {
-    afterPoint.paginationPointType = null;
-  } else if (
-    ![
-      DiffItemType.INPUT,
-      DiffItemType.COLLATERAL,
-      DiffItemType.OUTPUT,
-    ].includes(afterPoint.paginationPointType)
-  ) {
-    throw new Error("error, unexpected paginationPointType in afterPoint.");
-  }
-
-  if (
-    afterPoint.paginationPointType !== null &&
-    typeof afterPoint.txHash !== "string"
-  ) {
-    throw new Error("error, missing txHash in afterPoint.");
-  }
-
-  if (
-    afterPoint.paginationPointType !== null &&
-    typeof afterPoint.paginationPointValue !== "string"
-  ) {
-    throw new Error("error, missing paginationPointValue in afterPoint.");
+    if (
+      afterPoint.paginationPointType !== null &&
+      typeof afterPoint.paginationPointValue !== "string"
+    ) {
+      throw new Error("error, missing paginationPointValue in afterPoint.");
+    }
   }
 
   return {
     addresses,
     untilBlockHash,
     afterPoint,
+    afterBestblocks,
     diffLimit,
   };
 };
 
+const resolveBestblocksRequest = (transaction: Transaction) => async (hashes: Array<string> | undefined): Promise<{
+  lastFoundSafeblock?: string;
+  lastFoundBestblock?: string;
+  bestReferencePoint?: { blockHash: string; paginationPointType: null };
+}> => {
+  if (hashes == null) {
+    return {};
+  }
+  const [safeMatch, bestMatch] = await Promise.all([
+    getLatestSafeBlockFromHashes(transaction)(hashes),
+    getLatestBestBlockFromHashes(transaction)(hashes),
+  ]);
+  if (bestMatch == null) {
+    throw new Error("REFERENCE_POINT_BLOCK_NOT_FOUND");
+  }
+  return {
+    lastFoundSafeblock: safeMatch?.hash,
+    lastFoundBestblock: bestMatch.hash,
+    bestReferencePoint: {
+      blockHash: bestMatch.hash,
+      paginationPointType: null,
+    }
+  };
+};
+
+export const getLatestBestBlockFromHashes =
+  (transaction: Transaction) =>
+  async (hashes: Array<string>): Promise<BlockFrag | undefined> => {
+    const result = await transaction.run(
+      `MATCH (b:Block)
+      WHERE b.hash IN $hashes
+      
+      WITH b
+      RETURN b ORDER BY b.number DESC LIMIT 1`, {
+        hashes,
+      }
+    );
+
+    if (!result.records || result.records.length === 0) {
+      return undefined;
+    }
+
+    const record = result.records[0];
+
+    return {
+      epochNo: record.get("b").properties.epoch.toNumber(),
+      hash: record.get("b").properties.hash,
+      slotNo: record.get("b").properties.slot.toNumber(),
+      number: record.get("b").properties.number.toNumber(),
+    };
+  };
+
+export const getLatestSafeBlockFromHashes =
+  (transaction: Transaction) =>
+    async (hashes: Array<string>): Promise<BlockFrag | undefined> => {
+      const result = await transaction.run(
+        `MATCH (bestblock:BESTBLOCK)
+        WITH bestblock.number AS bestblockNumber
+        
+        MATCH (b:Block)
+        WHERE b.hash IN $hashes
+        WITH b
+        
+        WHERE b.number <= bestblockNumber - $safeBlockDepth
+        RETURN b ORDER BY b.number DESC LIMIT 1`, {
+          hashes,
+          safeBlockDepth: SAFE_BLOCK_DEPTH
+        }
+      );
+
+      if (!result.records || result.records.length === 0) {
+        return undefined;
+      }
+
+      const record = result.records[0];
+
+      return {
+        epochNo: record.get("b").properties.epoch.toNumber(),
+        hash: record.get("b").properties.hash,
+        slotNo: record.get("b").properties.slot.toNumber(),
+        number: record.get("b").properties.number.toNumber(),
+      };
+    };
+
+
 export const utxoDiffSincePoint = (driver: Driver) => ({
   handler: async (req: Request, res: Response) => {
-    const { addresses, untilBlockHash, afterPoint, diffLimit } =
+    const { addresses, untilBlockHash, afterPoint: afterPointParam, afterBestblocks, diffLimit } =
       await extractBodyParameters(req.body);
     
     const {
@@ -321,6 +421,14 @@ export const utxoDiffSincePoint = (driver: Driver) => ({
     } = getAddressesByType(addresses);
 
     const session = driver.session();
+    const transaction = session.beginTransaction();
+
+    const { lastFoundSafeblock, lastFoundBestblock, bestReferencePoint } =
+      await resolveBestblocksRequest(transaction)(afterBestblocks);
+    const afterPoint = afterPointParam || bestReferencePoint;
+    if (afterPoint == null) {
+      throw new Error("error, no `afterPoint` specified and no bestblock matched");
+    }
 
     const {
       afterBlock,
@@ -330,7 +438,7 @@ export const utxoDiffSincePoint = (driver: Driver) => ({
       untilBlock: untilBlockHash,
       after: afterPoint ? {
         block: afterPoint.blockHash,
-        tx: afterPoint.txHash,
+        tx: (afterPoint as any).txHash,
       } : undefined
     });
 
@@ -347,10 +455,10 @@ export const utxoDiffSincePoint = (driver: Driver) => ({
       afterPoint.paginationPointType
     );
 
-    const result = await session.run(query, {
+    const result = await transaction.run(query, {
       addresses: bech32OrBase58Addresses,
       paymentCreds,
-      paginationPointValue: afterPoint.paginationPointValue,
+      paginationPointValue: afterPoint.paginationPointType ? afterPoint.paginationPointValue : undefined,
       afterBlock,
       untilBlock,
       afterTxIndex: afterTxIndex,
@@ -403,6 +511,9 @@ export const utxoDiffSincePoint = (driver: Driver) => ({
       paginationPointValue: lastObj.paginationPointValue.toNumber().toString(),
     };
     apiResponse.diffItems = linearized;
+
+    apiResponse.lastFoundSafeblock = lastFoundSafeblock;
+    apiResponse.lastFoundBestblock = lastFoundBestblock;
 
     return res.send(apiResponse);
   }
