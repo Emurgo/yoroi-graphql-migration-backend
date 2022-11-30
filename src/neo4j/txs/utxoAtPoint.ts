@@ -48,7 +48,7 @@ export const utxoAtPoint = (driver: Driver) => ({
     
     OPTIONAL MATCH (o)-[:sourceOf]->(i:TX_IN)-[:inputOf]->(tx2:TX)-[:isAt]->(b2:Block)
     
-    WITH o, tx, b, i, tx2, b2 WHERE (i IS NULL) OR (b2.number >= 8002105)
+    WITH o, tx, b, i, tx2, b2 WHERE (i IS NULL) OR (b2.number >= $referenceBlockNumber)
     
     RETURN {
             utxo_id: o.id,

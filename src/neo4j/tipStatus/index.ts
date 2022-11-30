@@ -104,7 +104,8 @@ export const tipStatus = (driver: Driver) => ({
       
       MATCH (b:Block)
       WHERE b.hash IN $hashes
-        AND b.number = maxBlockNumber - $safeBlockDepth
+      WITH b, maxBlockNumber
+      WHERE b.number <= maxBlockNumber - $safeBlockDepth
       RETURN {
           hash: b.hash,
           blockNumber: b.number
