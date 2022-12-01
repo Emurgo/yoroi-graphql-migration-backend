@@ -79,26 +79,26 @@ export const getLatestBestBlockFromHashes =
 
 export const getLatestSafeBlockFromHashes =
   (pool: Pool) =>
-    async (hashes: Array<string>): Promise<BlockFrag | undefined> => {
-      const result = await pool.query(
-        `${baseGetBlockQuery}
+  async (hashes: Array<string>): Promise<BlockFrag | undefined> => {
+    const result = await pool.query(
+      `${baseGetBlockQuery}
     WHERE hash in (
       select decode(n, 'hex') from unnest(($1)::varchar array) as n
     ) AND block_no <= (SELECT MAX(block_no) FROM block) - ($2)::int
     ORDER BY block_no DESC limit 1`,
-        [hashes, SAFE_BLOCK_DEPTH]
-      );
+      [hashes, SAFE_BLOCK_DEPTH]
+    );
 
-      if (!result.rows || result.rows.length === 0) {
-        return undefined;
-      }
+    if (!result.rows || result.rows.length === 0) {
+      return undefined;
+    }
 
-      const row = result.rows[0];
+    const row = result.rows[0];
 
-      return {
-        epochNo: row.epoch_no,
-        hash: row.hash,
-        slotNo: row.slot_no,
-        number: row.block_no,
-      };
+    return {
+      epochNo: row.epoch_no,
+      hash: row.hash,
+      slotNo: row.slot_no,
+      number: row.block_no,
     };
+  };

@@ -65,23 +65,31 @@ const extractBodyParameters = async (
   const diffLimit: number = body.diffLimit;
 
   const afterBestblocks: Array<string> | undefined = body.afterBestblocks;
-  const afterPoint: {
-    blockHash: string;
-    paginationPointType: DiffItemType | null;
-    txHash?: string;
-    paginationPointValue?: string;
-  } | undefined = body.afterPoint;
+  const afterPoint:
+    | {
+        blockHash: string;
+        paginationPointType: DiffItemType | null;
+        txHash?: string;
+        paginationPointValue?: string;
+      }
+    | undefined = body.afterPoint;
 
   if (afterPoint == null) {
     if (afterBestblocks == null) {
-      throw new Error("error, one of `afterBestblocks` or `afterPoint` is required");
+      throw new Error(
+        "error, one of `afterBestblocks` or `afterPoint` is required"
+      );
     }
     if (!Array.isArray(afterBestblocks) || afterBestblocks.length === 0) {
-      throw new Error("error, `afterBestblocks` is expected to be a non empty array of block hashes");
+      throw new Error(
+        "error, `afterBestblocks` is expected to be a non empty array of block hashes"
+      );
     }
   } else {
     if (afterBestblocks != null) {
-      throw new Error("error, only one of `afterBestblocks` or `afterPoint` is expected");
+      throw new Error(
+        "error, only one of `afterBestblocks` or `afterPoint` is expected"
+      );
     }
     if (afterPoint.blockHash == null) {
       throw new Error("error, missing blockHash in afterPoint.");
@@ -341,35 +349,44 @@ const buildFullQuery = (paginationPoinType: DiffItemType | null) => {
   LIMIT $${5 + (paginationPoinType != null ? 2 : 0)}::word31type;`;
 };
 
-const resolveBestblocksRequest = (pool: Pool) => async (hashes: Array<string> | undefined): Promise<{
-  lastFoundSafeblock?: string;
-  lastFoundBestblock?: string;
-  bestReferencePoint?: { blockHash: string; paginationPointType: null };
-}> => {
-  if (hashes == null) {
-    return {};
-  }
-  const [safeMatch, bestMatch] = await Promise.all([
-    getLatestSafeBlockFromHashes(pool)(hashes),
-    getLatestBestBlockFromHashes(pool)(hashes),
-  ]);
-  if (bestMatch == null) {
-    throw new Error("REFERENCE_POINT_BLOCK_NOT_FOUND");
-  }
-  return {
-    lastFoundSafeblock: safeMatch?.hash,
-    lastFoundBestblock: bestMatch.hash,
-    bestReferencePoint: {
-      blockHash: bestMatch.hash,
-      paginationPointType: null,
+const resolveBestblocksRequest =
+  (pool: Pool) =>
+  async (
+    hashes: Array<string> | undefined
+  ): Promise<{
+    lastFoundSafeblock?: string;
+    lastFoundBestblock?: string;
+    bestReferencePoint?: { blockHash: string; paginationPointType: null };
+  }> => {
+    if (hashes == null) {
+      return {};
     }
+    const [safeMatch, bestMatch] = await Promise.all([
+      getLatestSafeBlockFromHashes(pool)(hashes),
+      getLatestBestBlockFromHashes(pool)(hashes),
+    ]);
+    if (bestMatch == null) {
+      throw new Error("REFERENCE_POINT_BLOCK_NOT_FOUND");
+    }
+    return {
+      lastFoundSafeblock: safeMatch?.hash,
+      lastFoundBestblock: bestMatch.hash,
+      bestReferencePoint: {
+        blockHash: bestMatch.hash,
+        paginationPointType: null,
+      },
+    };
   };
-};
 
 export const handleUtxoDiffSincePoint =
   (pool: Pool) => async (req: Request, res: Response) => {
-    const { addresses, untilBlockHash, afterPoint: afterPointParam, afterBestblocks, diffLimit } =
-      await extractBodyParameters(req.body);
+    const {
+      addresses,
+      untilBlockHash,
+      afterPoint: afterPointParam,
+      afterBestblocks,
+      diffLimit,
+    } = await extractBodyParameters(req.body);
 
     const untilBlock = await getBlock(pool)(untilBlockHash);
     if (!untilBlock) {
@@ -380,7 +397,9 @@ export const handleUtxoDiffSincePoint =
       await resolveBestblocksRequest(pool)(afterBestblocks);
     const afterPoint = afterPointParam || bestReferencePoint;
     if (afterPoint == null) {
-      throw new Error("error, no `afterPoint` specified and no bestblock matched");
+      throw new Error(
+        "error, no `afterPoint` specified and no bestblock matched"
+      );
     }
 
     const afterBlock = await getBlock(pool)(afterPoint.blockHash);
