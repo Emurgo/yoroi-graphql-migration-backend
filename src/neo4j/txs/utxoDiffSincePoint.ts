@@ -468,6 +468,8 @@ export const utxoDiffSincePoint = (driver: Driver) => ({
     await session.close();
 
     const apiResponse = {} as any;
+    apiResponse.lastFoundSafeblock = lastFoundSafeblock;
+    apiResponse.lastFoundBestblock = lastFoundBestblock;
 
     if (result.records.length === 0) {
       apiResponse.diffItems = [];
@@ -511,9 +513,6 @@ export const utxoDiffSincePoint = (driver: Driver) => ({
       paginationPointValue: lastObj.paginationPointValue.toNumber().toString(),
     };
     apiResponse.diffItems = linearized;
-
-    apiResponse.lastFoundSafeblock = lastFoundSafeblock;
-    apiResponse.lastFoundBestblock = lastFoundBestblock;
 
     return res.send(apiResponse);
   }
