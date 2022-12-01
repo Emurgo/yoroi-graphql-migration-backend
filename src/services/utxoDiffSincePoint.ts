@@ -3,7 +3,11 @@ import config from "config";
 import { Pool } from "pg";
 import { Request, Response } from "express";
 
-import { getBlock } from "../utils/queries/block";
+import {
+  getBlock,
+  getLatestBestBlockFromHashes,
+  getLatestSafeBlockFromHashes,
+} from "../utils/queries/block";
 import { getTransactionRowByHash } from "../utils/queries/transaction";
 import {
   assertNever,
@@ -25,7 +29,8 @@ const extractBodyParameters = async (
 ): Promise<{
   addresses: string[];
   untilBlockHash: string;
-  afterPoint: {
+  afterBestblocks?: Array<string>;
+  afterPoint?: {
     blockHash: string;
     paginationPointType: DiffItemType | null;
     // if paginationPointType is not null, these two fields must be present
@@ -59,51 +64,68 @@ const extractBodyParameters = async (
 
   const diffLimit: number = body.diffLimit;
 
-  const afterPoint: {
-    blockHash: string;
-    paginationPointType: DiffItemType | null;
-    txHash?: string;
-    paginationPointValue?: string;
-  } = body.afterPoint;
+  const afterBestblocks: Array<string> | undefined = body.afterBestblocks;
+  const afterPoint:
+    | {
+        blockHash: string;
+        paginationPointType: DiffItemType | null;
+        txHash?: string;
+        paginationPointValue?: string;
+      }
+    | undefined = body.afterPoint;
 
-  if (!afterPoint) {
-    throw new Error("error, empty afterBestBlocks.");
-  }
+  if (afterPoint == null) {
+    if (afterBestblocks == null) {
+      throw new Error(
+        "error, one of `afterBestblocks` or `afterPoint` is required"
+      );
+    }
+    if (!Array.isArray(afterBestblocks) || afterBestblocks.length === 0) {
+      throw new Error(
+        "error, `afterBestblocks` is expected to be a non empty array of block hashes"
+      );
+    }
+  } else {
+    if (afterBestblocks != null) {
+      throw new Error(
+        "error, only one of `afterBestblocks` or `afterPoint` is expected"
+      );
+    }
+    if (afterPoint.blockHash == null) {
+      throw new Error("error, missing blockHash in afterPoint.");
+    }
+    if (afterPoint.paginationPointType == null) {
+      afterPoint.paginationPointType = null;
+    } else if (
+      ![
+        DiffItemType.INPUT,
+        DiffItemType.COLLATERAL,
+        DiffItemType.OUTPUT,
+      ].includes(afterPoint.paginationPointType)
+    ) {
+      throw new Error("error, unexpected paginationPointType in afterPoint.");
+    }
 
-  if (!afterPoint.blockHash) {
-    throw new Error("error, missing blockHash in afterPoint.");
-  }
+    if (
+      afterPoint.paginationPointType !== null &&
+      typeof afterPoint.txHash !== "string"
+    ) {
+      throw new Error("error, missing txHash in afterPoint.");
+    }
 
-  if (!afterPoint.paginationPointType) {
-    afterPoint.paginationPointType = null;
-  } else if (
-    ![
-      DiffItemType.INPUT,
-      DiffItemType.COLLATERAL,
-      DiffItemType.OUTPUT,
-    ].includes(afterPoint.paginationPointType)
-  ) {
-    throw new Error("error, unexpected paginationPointType in afterPoint.");
-  }
-
-  if (
-    afterPoint.paginationPointType !== null &&
-    typeof afterPoint.txHash !== "string"
-  ) {
-    throw new Error("error, missing txHash in afterPoint.");
-  }
-
-  if (
-    afterPoint.paginationPointType !== null &&
-    typeof afterPoint.paginationPointValue !== "string"
-  ) {
-    throw new Error("error, missing paginationPointValue in afterPoint.");
+    if (
+      afterPoint.paginationPointType !== null &&
+      typeof afterPoint.paginationPointValue !== "string"
+    ) {
+      throw new Error("error, missing paginationPointValue in afterPoint.");
+    }
   }
 
   return {
     addresses,
     untilBlockHash,
     afterPoint,
+    afterBestblocks,
     diffLimit,
   };
 };
@@ -324,17 +346,60 @@ const buildFullQuery = (paginationPoinType: DiffItemType | null) => {
     q."blockIndex",
     CASE q."diffItemType" WHEN 'input' THEN 0 WHEN 'collateral' THEN 1  ELSE 2 END,
     q."paginationPointValue"
-  LIMIT $${5 + (paginationPoinType !== null ? 2 : 0)}::word31type;`;
+  LIMIT $${5 + (paginationPoinType != null ? 2 : 0)}::word31type;`;
 };
+
+const resolveBestblocksRequest =
+  (pool: Pool) =>
+  async (
+    hashes: Array<string> | undefined
+  ): Promise<{
+    lastFoundSafeblock?: string;
+    lastFoundBestblock?: string;
+    bestReferencePoint?: { blockHash: string; paginationPointType: null };
+  }> => {
+    if (hashes == null) {
+      return {};
+    }
+    const [safeMatch, bestMatch] = await Promise.all([
+      getLatestSafeBlockFromHashes(pool)(hashes),
+      getLatestBestBlockFromHashes(pool)(hashes),
+    ]);
+    if (bestMatch == null) {
+      throw new Error("REFERENCE_POINT_BLOCK_NOT_FOUND");
+    }
+    return {
+      lastFoundSafeblock: safeMatch?.hash,
+      lastFoundBestblock: bestMatch.hash,
+      bestReferencePoint: {
+        blockHash: bestMatch.hash,
+        paginationPointType: null,
+      },
+    };
+  };
 
 export const handleUtxoDiffSincePoint =
   (pool: Pool) => async (req: Request, res: Response) => {
-    const { addresses, untilBlockHash, afterPoint, diffLimit } =
-      await extractBodyParameters(req.body);
+    const {
+      addresses,
+      untilBlockHash,
+      afterPoint: afterPointParam,
+      afterBestblocks,
+      diffLimit,
+    } = await extractBodyParameters(req.body);
 
     const untilBlock = await getBlock(pool)(untilBlockHash);
     if (!untilBlock) {
       throw new Error("REFERENCE_BESTBLOCK_NOT_FOUND");
+    }
+
+    const { lastFoundSafeblock, lastFoundBestblock, bestReferencePoint } =
+      await resolveBestblocksRequest(pool)(afterBestblocks);
+    const afterPoint = afterPointParam || bestReferencePoint;
+    if (afterPoint == null) {
+      throw new Error(
+        "error, no `afterPoint` specified and no bestblock matched"
+      );
     }
 
     const afterBlock = await getBlock(pool)(afterPoint.blockHash);
@@ -379,6 +444,8 @@ export const handleUtxoDiffSincePoint =
         const result = await pool.query(fullQuery, queryParameters);
 
         const apiResponse = {} as any;
+        apiResponse.lastFoundSafeblock = lastFoundSafeblock;
+        apiResponse.lastFoundBestblock = lastFoundBestblock;
 
         if (result.rows.length === 0) {
           apiResponse.diffItems = [];
