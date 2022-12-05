@@ -30,7 +30,7 @@
     "bech32": "^2.0.0",
     "bunyan": "^1.8.15",
     "cardano-wallet": "^1.2.2",
-    "chai": "^4.2.0",
+    "chai": "^4.3.7",
     "compression": "^1.7.4",
     "config": "^3.3.2",
     "cors": "^2.8.5",
@@ -48,7 +48,7 @@
   },
   "devDependencies": {
     "@types/bunyan": "^1.8.8",
-    "@types/chai": "^4.2.14",
+    "@types/chai": "^4.3.4",
     "@types/compression": "^1.7.0",
     "@types/config": "0.0.36",
     "@types/cors": "^2.8.8",
