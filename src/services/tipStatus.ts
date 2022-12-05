@@ -3,7 +3,7 @@ import config from "config";
 import { Pool } from "pg";
 import { Request, Response } from "express";
 
-const SAFE_BLOCK_DEPTH = parseInt(config.get("safeBlockDifference"));
+export const SAFE_BLOCK_DEPTH = parseInt(config.get("safeBlockDifference"));
 
 const bestBlockQuery = `
   SELECT epoch_no AS "epoch",
