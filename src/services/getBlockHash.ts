@@ -2,10 +2,10 @@ import { Request, Response } from "express";
 import { Pool } from "pg";
 
 const query = `
-    SELECT encode(hash, 'hex') as hash
+    SELECT encode(hash, 'hex') as hash, epoch_no, slot_no
     FROM   block
-    WHERE  epoch_no = $1 AND slot_no <= $2
-    ORDER  BY slot_no DESC
+    WHERE  epoch_no <= $1 AND slot_no <= $2
+    ORDER  BY epoch_no DESC, slot_no DESC
     LIMIT  1; 
 `;
 
@@ -44,8 +44,6 @@ export const handleGetBlockHashBySlot =
       return;
     }
 
-    const blockHashes: { [key: string]: string | null } = {};
-
     const result = await Promise.all(
       slots.map((slot) =>
         pool
@@ -54,8 +52,10 @@ export const handleGetBlockHashBySlot =
       )
     );
 
+    const blockHashes: { [key: string]: string | null } = {};
     result.forEach((res) => {
-      blockHashes[res.slot as any] =
+      const [epoch, slot] = res.slot;
+      blockHashes[`${epoch},${slot}`] =
         res.rows.length != 0 ? res.rows[0].hash : null;
     });
 
