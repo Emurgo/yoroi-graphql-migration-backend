@@ -9,8 +9,10 @@ import {
   getSpendingKeyHash,
   getAddressesByType,
 } from "../utils";
-import { decode, encode, toWords } from "bech32";
+import { bech32 } from "bech32";
 import { Prefixes } from "../utils/cip5";
+
+const { decode, encode, toWords } = bech32;
 
 const baseQuery = `
   select ( select json_agg((address)) 

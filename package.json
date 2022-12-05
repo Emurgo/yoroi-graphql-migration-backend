@@ -27,7 +27,7 @@
     "@sentry/tracing": "^6.17.5",
     "aws-sdk": "^2.1056.0",
     "axios": "^0.21.4",
-    "bech32": "^1.1.4",
+    "bech32": "^2.0.0",
     "bunyan": "^1.8.15",
     "cardano-wallet": "^1.2.2",
     "chai": "^4.2.0",
