@@ -15,7 +15,9 @@ import {
   applyRoutes,
   Route,
   UtilEither,
-  errMsgs, pgTxWrapper,
+  errMsgs,
+  pgTxWrapper,
+  PoolOrClient,
 } from "./utils";
 import * as utils from "./utils";
 import * as middleware from "./middleware";
@@ -192,7 +194,7 @@ const getOrDefaultAfterParam = (
   };
 };
 
-const txHistory = async (req: Request, res: Response) => {
+const txHistory = (pool: PoolOrClient) => async (req: Request, res: Response) => {
   if (!req.body) {
     throw new Error("error, no body");
   }
@@ -350,7 +352,7 @@ const routes: Route[] = [
   { path: "/v2/bestblock", method: "get", handler: bestBlock(pool) },
   { path: "/v2/tipStatus", method: "get", handler: handleTipStatusGet(pool) },
   { path: "/v2/tipStatus", method: "post", handler: handleTipStatusPost(pool) },
-  { path: "/v2/txs/utxoAtPoint", method: "post", handler: utxoAtPoint(pool) },
+  { path: "/v2/txs/utxoAtPoint", method: "post", handler: pgTxWrapper(utxoAtPoint)(pool) },
   {
     path: "/v2/txs/utxoDiffSincePoint",
     method: "post",
@@ -376,7 +378,7 @@ const routes: Route[] = [
     method: "post",
     handler: utxoSumForAddresses,
   },
-  { path: "/v2/txs/history", method: "post", handler: txHistory },
+  { path: "/v2/txs/history", method: "post", handler: pgTxWrapper(txHistory)(pool) },
   { path: "/txs/io/:tx_hash", method: "get", handler: handleGetTxIO(pool) },
   {
     path: "/txs/io/:tx_hash/o/:index",
@@ -549,7 +551,7 @@ const routes: Route[] = [
   {
     path: "/v2.1/txs/history",
     method: "post",
-    handler: txHistory,
+    handler: pgTxWrapper(txHistory)(pool),
     interceptor: middleware.handleCamelCaseResponse,
   },
   {

@@ -6,7 +6,7 @@ import {
   assertNever,
   validateAddressesReq,
   getAddressesByType,
-  extractAssets,
+  extractAssets, PoolOrClient,
 } from "../utils";
 
 import { getBlock } from "../utils/queries/block";
@@ -46,7 +46,7 @@ LIMIT $4::word31type OFFSET $5::word31type;
 `;
 
 export const utxoAtPoint =
-  (pool: Pool) => async (req: Request, res: Response) => {
+  (pool: PoolOrClient) => async (req: Request, res: Response) => {
     if (!req.body || !req.body.addresses) {
       throw new Error("error, no addresses.");
     }
