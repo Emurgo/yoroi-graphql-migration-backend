@@ -1,4 +1,3 @@
-import { Pool } from "pg";
 import { Request, Response } from "express";
 
 import config from "config";
@@ -6,7 +5,8 @@ import {
   assertNever,
   validateAddressesReq,
   getAddressesByType,
-  extractAssets, PoolOrClient,
+  extractAssets,
+  PoolOrClient,
 } from "../utils";
 
 import { getBlock } from "../utils/queries/block";

@@ -4,7 +4,7 @@ import express from "express";
 import * as websockets from "ws";
 import { Request, Response } from "express";
 
-import {ClientBase, Pool} from "pg";
+import { Pool } from "pg";
 
 // eslint-disable-next-line
 const semverCompare = require("semver-compare");

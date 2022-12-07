@@ -2,7 +2,8 @@ import {
   errMsgs,
   UtilEither,
   extractAssets,
-  getAddressesByType, PoolOrClient,
+  getAddressesByType,
+  PoolOrClient,
 } from "../utils";
 
 import {
@@ -21,8 +22,6 @@ import {
   TransactionMetadatum,
   BigNum,
 } from "@emurgo/cardano-serialization-lib-nodejs";
-
-import { Pool } from "pg";
 
 /**
   Everything else in this repo is using graphql, so why psql here?

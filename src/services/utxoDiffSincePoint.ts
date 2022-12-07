@@ -1,6 +1,5 @@
 import config from "config";
 
-import {ClientBase, Pool} from "pg";
 import { Request, Response } from "express";
 
 import {
@@ -13,7 +12,8 @@ import {
   assertNever,
   validateAddressesReq,
   getAddressesByType,
-  extractAssets, PoolOrClient,
+  extractAssets,
+  PoolOrClient,
 } from "../utils";
 
 const addressesRequestLimit: number = config.get("server.addressRequestLimit");

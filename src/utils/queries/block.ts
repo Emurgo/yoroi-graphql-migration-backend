@@ -1,8 +1,8 @@
-import {Pool, QueryConfig, QueryResult, QueryResultRow} from "pg";
+import { Pool } from "pg";
 
 import { BlockFrag } from "../../Transactions/types";
 import { SAFE_BLOCK_DEPTH } from "../../services/tipStatus";
-import {PoolOrClient} from "../index";
+import { PoolOrClient } from "../index";
 
 const baseGetBlockQuery = `SELECT encode(hash, 'hex') as hash,
   epoch_no,

@@ -1,5 +1,4 @@
-import { Pool } from "pg";
-import {PoolOrClient} from "../index";
+import { PoolOrClient } from "../index";
 
 type TransactionRow = {
   id: string;
