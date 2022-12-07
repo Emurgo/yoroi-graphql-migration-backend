@@ -53,6 +53,7 @@ export interface Route {
 async function pgTx<T>(pool: Pool, cb: (client: ClientBase) => Promise<T>): Promise<T> {
   const client = await pool.connect();
   try {
+    await client.query("BEGIN");
     const result = await cb(client);
     await client.query("COMMIT");
     return result;
