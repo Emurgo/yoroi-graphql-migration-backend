@@ -1,17 +1,12 @@
 import { Pool } from "pg";
 import { Request, Response } from "express";
 
-import config from "config";
 import {
-  assertNever,
-  validateAddressesReq,
   getAddressesByType,
   extractAssets,
 } from "../utils";
 
 import { getBlock } from "../utils/queries/block";
-
-const addressesRequestLimit: number = config.get("server.addressRequestLimit");
 
 const utxoAtPointQuery = `SELECT tx_out.address,
        tx_out.payment_cred,
@@ -47,12 +42,15 @@ LIMIT $4::word31type OFFSET $5::word31type;
 
 export const utxoAtPoint =
   (pool: Pool) => async (req: Request, res: Response) => {
-    if (!req.body || !req.body.addresses) {
+    if (!req.body) {
+      throw new Error("error, missing request body.");
+    }
+
+    const addresses: string[] = req.body.addresses;
+    if (!addresses || addresses.length === 0) {
       throw new Error("error, no addresses.");
     }
-    if (!req.body || !req.body.addresses) {
-      throw new Error("error, no addresses.");
-    }
+
     if (!req.body.referenceBlockHash) {
       throw new Error("error, missing the `referenceBlockHash`.");
     }
@@ -65,47 +63,36 @@ export const utxoAtPoint =
     }
 
     if (page <= 0 || pageSize <= 0) {
-      throw new Error("error, page and pageSize should be pasitive integers.");
+      throw new Error("error, page and pageSize should be positive integers.");
     }
 
     const offset = (page - 1) * pageSize;
+    const addressTypes = getAddressesByType(addresses);
 
-    const addressTypes = getAddressesByType(req.body.addresses);
-    const verifiedAddresses = validateAddressesReq(
-      addressesRequestLimit,
-      req.body.addresses
+    const referenceBlock = await getBlock(pool)(
+      req.body.referenceBlockHash
     );
-    switch (verifiedAddresses.kind) {
-      case "ok": {
-        const referenceBlock = await getBlock(pool)(
-          req.body.referenceBlockHash
-        );
-        if (!referenceBlock) {
-          throw new Error("REFERENCE_POINT_BLOCK_NOT_FOUND");
-        }
-
-        const result = await pool.query(utxoAtPointQuery, [
-          [...addressTypes.legacyAddr, ...addressTypes.bech32],
-          addressTypes.paymentCreds,
-          referenceBlock.number,
-          pageSize,
-          offset,
-        ]);
-        const utxos = result.rows.map((utxo) => ({
-          utxo_id: `${utxo.hash}:${utxo.index}`,
-          tx_hash: utxo.hash,
-          tx_index: utxo.index,
-          receiver: utxo.address,
-          amount: utxo.value.toString(),
-          assets: extractAssets(utxo.assets),
-          block_num: utxo.blockNumber,
-        }));
-        res.send(utxos);
-        return;
-      }
-      case "error":
-        throw new Error(verifiedAddresses.errMsg);
-      default:
-        return assertNever(verifiedAddresses);
+    if (!referenceBlock) {
+      throw new Error("REFERENCE_POINT_BLOCK_NOT_FOUND");
     }
+
+    const result = await pool.query(utxoAtPointQuery, [
+      [...addressTypes.legacyAddr, ...addressTypes.bech32],
+      addressTypes.paymentCreds,
+      referenceBlock.number,
+      pageSize,
+      offset,
+    ]);
+
+    const utxos = result.rows.map((utxo) => ({
+      utxo_id: `${utxo.hash}:${utxo.index}`,
+      tx_hash: utxo.hash,
+      tx_index: utxo.index,
+      receiver: utxo.address,
+      amount: utxo.value.toString(),
+      assets: extractAssets(utxo.assets),
+      block_num: utxo.blockNumber,
+    }));
+
+    res.send(utxos);
   };

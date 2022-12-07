@@ -1,5 +1,3 @@
-import config from "config";
-
 import { Pool } from "pg";
 import { Request, Response } from "express";
 
@@ -10,13 +8,9 @@ import {
 } from "../utils/queries/block";
 import { getTransactionRowByHash } from "../utils/queries/transaction";
 import {
-  assertNever,
-  validateAddressesReq,
   getAddressesByType,
   extractAssets,
 } from "../utils";
-
-const addressesRequestLimit: number = config.get("server.addressRequestLimit");
 
 enum DiffItemType {
   INPUT = "input",
@@ -408,93 +402,80 @@ export const handleUtxoDiffSincePoint =
     }
 
     const addressTypes = getAddressesByType(addresses);
-    const verifiedAddresses = validateAddressesReq(
-      addressesRequestLimit,
-      addresses
-    );
 
     const fullQuery = buildFullQuery(afterPoint.paginationPointType);
 
-    switch (verifiedAddresses.kind) {
-      case "ok": {
-        const queryParameters: any[] = [
-          [...addressTypes.legacyAddr, ...addressTypes.bech32],
-          addressTypes.paymentCreds,
-          untilBlock.number,
-          afterBlock.number,
-        ];
+    const queryParameters: any[] = [
+      [...addressTypes.legacyAddr, ...addressTypes.bech32],
+      addressTypes.paymentCreds,
+      untilBlock.number,
+      afterBlock.number,
+    ];
 
-        if (afterPoint.paginationPointType !== null) {
-          if (afterPoint.txHash == null) {
-            throw new Error("won't happen");
-          }
-          const afterPointTx = await getTransactionRowByHash(pool)(
-            afterPoint.txHash
-          );
-          if (!afterPointTx) {
-            throw new Error("afterPoint.txHash not found");
-          }
-
-          queryParameters.push(afterPoint.paginationPointValue);
-          queryParameters.push(afterPointTx.blockIndex);
-        }
-
-        queryParameters.push(diffLimit);
-
-        const result = await pool.query(fullQuery, queryParameters);
-
-        const apiResponse = {} as any;
-        apiResponse.lastFoundSafeblock = lastFoundSafeblock;
-        apiResponse.lastFoundBestblock = lastFoundBestblock;
-
-        if (result.rows.length === 0) {
-          apiResponse.diffItems = [];
-          res.send(apiResponse);
-          return;
-        }
-
-        const linearized = [];
-        for (const row of result.rows) {
-          if (
-            [DiffItemType.INPUT, DiffItemType.COLLATERAL].includes(
-              row.diffItemType
-            )
-          ) {
-            linearized.push({
-              type: DiffItemType.INPUT,
-              id: `${row.src_hash}:${row.index}`,
-              amount: row.value,
-            });
-          } else {
-            linearized.push({
-              type: DiffItemType.OUTPUT,
-              id: `${row.hash}:${row.index}`,
-              receiver: row.address,
-              amount: row.value,
-              assets: extractAssets(row.assets),
-              block_num: row.blockNumber,
-              tx_hash: row.hash,
-              tx_index: row.index,
-            });
-          }
-        }
-
-        const lastRow = result.rows[result.rowCount - 1];
-
-        apiResponse.lastDiffPointSelected = {
-          blockHash: lastRow.blockHash,
-          txHash: lastRow.hash,
-          paginationPointType: lastRow.diffItemType,
-          paginationPointValue: lastRow.paginationPointValue,
-        };
-        apiResponse.diffItems = linearized;
-
-        res.send(apiResponse);
-        break;
+    if (afterPoint.paginationPointType !== null) {
+      if (afterPoint.txHash == null) {
+        throw new Error("won't happen");
       }
-      case "error":
-        throw new Error(verifiedAddresses.errMsg);
-      default:
-        return assertNever(verifiedAddresses);
+      const afterPointTx = await getTransactionRowByHash(pool)(
+        afterPoint.txHash
+      );
+      if (!afterPointTx) {
+        throw new Error("afterPoint.txHash not found");
+      }
+
+      queryParameters.push(afterPoint.paginationPointValue);
+      queryParameters.push(afterPointTx.blockIndex);
     }
+
+    queryParameters.push(diffLimit);
+
+    const result = await pool.query(fullQuery, queryParameters);
+
+    const apiResponse = {} as any;
+    apiResponse.lastFoundSafeblock = lastFoundSafeblock;
+    apiResponse.lastFoundBestblock = lastFoundBestblock;
+
+    if (result.rows.length === 0) {
+      apiResponse.diffItems = [];
+      res.send(apiResponse);
+      return;
+    }
+
+    const linearized = [];
+    for (const row of result.rows) {
+      if (
+        [DiffItemType.INPUT, DiffItemType.COLLATERAL].includes(
+          row.diffItemType
+        )
+      ) {
+        linearized.push({
+          type: DiffItemType.INPUT,
+          id: `${row.src_hash}:${row.index}`,
+          amount: row.value,
+        });
+      } else {
+        linearized.push({
+          type: DiffItemType.OUTPUT,
+          id: `${row.hash}:${row.index}`,
+          receiver: row.address,
+          amount: row.value,
+          assets: extractAssets(row.assets),
+          block_num: row.blockNumber,
+          tx_hash: row.hash,
+          tx_index: row.index,
+        });
+      }
+    }
+
+    const lastRow = result.rows[result.rowCount - 1];
+
+    apiResponse.lastDiffPointSelected = {
+      blockHash: lastRow.blockHash,
+      txHash: lastRow.hash,
+      paginationPointType: lastRow.diffItemType,
+      paginationPointValue: lastRow.paginationPointValue,
+    };
+    apiResponse.diffItems = linearized;
+
+    res.send(apiResponse);
   };
