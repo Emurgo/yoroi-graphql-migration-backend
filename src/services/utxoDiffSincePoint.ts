@@ -358,7 +358,7 @@ const resolveBestblocksRequest =
     lastFoundBestblock?: string;
     bestReferencePoint?: { blockHash: string; paginationPointType: null };
   }> => {
-    if (hashes == null) {
+    if (hashes == null || hashes.length === 0) {
       return {};
     }
     const [safeMatch, bestMatch] = await Promise.all([
