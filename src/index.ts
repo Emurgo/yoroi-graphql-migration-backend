@@ -16,7 +16,7 @@ import {
   Route,
   UtilEither,
   errMsgs,
-  pgTxWrapper,
+  pgSnapshotReadWrapper,
   PoolOrClient,
 } from "./utils";
 import * as utils from "./utils";
@@ -352,11 +352,11 @@ const routes: Route[] = [
   { path: "/v2/bestblock", method: "get", handler: bestBlock(pool) },
   { path: "/v2/tipStatus", method: "get", handler: handleTipStatusGet(pool) },
   { path: "/v2/tipStatus", method: "post", handler: handleTipStatusPost(pool) },
-  { path: "/v2/txs/utxoAtPoint", method: "post", handler: pgTxWrapper(utxoAtPoint)(pool) },
+  { path: "/v2/txs/utxoAtPoint", method: "post", handler: pgSnapshotReadWrapper(utxoAtPoint)(pool) },
   {
     path: "/v2/txs/utxoDiffSincePoint",
     method: "post",
-    handler: pgTxWrapper(handleUtxoDiffSincePoint)(pool),
+    handler: pgSnapshotReadWrapper(handleUtxoDiffSincePoint)(pool),
   },
   {
     path: "/v2/addresses/filterUsed",
@@ -378,7 +378,7 @@ const routes: Route[] = [
     method: "post",
     handler: utxoSumForAddresses,
   },
-  { path: "/v2/txs/history", method: "post", handler: pgTxWrapper(txHistory)(pool) },
+  { path: "/v2/txs/history", method: "post", handler: pgSnapshotReadWrapper(txHistory)(pool) },
   { path: "/txs/io/:tx_hash", method: "get", handler: handleGetTxIO(pool) },
   {
     path: "/txs/io/:tx_hash/o/:index",
@@ -551,7 +551,7 @@ const routes: Route[] = [
   {
     path: "/v2.1/txs/history",
     method: "post",
-    handler: pgTxWrapper(txHistory)(pool),
+    handler: pgSnapshotReadWrapper(txHistory)(pool),
     interceptor: middleware.handleCamelCaseResponse,
   },
   {
