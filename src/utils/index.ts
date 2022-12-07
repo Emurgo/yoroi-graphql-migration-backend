@@ -54,7 +54,10 @@ export interface Route {
  * NOTE: this function will always ROLLBACK and never commit,
  * the only reason is to assure atomic concurrent reading within a transaction.
  */
-async function pgSnapshotRead<T>(pool: Pool, cb: (client: ClientBase) => Promise<T>): Promise<T> {
+async function pgSnapshotRead<T>(
+  pool: Pool,
+  cb: (client: ClientBase) => Promise<T>
+): Promise<T> {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -68,13 +71,18 @@ async function pgSnapshotRead<T>(pool: Pool, cb: (client: ClientBase) => Promise
 export type PoolOrClient = {
   query<R extends QueryResultRow = any, I extends any[] = any[]>(
     queryTextOrConfig: string | QueryConfig<I>,
-    values?: I,
+    values?: I
   ): Promise<QueryResult<R>>;
 };
 
-export const pgSnapshotReadWrapper = (handlerFactory: (pool: PoolOrClient) => Handler) => (pool: Pool): Handler => async (req: Request, res: Response, next: NextFunction) => {
-  pgSnapshotRead(pool, async client => handlerFactory(client)(req, res, next));
-};
+export const pgSnapshotReadWrapper =
+  (handlerFactory: (pool: PoolOrClient) => Handler) =>
+  (pool: Pool): Handler =>
+  async (req: Request, res: Response, next: NextFunction) => {
+    pgSnapshotRead(pool, async (client) =>
+      handlerFactory(client)(req, res, next)
+    );
+  };
 
 export const applyRoutes = (routes: Route[], router: Router) => {
   for (const route of routes) {

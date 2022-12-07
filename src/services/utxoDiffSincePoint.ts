@@ -380,7 +380,6 @@ const resolveBestblocksRequest =
 
 export const handleUtxoDiffSincePoint =
   (pool: PoolOrClient) => async (req: Request, res: Response) => {
-
     const {
       addresses,
       untilBlockHash,
