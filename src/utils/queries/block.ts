@@ -1,7 +1,8 @@
-import { Pool } from "pg";
+import {Pool, QueryConfig, QueryResult, QueryResultRow} from "pg";
 
 import { BlockFrag } from "../../Transactions/types";
 import { SAFE_BLOCK_DEPTH } from "../../services/tipStatus";
+import {PoolOrClient} from "../index";
 
 const baseGetBlockQuery = `SELECT encode(hash, 'hex') as hash,
   epoch_no,
@@ -30,7 +31,7 @@ export const getLatestBlock = async (pool: Pool): Promise<BlockFrag> => {
 };
 
 export const getBlock =
-  (pool: Pool) =>
+  (pool: PoolOrClient) =>
   async (hash: string): Promise<BlockFrag | undefined> => {
     const result = await pool.query(
       `${baseGetBlockQuery}
@@ -53,7 +54,7 @@ export const getBlock =
   };
 
 export const getLatestBestBlockFromHashes =
-  (pool: Pool) =>
+  (pool: PoolOrClient) =>
   async (hashes: Array<string>): Promise<BlockFrag | undefined> => {
     const result = await pool.query(
       `${baseGetBlockQuery}
@@ -78,7 +79,7 @@ export const getLatestBestBlockFromHashes =
   };
 
 export const getLatestSafeBlockFromHashes =
-  (pool: Pool) =>
+  (pool: PoolOrClient) =>
   async (hashes: Array<string>): Promise<BlockFrag | undefined> => {
     const result = await pool.query(
       `${baseGetBlockQuery}

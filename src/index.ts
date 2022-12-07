@@ -4,7 +4,7 @@ import express from "express";
 import * as websockets from "ws";
 import { Request, Response } from "express";
 
-import { Pool } from "pg";
+import {ClientBase, Pool} from "pg";
 
 // eslint-disable-next-line
 const semverCompare = require("semver-compare");
@@ -15,7 +15,7 @@ import {
   applyRoutes,
   Route,
   UtilEither,
-  errMsgs,
+  errMsgs, pgTxWrapper,
 } from "./utils";
 import * as utils from "./utils";
 import * as middleware from "./middleware";
@@ -354,7 +354,7 @@ const routes: Route[] = [
   {
     path: "/v2/txs/utxoDiffSincePoint",
     method: "post",
-    handler: handleUtxoDiffSincePoint(pool),
+    handler: pgTxWrapper(handleUtxoDiffSincePoint)(pool),
   },
   {
     path: "/v2/addresses/filterUsed",

@@ -1,4 +1,5 @@
 import { Pool } from "pg";
+import {PoolOrClient} from "../index";
 
 type TransactionRow = {
   id: string;
@@ -12,7 +13,7 @@ type TransactionRow = {
 };
 
 export const getTransactionRowByHash =
-  (pool: Pool) =>
+  (pool: PoolOrClient) =>
   async (hash: string): Promise<TransactionRow | undefined> => {
     const result = await pool.query(
       "select * from tx where hash = decode($1, 'hex')",

@@ -1,17 +1,18 @@
-import { blake2b } from "hash-wasm";
-import { Router, Request, Response, NextFunction } from "express";
+import {blake2b} from "hash-wasm";
+import {NextFunction, Request, Response, Router} from "express";
 import {
   Address,
-  ByronAddress,
   BaseAddress,
-  PointerAddress,
+  ByronAddress,
   EnterpriseAddress,
+  PointerAddress,
   RewardAddress,
   Transaction,
 } from "@emurgo/cardano-serialization-lib-nodejs";
-import { decode, fromWords } from "bech32";
-import { Prefixes } from "./cip5";
-import { Asset } from "../Transactions/types";
+import {decode, fromWords} from "bech32";
+import {Prefixes} from "./cip5";
+import {Asset} from "../Transactions/types";
+import {ClientBase, Pool, QueryConfig, QueryResult, QueryResultRow} from "pg";
 
 export const contentTypeHeaders = {
   headers: { "Content-Type": "application/json" },
@@ -48,6 +49,31 @@ export interface Route {
   handler: Handler | Handler[] | Response;
   interceptor?: (req: Request, res: Response, next: NextFunction) => void;
 }
+
+async function pgTx<T>(pool: Pool, cb: (client: ClientBase) => Promise<T>): Promise<T> {
+  const client = await pool.connect();
+  try {
+    const result = await cb(client);
+    await client.query("COMMIT");
+    return result;
+  } catch (e) {
+    await client.query("ROLLBACK");
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
+export type PoolOrClient = {
+  query<R extends QueryResultRow = any, I extends any[] = any[]>(
+    queryTextOrConfig: string | QueryConfig<I>,
+    values?: I,
+  ): Promise<QueryResult<R>>;
+};
+
+export const pgTxWrapper = (handlerFactory: (pool: PoolOrClient) => Handler) => (pool: Pool): Handler => async (req: Request, res: Response, next: NextFunction) => {
+  pgTx(pool, async client => handlerFactory(client)(req, res, next));
+};
 
 export const applyRoutes = (routes: Route[], router: Router) => {
   for (const route of routes) {
