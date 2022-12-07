@@ -206,8 +206,8 @@ export const rowToCertificate = (row: any): Certificate | null => {
         rewards: row.rewards === null ? {} : rewards,
       };
     }
-    default:
-      console.log(`Certificate from DB doesn't match any known type: ${row}`); // the app only logs errors.
+    default: // the app only logs errors.
+      console.log(`Certificate from DB doesn't match any known type: ${row}`);
       return null;
   }
 };

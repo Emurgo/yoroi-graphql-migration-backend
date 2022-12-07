@@ -1,10 +1,7 @@
 import { Pool } from "pg";
 import { Request, Response } from "express";
 
-import {
-  getAddressesByType,
-  extractAssets,
-} from "../utils";
+import { getAddressesByType, extractAssets } from "../utils";
 
 import { getBlock } from "../utils/queries/block";
 
@@ -69,9 +66,7 @@ export const utxoAtPoint =
     const offset = (page - 1) * pageSize;
     const addressTypes = getAddressesByType(addresses);
 
-    const referenceBlock = await getBlock(pool)(
-      req.body.referenceBlockHash
-    );
+    const referenceBlock = await getBlock(pool)(req.body.referenceBlockHash);
     if (!referenceBlock) {
       throw new Error("REFERENCE_POINT_BLOCK_NOT_FOUND");
     }

@@ -7,10 +7,7 @@ import {
   getLatestSafeBlockFromHashes,
 } from "../utils/queries/block";
 import { getTransactionRowByHash } from "../utils/queries/transaction";
-import {
-  getAddressesByType,
-  extractAssets,
-} from "../utils";
+import { getAddressesByType, extractAssets } from "../utils";
 
 enum DiffItemType {
   INPUT = "input",
@@ -444,9 +441,7 @@ export const handleUtxoDiffSincePoint =
     const linearized = [];
     for (const row of result.rows) {
       if (
-        [DiffItemType.INPUT, DiffItemType.COLLATERAL].includes(
-          row.diffItemType
-        )
+        [DiffItemType.INPUT, DiffItemType.COLLATERAL].includes(row.diffItemType)
       ) {
         linearized.push({
           type: DiffItemType.INPUT,
