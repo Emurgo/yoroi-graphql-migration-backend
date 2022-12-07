@@ -3,6 +3,7 @@ import {
   UtilEither,
   extractAssets,
   getAddressesByType,
+  PoolOrClient,
 } from "../utils";
 
 import {
@@ -21,8 +22,6 @@ import {
   TransactionMetadatum,
   BigNum,
 } from "@emurgo/cardano-serialization-lib-nodejs";
-
-import { Pool } from "pg";
 
 /**
   Everything else in this repo is using graphql, so why psql here?
@@ -307,7 +306,7 @@ function buildMetadataObj(
 }
 
 export const askTransactionHistory = async (
-  pool: Pool,
+  pool: PoolOrClient,
   limit: number,
   addresses: string[],
   after: {
@@ -439,7 +438,7 @@ const askBlockNumByTxHashQuery = `
 `;
 
 export const askBlockNumByTxHash = async (
-  pool: Pool,
+  pool: PoolOrClient,
   hash: string | undefined
 ): Promise<UtilEither<BlockNumByTxHashFrag>> => {
   if (!hash) return { kind: "error", errMsg: errMsgs.noValue };
@@ -470,7 +469,7 @@ const askBlockNumByHashQuery = `
 `;
 
 export const askBlockNumByHash = async (
-  pool: Pool,
+  pool: PoolOrClient,
   hash: string
 ): Promise<UtilEither<number>> => {
   if (!hash) return { kind: "error", errMsg: errMsgs.noValue };

@@ -126,7 +126,8 @@ export async function start() {
       // @ts-expect-error: TypeScript can't get `util.promisify` straight
       { Bucket, Key: "__BEGIN_FLAG" }
     );
-  } catch (error) {
+  } catch (e) {
+    const error: Error = e instanceof Error ? e : new Error(String(e));
     if (error.message === "The specified key does not exist.") {
       logger.info("no begin flag");
       return;
