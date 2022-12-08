@@ -16,6 +16,8 @@ import {
   Route,
   UtilEither,
   errMsgs,
+  pgSnapshotReadWrapper,
+  PoolOrClient,
 } from "./utils";
 import * as utils from "./utils";
 import * as middleware from "./middleware";
@@ -45,8 +47,8 @@ import { handleGetTxIO, handleGetTxOutput } from "./services/txIO";
 import { handleTipStatusGet, handleTipStatusPost } from "./services/tipStatus";
 import { handleGetTransactions } from "./services/transactions";
 import { handleValidateNft } from "./services/validateNft";
-
 import { handlePolicyIdExists } from "./services/policyIdExists";
+import { handleTxSummariesForAddresses } from "./services/txSummariesForAddresses";
 
 import { HealthChecker } from "./HealthChecker";
 
@@ -192,78 +194,79 @@ const getOrDefaultAfterParam = (
   };
 };
 
-const txHistory = async (req: Request, res: Response) => {
-  if (!req.body) {
-    throw new Error("error, no body");
-  }
-  const verifiedBody = utils.validateHistoryReq(
-    addressesRequestLimit,
-    apiResponseLimit,
-    req.body
-  );
-  switch (verifiedBody.kind) {
-    case "ok": {
-      const body = verifiedBody.value;
-      const limit = body.limit || apiResponseLimit;
-      const [referenceTx, referenceBlock] =
-        (body.after && [body.after.tx, body.after.block]) || [];
-      const referenceBestBlock = body.untilBlock;
-      const untilBlockNum = await askBlockNumByHash(pool, referenceBestBlock);
-      const afterBlockInfo = await askBlockInfo(pool, body.after);
-
-      if (
-        untilBlockNum.kind === "error" &&
-        untilBlockNum.errMsg === utils.errMsgs.noValue
-      ) {
-        throw new Error("REFERENCE_BEST_BLOCK_MISMATCH");
-      }
-      if (
-        afterBlockInfo.kind === "error" &&
-        typeof referenceTx !== "undefined"
-      ) {
-        throw new Error("REFERENCE_TX_NOT_FOUND");
-      }
-
-      if (
-        referenceTx &&
-        afterBlockInfo.kind === "ok" &&
-        afterBlockInfo.value.block.hash !== referenceBlock
-      ) {
-        throw new Error("REFERENCE_BLOCK_MISMATCH");
-      }
-
-      // when things are running smoothly, we would never hit this case case
-      if (untilBlockNum.kind !== "ok") {
-        throw new Error(untilBlockNum.errMsg);
-      }
-      const afterInfo = getOrDefaultAfterParam(afterBlockInfo);
-
-      const maybeTxs = await askTransactionHistory(
-        pool,
-        limit,
-        body.addresses,
-        afterInfo,
-        untilBlockNum.value
-      );
-      switch (maybeTxs.kind) {
-        case "ok": {
-          const txs = mapTransactionFragsToResponse(maybeTxs.value);
-
-          res.send(txs);
-          return;
-        }
-        case "error":
-          throw new Error(maybeTxs.errMsg);
-        default:
-          return utils.assertNever(maybeTxs);
-      }
+const txHistory =
+  (pool: PoolOrClient) => async (req: Request, res: Response) => {
+    if (!req.body) {
+      throw new Error("error, no body");
     }
-    case "error":
-      throw new Error(verifiedBody.errMsg);
-    default:
-      return utils.assertNever(verifiedBody);
-  }
-};
+    const verifiedBody = utils.validateHistoryReq(
+      addressesRequestLimit,
+      apiResponseLimit,
+      req.body
+    );
+    switch (verifiedBody.kind) {
+      case "ok": {
+        const body = verifiedBody.value;
+        const limit = body.limit || apiResponseLimit;
+        const [referenceTx, referenceBlock] =
+          (body.after && [body.after.tx, body.after.block]) || [];
+        const referenceBestBlock = body.untilBlock;
+        const untilBlockNum = await askBlockNumByHash(pool, referenceBestBlock);
+        const afterBlockInfo = await askBlockInfo(pool, body.after);
+
+        if (
+          untilBlockNum.kind === "error" &&
+          untilBlockNum.errMsg === utils.errMsgs.noValue
+        ) {
+          throw new Error("REFERENCE_BEST_BLOCK_MISMATCH");
+        }
+        if (
+          afterBlockInfo.kind === "error" &&
+          typeof referenceTx !== "undefined"
+        ) {
+          throw new Error("REFERENCE_TX_NOT_FOUND");
+        }
+
+        if (
+          referenceTx &&
+          afterBlockInfo.kind === "ok" &&
+          afterBlockInfo.value.block.hash !== referenceBlock
+        ) {
+          throw new Error("REFERENCE_BLOCK_MISMATCH");
+        }
+
+        // when things are running smoothly, we would never hit this case case
+        if (untilBlockNum.kind !== "ok") {
+          throw new Error(untilBlockNum.errMsg);
+        }
+        const afterInfo = getOrDefaultAfterParam(afterBlockInfo);
+
+        const maybeTxs = await askTransactionHistory(
+          pool,
+          limit,
+          body.addresses,
+          afterInfo,
+          untilBlockNum.value
+        );
+        switch (maybeTxs.kind) {
+          case "ok": {
+            const txs = mapTransactionFragsToResponse(maybeTxs.value);
+
+            res.send(txs);
+            return;
+          }
+          case "error":
+            throw new Error(maybeTxs.errMsg);
+          default:
+            return utils.assertNever(maybeTxs);
+        }
+      }
+      case "error":
+        throw new Error(verifiedBody.errMsg);
+      default:
+        return utils.assertNever(verifiedBody);
+    }
+  };
 
 const getStatus = async (req: Request, res: Response) => {
   const isQueueOnline = config.get("usingQueueEndpoint") === "true";
@@ -351,11 +354,15 @@ const routes: Route[] = [
   { path: "/v2/bestblock", method: "get", handler: bestBlock(pool) },
   { path: "/v2/tipStatus", method: "get", handler: handleTipStatusGet(pool) },
   { path: "/v2/tipStatus", method: "post", handler: handleTipStatusPost(pool) },
-  { path: "/v2/txs/utxoAtPoint", method: "post", handler: utxoAtPoint(pool) },
+  {
+    path: "/v2/txs/utxoAtPoint",
+    method: "post",
+    handler: pgSnapshotReadWrapper(utxoAtPoint)(pool),
+  },
   {
     path: "/v2/txs/utxoDiffSincePoint",
     method: "post",
-    handler: handleUtxoDiffSincePoint(pool),
+    handler: pgSnapshotReadWrapper(handleUtxoDiffSincePoint)(pool),
   },
   {
     path: "/v2/addresses/filterUsed",
@@ -377,7 +384,11 @@ const routes: Route[] = [
     method: "post",
     handler: utxoSumForAddresses,
   },
-  { path: "/v2/txs/history", method: "post", handler: txHistory },
+  {
+    path: "/v2/txs/history",
+    method: "post",
+    handler: pgSnapshotReadWrapper(txHistory)(pool),
+  },
   { path: "/txs/io/:tx_hash", method: "get", handler: handleGetTxIO(pool) },
   {
     path: "/txs/io/:tx_hash/o/:index",
@@ -550,7 +561,7 @@ const routes: Route[] = [
   {
     path: "/v2.1/txs/history",
     method: "post",
-    handler: txHistory,
+    handler: pgSnapshotReadWrapper(txHistory)(pool),
     interceptor: middleware.handleCamelCaseResponse,
   },
   {
@@ -670,6 +681,11 @@ const routes: Route[] = [
     method: "get",
     handler: getFundInfo,
     interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/txs/summaries",
+    method: "post",
+    handler: handleTxSummariesForAddresses(pool),
   },
 ];
 
