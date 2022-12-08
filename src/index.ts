@@ -209,7 +209,7 @@ const txHistory = async (req: Request, res: Response) => {
         (body.after && [body.after.tx, body.after.block]) || [];
       const referenceBestBlock = body.untilBlock;
       const untilBlockNum = await askBlockNumByHash(pool, referenceBestBlock);
-      const afterBlockInfo = await askBlockNumByTxHash(pool, referenceTx);
+      const afterBlockInfo = await askBlockNumByTxHash(pool, body.after);
 
       if (
         untilBlockNum.kind === "error" &&
@@ -225,6 +225,7 @@ const txHistory = async (req: Request, res: Response) => {
       }
 
       if (
+        referenceTx &&
         afterBlockInfo.kind === "ok" &&
         afterBlockInfo.value.block.hash !== referenceBlock
       ) {
@@ -236,6 +237,7 @@ const txHistory = async (req: Request, res: Response) => {
         throw new Error(untilBlockNum.errMsg);
       }
       const afterInfo = getOrDefaultAfterParam(afterBlockInfo);
+      console.log({afterInfo});
 
       const maybeTxs = await askTransactionHistory(
         pool,

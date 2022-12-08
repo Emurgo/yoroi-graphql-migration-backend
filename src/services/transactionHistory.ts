@@ -3,6 +3,7 @@ import {
   UtilEither,
   extractAssets,
   getAddressesByType,
+  TxBlockData,
 } from "../utils";
 
 import {
@@ -438,14 +439,32 @@ const askBlockNumByTxHashQuery = `
   WHERE "tx"."hash"=decode($1, 'hex')
 `;
 
+const askBlockNumByBlockHashQuery = `
+  SELECT encode("tx"."hash", 'hex') AS "hash", "tx"."block_index" as "blockIndex", "Block"."block_no" AS "blockNumber", encode("Block"."hash", 'hex') AS "blockHash"
+  FROM "tx"
+  LEFT JOIN "block" "Block" ON "tx"."block_id" = "Block"."id"
+  WHERE "Block"."block_no" > (
+    SELECT block_no
+    FROM block
+    WHERE hash = decode($1, 'hex')
+  ) 
+  LIMIT 1
+`;
+
+
 export const askBlockNumByTxHash = async (
   pool: Pool,
-  hash: string | undefined
+  blockData?: TxBlockData 
 ): Promise<UtilEither<BlockNumByTxHashFrag>> => {
-  if (!hash) return { kind: "error", errMsg: errMsgs.noValue };
+  // todo: remove this gaurd
+  console.log({blockData});
+  if (!blockData) return { kind: "error", errMsg: errMsgs.noValue };
 
   try {
-    const res = await pool.query(askBlockNumByTxHashQuery, [hash]);
+    const [query, params] = blockData.tx ? [askBlockNumByTxHashQuery, [blockData.tx]] :
+        [askBlockNumByBlockHashQuery, [blockData.block]];
+    const res = await pool.query(query, params);
+
     return {
       kind: "ok",
       value: {

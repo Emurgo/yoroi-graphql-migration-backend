@@ -117,11 +117,6 @@ export const validateHistoryReq = (
     return { kind: "error", errMsg: "body.addresses does not exist." };
   if (!("untilBlock" in data))
     return { kind: "error", errMsg: "body.untilBlock does not exist." };
-  if ("after" in data && !("tx" in data.after))
-    return {
-      kind: "error",
-      errMsg: "body.after exists but body.after.tx does not",
-    };
   if ("after" in data && !("block" in data.after))
     return {
       kind: "error",
