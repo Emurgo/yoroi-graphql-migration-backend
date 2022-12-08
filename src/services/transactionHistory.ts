@@ -432,47 +432,52 @@ interface BlockByTxHashFrag {
   number: number;
 }
 
-const askBlockNumByTxHashQuery = `
-  SELECT "tx"."hash" AS "hash", "tx"."block_index" as "blockIndex", "Block"."block_no" AS "blockNumber", "Block"."hash" AS "blockHash"
+const askBlockInfoByTxHashQuery = `
+  SELECT encode("tx"."hash", 'hex')    AS "hash", 
+         "tx"."block_index"            AS "blockIndex", 
+         "Block"."block_no"            AS "blockNumber", 
+         encode("Block"."hash", 'hex') AS "blockHash"
   FROM "tx"
   LEFT JOIN "block" "Block" ON "tx"."block_id" = "Block"."id"
   WHERE "tx"."hash"=decode($1, 'hex')
 `;
 
-const askBlockNumByBlockHashQuery = `
-  SELECT encode("tx"."hash", 'hex') AS "hash", "tx"."block_index" as "blockIndex", "Block"."block_no" AS "blockNumber", encode("Block"."hash", 'hex') AS "blockHash"
+const askBlockInfoByBlockHashQuery = `
+  SELECT encode("tx"."hash", 'hex')    AS "hash",
+         "tx"."block_index"            AS "blockIndex", 
+         "Block"."block_no"            AS "blockNumber", 
+         encode("Block"."hash", 'hex') AS "blockHash"
   FROM "tx"
-  LEFT JOIN "block" "Block" ON "tx"."block_id" = "Block"."id"
-  WHERE "Block"."block_no" > (
-    SELECT block_no
-    FROM block
-    WHERE hash = decode($1, 'hex')
-  ) 
+       LEFT JOIN "block" "Block" 
+              ON "tx"."block_id" = "Block"."id"
+  WHERE "Block"."block_no" > (SELECT block_no
+                              FROM block
+                              WHERE hash = decode($1, 'hex')
+                              LIMIT 1) 
+  ORDER BY "tx"."block_index" ASC
   LIMIT 1
 `;
 
 
-export const askBlockNumByTxHash = async (
+export const askBlockInfo = async (
   pool: Pool,
   blockData?: TxBlockData 
 ): Promise<UtilEither<BlockNumByTxHashFrag>> => {
-  // todo: remove this gaurd
-  console.log({blockData});
   if (!blockData) return { kind: "error", errMsg: errMsgs.noValue };
 
   try {
-    const [query, params] = blockData.tx ? [askBlockNumByTxHashQuery, [blockData.tx]] :
-        [askBlockNumByBlockHashQuery, [blockData.block]];
+    const [query, params] = blockData.tx ? [askBlockInfoByTxHashQuery, [blockData.tx]] :
+        [askBlockInfoByBlockHashQuery, [blockData.block]];
     const res = await pool.query(query, params);
 
     return {
       kind: "ok",
       value: {
         block: {
-          hash: res.rows[0].blockHash.toString("hex"),
+          hash: res.rows[0].blockHash,
           number: res.rows[0].blockNumber,
         },
-        hash: res.rows[0].hash.toString("hex"),
+        hash: res.rows[0].hash,
         blockIndex: res.rows[0].blockIndex,
       },
     };

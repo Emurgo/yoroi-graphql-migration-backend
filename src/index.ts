@@ -25,7 +25,7 @@ import { utxoForAddresses } from "./services/utxoForAddress";
 import { utxoAtPoint } from "./services/utxoAtPoint";
 import {
   askBlockNumByHash,
-  askBlockNumByTxHash,
+  askBlockInfo,
   askTransactionHistory,
 } from "./services/transactionHistory";
 import type { BlockNumByTxHashFrag } from "./services/transactionHistory";
@@ -209,7 +209,7 @@ const txHistory = async (req: Request, res: Response) => {
         (body.after && [body.after.tx, body.after.block]) || [];
       const referenceBestBlock = body.untilBlock;
       const untilBlockNum = await askBlockNumByHash(pool, referenceBestBlock);
-      const afterBlockInfo = await askBlockNumByTxHash(pool, body.after);
+      const afterBlockInfo = await askBlockInfo(pool, body.after);
 
       if (
         untilBlockNum.kind === "error" &&
@@ -237,7 +237,6 @@ const txHistory = async (req: Request, res: Response) => {
         throw new Error(untilBlockNum.errMsg);
       }
       const afterInfo = getOrDefaultAfterParam(afterBlockInfo);
-      console.log({afterInfo});
 
       const maybeTxs = await askTransactionHistory(
         pool,
