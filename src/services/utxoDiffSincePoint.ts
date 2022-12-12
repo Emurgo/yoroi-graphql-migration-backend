@@ -1,6 +1,5 @@
 import config from "config";
 
-import { Pool } from "pg";
 import { Request, Response } from "express";
 
 import {
@@ -14,6 +13,7 @@ import {
   validateAddressesReq,
   getAddressesByType,
   extractAssets,
+  PoolOrClient,
 } from "../utils";
 
 const addressesRequestLimit: number = config.get("server.addressRequestLimit");
@@ -350,7 +350,7 @@ const buildFullQuery = (paginationPoinType: DiffItemType | null) => {
 };
 
 const resolveBestblocksRequest =
-  (pool: Pool) =>
+  (pool: PoolOrClient) =>
   async (
     hashes: Array<string> | undefined
   ): Promise<{
@@ -358,7 +358,7 @@ const resolveBestblocksRequest =
     lastFoundBestblock?: string;
     bestReferencePoint?: { blockHash: string; paginationPointType: null };
   }> => {
-    if (hashes == null) {
+    if (hashes == null || hashes.length === 0) {
       return {};
     }
     const [safeMatch, bestMatch] = await Promise.all([
@@ -379,7 +379,7 @@ const resolveBestblocksRequest =
   };
 
 export const handleUtxoDiffSincePoint =
-  (pool: Pool) => async (req: Request, res: Response) => {
+  (pool: PoolOrClient) => async (req: Request, res: Response) => {
     const {
       addresses,
       untilBlockHash,
