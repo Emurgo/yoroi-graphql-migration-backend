@@ -11,7 +11,7 @@ export default {
     port: process.env.POSTGRES_PORT || 5432
   },
   server: {
-    addressRequestLimit: 50,
+    addressRequestLimit: 500,
     apiResponseLimit: 50,
     txSubmissionEndpoint: process.env.TX_SUBMISSION_ENDPOINT || "https://backend.yoroiwallet.com/api/submit/tx",
     signedTxQueueEndpoint: process.env.SIGNED_TX_QUEUE_ENDPOINT || "http://localhost:3030/",
