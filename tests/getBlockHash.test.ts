@@ -7,15 +7,15 @@ const s = should();
 
 const data = {
   slot1: {
-    slot: [32, 12353044],
-    hash: "7d6ecf29e2a834652d78c9ed3e1b7742c18ad64bf122b53fe9647de0fa538679",
+    slot: [32, 170673],
+    hash: "be7b0a92973a790458a4ba6df4c5b8596715c7f667b170512937ee54ffe8cc2b",
   },
   slot2: {
-    slot: [32, 12353055],
-    hash: "05f00f274514b5e523867ac15058771336e64cd8da032c86eeb82e8aff4d8f72",
+    slot: [32, 170680],
+    hash: "b1b10ffa5bfa78f56c123dcea9b5d222f9573cf05bba382150b8f1f1d621b376",
   },
   slot3: {
-    slot: [132, 100000],
+    slot: [-10, 100000],
     hash: null,
   },
 };
@@ -98,7 +98,6 @@ describe("/lastBlockBySlot", function () {
   });
 
   it("Should return error response for in valid slot entry", async function () {
-
     try {
       await axios.post(endpoint, {
         slots: [
