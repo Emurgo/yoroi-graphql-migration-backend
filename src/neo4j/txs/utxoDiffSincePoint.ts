@@ -434,7 +434,7 @@ export const utxoDiffSincePoint = (driver: Driver) => ({
       afterBlock,
       untilBlock,
       afterTxIndex
-    } = await getPaginationParameters(driver)({
+    } = await getPaginationParameters(transaction)({
       untilBlock: untilBlockHash,
       after: afterPoint ? {
         block: afterPoint.blockHash,
@@ -465,6 +465,7 @@ export const utxoDiffSincePoint = (driver: Driver) => ({
       diffLimit: Integer.fromNumber(diffLimit),
     });
 
+    await transaction.rollback();
     await session.close();
 
     const apiResponse = {} as any;

@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { Transaction } from "neo4j-driver";
 import { Driver } from "neo4j-driver-core";
 import { getAddressesByType } from "../utils";
 import {
@@ -90,7 +91,7 @@ UNION
 `);
 };
 
-export const getTxHistory = (driver: Driver) => async (addresses: string[], pagination: {
+export const getTxHistory = (transaction: Transaction) => async (addresses: string[], pagination: {
   untilBlock: string,
   after?: {
     block: string,
@@ -104,9 +105,7 @@ export const getTxHistory = (driver: Driver) => async (addresses: string[], pagi
     rewardAddresses
   } = getAddressesByType(addresses);
 
-  const session = driver.session();
-
-  const paginationParameters = await getPaginationParameters(driver)(pagination);
+  const paginationParameters = await getPaginationParameters(transaction)(pagination);
 
   const txsCypherPart = getTxsCypherPart(
     bech32OrBase58Addresses,
@@ -159,7 +158,7 @@ WITH block, tx, outputs, inputs, collateral_inputs, withdrawals, certificates, c
 
 RETURN block, tx, outputs, inputs, collateral_inputs, withdrawals, certificates, scripts;`;
 
-  const response = await session.run(cypher, {
+  const response = await transaction.run(cypher, {
     addresses: bech32OrBase58Addresses,
     payment_creds: paymentCreds,
     addr_key_hashes: addrKeyHashes,
@@ -167,14 +166,18 @@ RETURN block, tx, outputs, inputs, collateral_inputs, withdrawals, certificates,
     ...paginationParameters
   });
 
-  await session.close();
-
   return neo4jTxDataToResponseTxData(response.records);
 };
 
 export const history = (driver: Driver) => ({
   handler: async (req: Request, res: Response) => {
-    const txs = await getTxHistory(driver)(req.body.addresses, req.body);
+    const session = driver.session();
+    const transaction = await session.beginTransaction();
+
+    const txs = await getTxHistory(transaction)(req.body.addresses, req.body);
+
+    await transaction.rollback();
+    await session.close();
 
     return res.send(txs);
   }

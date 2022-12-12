@@ -33,7 +33,8 @@ export const utxoAtPoint = (driver: Driver) => ({
     } as block`;
 
     const session = driver.session();
-    const referenceBlockResult = await session.run(cypherBlock, { hash: referenceBlockHash });
+    const trasaction = await session.beginTransaction();
+    const referenceBlockResult = await trasaction.run(cypherBlock, { hash: referenceBlockHash });
 
     if (!referenceBlockResult.records[0]) {
       throw new Error("REFERENCE_POINT_BLOCK_NOT_FOUND");
@@ -63,7 +64,7 @@ export const utxoAtPoint = (driver: Driver) => ({
     SKIP $pageSize * ($pageNumber-1)
     LIMIT $pageSize`;
 
-    const result = await session.run(cypher, {
+    const result = await trasaction.run(cypher, {
       hashes: addresses,
       referenceBlockNumber: referenceBlockNumber,
       pageSize: Integer.fromNumber(req.body.pageSize),
@@ -84,6 +85,7 @@ export const utxoAtPoint = (driver: Driver) => ({
       };
     });
 
+    await trasaction.rollback();
     await session.close();
 
     return res.send(r);

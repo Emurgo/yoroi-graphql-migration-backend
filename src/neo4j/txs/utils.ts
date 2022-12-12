@@ -1,5 +1,4 @@
-import { Integer } from "neo4j-driver";
-import { Driver } from "neo4j-driver-core";
+import { Integer, Transaction } from "neo4j-driver";
 import config from "config";
 import {
   Address,
@@ -341,7 +340,7 @@ const certificateToKindMap: { [key in Neo4jModel.CertificateType]: string } = {
   [Neo4jModel.CertificateType.StakeRegistration]: "StakeRegistration",
 };
 
-export const getPaginationParameters = (driver: Driver) => async (args: {
+export const getPaginationParameters = (transaction: Transaction) => async (args: {
   untilBlock: string,
   after?: {
     block: string,
@@ -382,15 +381,11 @@ export const getPaginationParameters = (driver: Driver) => async (args: {
   const cypher = `${matchPart}
 RETURN ${returnPart}`;
 
-  const session = driver.session();
-
-  const result = await session.run(cypher, {
+  const result = await transaction.run(cypher, {
     untilBlock: args.untilBlock,
     afterBlock: args.after?.block,
     afterTx: args.after?.tx ?? "",
   });
-
-  await session.close();
 
   if (result.records.length === 0) {
     throw new Error("REFERENCE_BEST_BLOCK_MISMATCH");
