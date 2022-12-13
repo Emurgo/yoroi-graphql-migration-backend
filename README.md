@@ -362,6 +362,8 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   - 'REFERENCE_TX_NOT_FOUND'
   - 'REFERENCE_BEST_BLOCK_MISMATCH'
 
+  **Note**: If `after.tx` value is missing - then the transactions within that block are not considered at all, and only transactions AFTER the block are selected.
+
   Input
 
   Up to 50 addresses in the request
@@ -373,7 +375,7 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
     // omitting "after" means you query starting from the genesis block
     after?: {
       block: string, // block hash
-      tx: string, // tx hash
+      tx?: string, // tx hash
     },
     untilBlock: string, // block hash - inclusive
   }

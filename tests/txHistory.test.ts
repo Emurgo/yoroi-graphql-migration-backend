@@ -519,4 +519,19 @@ describe("/txs/history", function() {
     });
     expect(catalystRewardTx.data).to.have.lengthOf(2);
   });
+
+  it.only("Should query TXs from the next block if `after.tx` is missing", async() => {
+    const result = await axios.post(testableUri, {
+      addresses: [
+        "addr_vkh1sk4l8m992qj258pzh9z9nx673y8vzt0mrx2py2w6fw3fx3j6rfd"
+      ],
+      after: {
+        block: "c2dfd2828d2a6fbeab305a01364cb6a6d740a6efe787422f95c66d01b873a82b",
+      },
+      untilBlock: "f33e9b772678ede034954d75fc932994fb665c8438fba25128f02ceb38790468"
+    });
+    console.log(result.data);
+    expect(result.data).to.have.lengthOf(1);
+    expect(result.data[0].hash).to.equal("bc9af1ca0415ccb2360dff730c9cd8de61f35a3efa1c123af27d4452a0461845");
+  });
 });
