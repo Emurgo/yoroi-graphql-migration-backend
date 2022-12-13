@@ -106,54 +106,56 @@ export const validateNFT = (driver: Driver) => ({
 
     const session = driver.session();
 
-    const result = await session.run(cypher, {
-      fingerprint: fingerprint,
-    });
-
-    await session.close();
-
-    if (result.records.length === 0) {
-      return res.status(404).send({
-        error: "Not found",
+    try {
+      const result = await session.run(cypher, {
+        fingerprint: fingerprint,
       });
-    }
-
-    const record = result.records[0];
-    const metadataString = record.get("metadata");
-
-    const asset = Buffer.from(record.get("asset"), "hex").toString();
-    const policy = record.get("policy");
-    const metadata = JSON.parse(metadataString) as any[];
-
-    const assetMetada = metadata.reduce((prev, curr) => {
-      if (curr.label === "721") {
-        if (curr.map_json[policy][asset]) {
-          return curr.map_json[policy][asset];
-        }
+  
+      if (result.records.length === 0) {
+        return res.status(404).send({
+          error: "Not found",
+        });
       }
-      return prev;
-    }, null as any);
-
-    if (!assetMetada) {
-      return res.status(409).send({
-        metadata: metadata,
-        error: "missing assetinfo on metadata",
-      });
+  
+      const record = result.records[0];
+      const metadataString = record.get("metadata");
+  
+      const asset = Buffer.from(record.get("asset"), "hex").toString();
+      const policy = record.get("policy");
+      const metadata = JSON.parse(metadataString) as any[];
+  
+      const assetMetada = metadata.reduce((prev, curr) => {
+        if (curr.label === "721") {
+          if (curr.map_json[policy][asset]) {
+            return curr.map_json[policy][asset];
+          }
+        }
+        return prev;
+      }, null as any);
+  
+      if (!assetMetada) {
+        return res.status(409).send({
+          metadata: metadata,
+          error: "missing assetinfo on metadata",
+        });
+      }
+  
+      if (!assetMetada.image) {
+        return res.status(409).send({
+          metadata: metadata,
+          error: "missing image field on metadata",
+        });
+      }
+  
+      if (req.query.skipValidation) {
+        return res.status(204).send();
+      }
+  
+      await sendNftForAnalysis(lambda, fingerprint, assetMetada.image, envName);
+  
+      return res.status(202).send();
+    } finally {
+      await session.close();
     }
-
-    if (!assetMetada.image) {
-      return res.status(409).send({
-        metadata: metadata,
-        error: "missing image field on metadata",
-      });
-    }
-
-    if (req.query.skipValidation) {
-      return res.status(204).send();
-    }
-
-    await sendNftForAnalysis(lambda, fingerprint, assetMetada.image, envName);
-
-    return res.status(202).send();
   }
 });

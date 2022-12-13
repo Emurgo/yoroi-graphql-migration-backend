@@ -24,70 +24,72 @@ export const info = (driver: Driver) => ({
 
 
     const session = driver.session();
-    const result = await session.run(cypher, { hashes: inputHashes });
+    try {
+      const result = await session.run(cypher, { hashes: inputHashes });
 
-    const poolsForResponse: any = {};
+      const poolsForResponse: any = {};
 
-    for (const record of result.records) {
-      const cert = record.get("c").properties;
-      const tx = record.get("tx").properties;
-      const block = record.get("b").properties;
+      for (const record of result.records) {
+        const cert = record.get("c").properties;
+        const tx = record.get("tx").properties;
+        const block = record.get("b").properties;
 
-      const certificateHash = (cert.operator === undefined) ? cert.pool_keyhash : cert.operator;
+        const certificateHash = (cert.operator === undefined) ? cert.pool_keyhash : cert.operator;
 
-      if (!poolsForResponse[certificateHash]) {
-        poolsForResponse[certificateHash] = {
-          info: {},
-          history: [],
-        };
+        if (!poolsForResponse[certificateHash]) {
+          poolsForResponse[certificateHash] = {
+            info: {},
+            history: [],
+          };
+        }
+
+        if (!poolsForResponse[certificateHash].history) {
+          poolsForResponse[certificateHash].history = [];
+        }
+        else {
+          poolsForResponse[certificateHash].history.push(
+            {
+              epoch: block.epoch.toNumber(),
+              slot: block.epoch_slot.toNumber(),
+              tx_ordinal: tx.tx_index.toNumber(),
+              cert_ordinal: cert.cert_index.toNumber(),
+              payload: getPayload(cert)
+            }
+          );
+        }
       }
 
-      if (!poolsForResponse[certificateHash].history) {
-        poolsForResponse[certificateHash].history = [];
-      }
-      else {
-        poolsForResponse[certificateHash].history.push(
-          {
-            epoch: block.epoch.toNumber(),
-            slot: block.epoch_slot.toNumber(),
-            tx_ordinal: tx.tx_index.toNumber(),
-            cert_ordinal: cert.cert_index.toNumber(),
-            payload: getPayload(cert)
-          }
-        );
-      }
-    }
+      const cypherLatestRegistration = `MATCH (c:CERTIFICATE)
+      WHERE c.operator in $hashes AND c.type = 'pool_registration'
+      WITH max(ID(c)) as cMax, c.operator as cOp
+      WITH collect(cMax) as ids
+      MATCH (c:CERTIFICATE) 
+      WHERE ID(c) in ids
+      RETURN {
+          hash: c.operator,
+          metadataHash: c.pool_metadata_hash
+      } as metadataHash`;
 
-    const cypherLatestRegistration = `MATCH (c:CERTIFICATE)
-    WHERE c.operator in $hashes AND c.type = 'pool_registration'
-    WITH max(ID(c)) as cMax, c.operator as cOp
-    WITH collect(cMax) as ids
-    MATCH (c:CERTIFICATE) 
-    WHERE ID(c) in ids
-    RETURN {
-        hash: c.operator,
-        metadataHash: c.pool_metadata_hash
-    } as metadataHash`;
+      const resultLatestMetadataHash = await session.run(cypherLatestRegistration, { hashes: inputHashes });
 
-    const resultLatestMetadataHash = await session.run(cypherLatestRegistration, { hashes: inputHashes });
+      for (const hash of inputHashes) {
+        if (poolsForResponse[hash]) {
 
-    for (const hash of inputHashes) {
-      if (poolsForResponse[hash]) {
+          const metadataHashRecord = resultLatestMetadataHash.records.find((record) => record.get("metadataHash").hash === hash);
+          if (metadataHashRecord) {
+            const metadataHash = metadataHashRecord.get("metadataHash").metadataHash;
 
-        const metadataHashRecord = resultLatestMetadataHash.records.find((record) => record.get("metadataHash").hash === hash);
-        if (metadataHashRecord) {
-          const metadataHash = metadataHashRecord.get("metadataHash").metadataHash;
-
-          const infoFromSmash = await getSmashInfo(hash, metadataHash);
-          if (infoFromSmash) {
-            poolsForResponse[hash].info = infoFromSmash;
+            const infoFromSmash = await getSmashInfo(hash, metadataHash);
+            if (infoFromSmash) {
+              poolsForResponse[hash].info = infoFromSmash;
+            }
           }
         }
       }
+
+      return res.send(poolsForResponse);
+    } finally {
+      await session.close();
     }
-
-    await session.close();
-
-    return res.send(poolsForResponse);
   }
 });

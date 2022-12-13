@@ -33,27 +33,29 @@ export const filterUsed = (driver: Driver) => ({
 
     const session = driver.session();
 
-    const result = await session.run(cypher, {
-      bech32OrBase58Addresses,
-      paymentCreds
-    });
+    try {
+      const result = await session.run(cypher, {
+        bech32OrBase58Addresses,
+        paymentCreds
+      });
+  
+      const usedAddresses = result.records.map(r => {
+        const a = r.get("a");
+  
+        if (a.startsWith("8200581c")) {
+          const cred = StakeCredential.from_bytes(
+            Buffer.from(a, "hex")
+          );
+          const keyHash = cred.to_keyhash();
+          return keyHash?.to_bech32("addr_vkh");
+        } else {
+          return a;
+        }
+      });
 
-    const usedAddresses = result.records.map(r => {
-      const a = r.get("a");
-
-      if (a.startsWith("8200581c")) {
-        const cred = StakeCredential.from_bytes(
-          Buffer.from(a, "hex")
-        );
-        const keyHash = cred.to_keyhash();
-        return keyHash?.to_bech32("addr_vkh");
-      } else {
-        return a;
-      }
-    });
-
-    await session.close();
-
-    return res.send(usedAddresses);
+      return res.send(usedAddresses);
+    } finally {
+      await session.close();
+    }
   }
 });

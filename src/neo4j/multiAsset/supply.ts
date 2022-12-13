@@ -44,32 +44,34 @@ export const supply = (driver: Driver) => ({
     } as asset`;
 
     const session = driver.session();
-    const result = await session.run(cypher, params);
+    try {
+      const result = await session.run(cypher, params);
 
-    const r: any = {};
-    r.supplies = {};
+      const r: any = {};
+      r.supplies = {};
 
-    for (const asset of assets) {
-      const key = `${asset.policy}.${asset.name}`;
-      r.supplies[key] = null;
-    }
-
-    for (const record of result.records) {
-      const asset = record.get("asset");
-      const assetName = Buffer.from(asset.asset, "hex").toString("utf8");
-
-      const key = `${asset.policy}.${assetName}`;
-      const quantity = asset.quantity.toNumber();
-
-      if (r.supplies[key]) {
-        r.supplies[key] += quantity;
-      } else {
-        r.supplies[key] = quantity;
+      for (const asset of assets) {
+        const key = `${asset.policy}.${asset.name}`;
+        r.supplies[key] = null;
       }
+
+      for (const record of result.records) {
+        const asset = record.get("asset");
+        const assetName = Buffer.from(asset.asset, "hex").toString("utf8");
+
+        const key = `${asset.policy}.${assetName}`;
+        const quantity = asset.quantity.toNumber();
+
+        if (r.supplies[key]) {
+          r.supplies[key] += quantity;
+        } else {
+          r.supplies[key] = quantity;
+        }
+      }
+
+      return res.send(r);
+    } finally {
+      await session.close();
     }
-
-    await session.close();
-
-    return res.send(r);
   }
 });

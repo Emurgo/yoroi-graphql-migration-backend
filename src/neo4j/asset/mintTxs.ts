@@ -25,31 +25,34 @@ export const mintTxs = (driver: Driver) => ({
     } as x`;
 
     const session = driver.session();
-    const result = await session.run(cypher, { fingerprint: req.params.fingerprint });
-    await session.close();
+    try {
+      const result = await session.run(cypher, { fingerprint: req.params.fingerprint });
 
-    const record = result.records[0].get("x");
+      const record = result.records[0].get("x");
 
-    const response = {
-      policy: record.policy,
-      name: record.name,
-      txs: record.txs.map((tx: any) => {
-        return {
-          hash: tx.hash,
-          block: {
-            slot: tx.block.slot.toNumber(),
-            epoch: tx.block.epoch.toNumber()
-          },
-          metadata: (tx.metadata === null) ? null : JSON.parse(tx.metadata).map((meta: any) => {
-            return {
-              key: parseInt(meta.label),
-              json: meta.map_json
-            };
-          })[0]
-        };
-      })
-    };
+      const response = {
+        policy: record.policy,
+        name: record.name,
+        txs: record.txs.map((tx: any) => {
+          return {
+            hash: tx.hash,
+            block: {
+              slot: tx.block.slot.toNumber(),
+              epoch: tx.block.epoch.toNumber()
+            },
+            metadata: (tx.metadata === null) ? null : JSON.parse(tx.metadata).map((meta: any) => {
+              return {
+                key: parseInt(meta.label),
+                json: meta.map_json
+              };
+            })[0]
+          };
+        })
+      };
 
-    return res.send(response);
+      return res.send(response);
+    } finally {
+      await session.close();
+    }
   }
 });

@@ -423,98 +423,100 @@ export const utxoDiffSincePoint = (driver: Driver) => ({
     const session = driver.session();
     const transaction = session.beginTransaction();
 
-    const { lastFoundSafeblock, lastFoundBestblock, bestReferencePoint } =
+    try {
+      const { lastFoundSafeblock, lastFoundBestblock, bestReferencePoint } =
       await resolveBestblocksRequest(transaction)(afterBestblocks);
-    const afterPoint = afterPointParam || bestReferencePoint;
-    if (afterPoint == null) {
-      throw new Error("error, no `afterPoint` specified and no bestblock matched");
-    }
-
-    const {
-      afterBlock,
-      untilBlock,
-      afterTxIndex
-    } = await getPaginationParameters(transaction)({
-      untilBlock: untilBlockHash,
-      after: afterPoint ? {
-        block: afterPoint.blockHash,
-        tx: (afterPoint as any).txHash,
-      } : undefined
-    });
-
-    const filterBy = [] as ("address" | "payment_cred")[];
-    if (bech32OrBase58Addresses.length > 0) {
-      filterBy.push("address");
-    }
-    if (paymentCreds.length > 0) {
-      filterBy.push("payment_cred");
-    }
-
-    const query = buildFullQuery(
-      filterBy,
-      afterPoint.paginationPointType
-    );
-
-    const result = await transaction.run(query, {
-      addresses: bech32OrBase58Addresses,
-      paymentCreds,
-      paginationPointValue: afterPoint.paginationPointType ? afterPoint.paginationPointValue : undefined,
-      afterBlock,
-      untilBlock,
-      afterTxIndex: afterTxIndex,
-      diffLimit: Integer.fromNumber(diffLimit),
-    });
-
-    await transaction.rollback();
-    await session.close();
-
-    const apiResponse = {} as any;
-    apiResponse.lastFoundSafeblock = lastFoundSafeblock;
-    apiResponse.lastFoundBestblock = lastFoundBestblock;
-
-    if (result.records.length === 0) {
-      apiResponse.diffItems = [];
-      return res.send(apiResponse);
-    }
-
-    const linearized = [] as any[];
-    for (const record of result.records) {
-      const obj = record.get("obj");
-      if (
-        [DiffItemType.INPUT, DiffItemType.COLLATERAL].includes(
-          obj.diffItemType
-        )
-      ) {
-        linearized.push({
-          type: DiffItemType.INPUT,
-          id: `${obj.src_hash}:${obj.index}`,
-          amount: formatNeo4jBigNumber(obj.value),
-        });
-      } else {
-        linearized.push({
-          type: DiffItemType.OUTPUT,
-          id: `${obj.hash}:${obj.index}`,
-          receiver: formatIOAddress(obj.address),
-          amount: formatNeo4jBigNumber(obj.value),
-          assets: mapNeo4jAssets(obj.assets),
-          block_num: obj.blockNumber.toNumber(),
-          tx_hash: obj.hash,
-          tx_index: obj.index.toNumber(),
-        });
+      const afterPoint = afterPointParam || bestReferencePoint;
+      if (afterPoint == null) {
+        throw new Error("error, no `afterPoint` specified and no bestblock matched");
       }
+
+      const {
+        afterBlock,
+        untilBlock,
+        afterTxIndex
+      } = await getPaginationParameters(transaction)({
+        untilBlock: untilBlockHash,
+        after: afterPoint ? {
+          block: afterPoint.blockHash,
+          tx: (afterPoint as any).txHash,
+        } : undefined
+      });
+
+      const filterBy = [] as ("address" | "payment_cred")[];
+      if (bech32OrBase58Addresses.length > 0) {
+        filterBy.push("address");
+      }
+      if (paymentCreds.length > 0) {
+        filterBy.push("payment_cred");
+      }
+
+      const query = buildFullQuery(
+        filterBy,
+        afterPoint.paginationPointType
+      );
+
+      const result = await transaction.run(query, {
+        addresses: bech32OrBase58Addresses,
+        paymentCreds,
+        paginationPointValue: afterPoint.paginationPointType ? afterPoint.paginationPointValue : undefined,
+        afterBlock,
+        untilBlock,
+        afterTxIndex: afterTxIndex,
+        diffLimit: Integer.fromNumber(diffLimit),
+      });
+
+      const apiResponse = {} as any;
+      apiResponse.lastFoundSafeblock = lastFoundSafeblock;
+      apiResponse.lastFoundBestblock = lastFoundBestblock;
+
+      if (result.records.length === 0) {
+        apiResponse.diffItems = [];
+        return res.send(apiResponse);
+      }
+
+      const linearized = [] as any[];
+      for (const record of result.records) {
+        const obj = record.get("obj");
+        if (
+          [DiffItemType.INPUT, DiffItemType.COLLATERAL].includes(
+            obj.diffItemType
+          )
+        ) {
+          linearized.push({
+            type: DiffItemType.INPUT,
+            id: `${obj.src_hash}:${obj.index}`,
+            amount: formatNeo4jBigNumber(obj.value),
+          });
+        } else {
+          linearized.push({
+            type: DiffItemType.OUTPUT,
+            id: `${obj.hash}:${obj.index}`,
+            receiver: formatIOAddress(obj.address),
+            amount: formatNeo4jBigNumber(obj.value),
+            assets: mapNeo4jAssets(obj.assets),
+            block_num: obj.blockNumber.toNumber(),
+            tx_hash: obj.hash,
+            tx_index: obj.index.toNumber(),
+          });
+        }
+      }
+
+      const lastRecord = result.records[result.records.length - 1];
+      const lastObj = lastRecord.get("obj");
+
+      apiResponse.lastDiffPointSelected = {
+        blockHash: lastObj.blockHash,
+        txHash: lastObj.hash,
+        paginationPointType: lastObj.diffItemType,
+        paginationPointValue: lastObj.paginationPointValue.toNumber().toString(),
+      };
+      apiResponse.diffItems = linearized;
+
+      return res.send(apiResponse);
+    } finally {
+      await transaction.rollback();
+      await session.close();
     }
-
-    const lastRecord = result.records[result.records.length - 1];
-    const lastObj = lastRecord.get("obj");
-
-    apiResponse.lastDiffPointSelected = {
-      blockHash: lastObj.blockHash,
-      txHash: lastObj.hash,
-      paginationPointType: lastObj.diffItemType,
-      paginationPointValue: lastObj.paginationPointValue.toNumber().toString(),
-    };
-    apiResponse.diffItems = linearized;
-
-    return res.send(apiResponse);
   }
 });

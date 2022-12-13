@@ -14,51 +14,53 @@ export const utxoForAddresses = (driver: Driver) => ({
 
     const session = driver.session();
 
-    const whereParts = [] as string[];
+    try {
+      const whereParts = [] as string[];
 
-    if (bech32OrBase58Addresses.length > 0) {
-      whereParts.push("o.address IN $bech32OrBase58Addresses");
+      if (bech32OrBase58Addresses.length > 0) {
+        whereParts.push("o.address IN $bech32OrBase58Addresses");
+      }
+
+      if (paymentCreds.length > 0) {
+        whereParts.push("o.payment_cred IN $paymentCreds");
+      }
+
+      const cypher = `MATCH (o:TX_OUT)-[:producedBy]->(tx:TX)-[:isAt]->(block:Block)
+      WHERE (${whereParts.join(" OR ")})
+        AND NOT (o)-[:sourceOf]->(:TX_IN)
+      RETURN {
+          utxo_id: o.id,
+          tx_hash: tx.hash,
+          tx_index: o.output_index,
+          receiver: o.address,
+          amount: o.amount,
+          dataHash: o.datum_hash,
+          assets: o.assets,
+          block_num: block.number
+      } as utxo`;
+
+      const result = await session.run(cypher, {
+        bech32OrBase58Addresses, paymentCreds
+      });
+
+      const r = result.records.map(r => {
+        const utxo = r.get("utxo");
+
+        return {
+          utxo_id: utxo.utxo_id,
+          tx_hash: utxo.tx_hash,
+          tx_index: utxo.tx_index.toNumber(),
+          receiver: formatIOAddress(utxo.receiver),
+          amount: utxo.amount.toNumber().toString(),
+          dataHash: utxo.dataHash,
+          assets: mapNeo4jAssets(utxo.assets),
+          block_num: utxo.block_num.toNumber()
+        };
+      });
+
+      return res.send(r);
+    } finally {
+      await session.close();
     }
-
-    if (paymentCreds.length > 0) {
-      whereParts.push("o.payment_cred IN $paymentCreds");
-    }
-
-    const cypher = `MATCH (o:TX_OUT)-[:producedBy]->(tx:TX)-[:isAt]->(block:Block)
-    WHERE (${whereParts.join(" OR ")})
-      AND NOT (o)-[:sourceOf]->(:TX_IN)
-    RETURN {
-        utxo_id: o.id,
-        tx_hash: tx.hash,
-        tx_index: o.output_index,
-        receiver: o.address,
-        amount: o.amount,
-        dataHash: o.datum_hash,
-        assets: o.assets,
-        block_num: block.number
-    } as utxo`;
-
-    const result = await session.run(cypher, {
-      bech32OrBase58Addresses, paymentCreds
-    });
-
-    const r = result.records.map(r => {
-      const utxo = r.get("utxo");
-
-      return {
-        utxo_id: utxo.utxo_id,
-        tx_hash: utxo.tx_hash,
-        tx_index: utxo.tx_index.toNumber(),
-        receiver: formatIOAddress(utxo.receiver),
-        amount: utxo.amount.toNumber().toString(),
-        dataHash: utxo.dataHash,
-        assets: mapNeo4jAssets(utxo.assets),
-        block_num: utxo.block_num.toNumber()
-      };
-    });
-
-    await session.close();
-
-    return res.send(r);
   }
 });

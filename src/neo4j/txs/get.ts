@@ -42,18 +42,20 @@ export const get = (driver: Driver) => ({
       RETURN block, tx, outputs, inputs, collateral_inputs, withdrawals, certificates, scripts;`;
 
     const session = driver.session();
-    const response = await session.run(cypher, { tx_hashes: req.body.txHashes });
+    try {
+      const response = await session.run(cypher, { tx_hashes: req.body.txHashes });
 
-    await session.close();
+      const transactionsForResponse: any = {};
 
-    const transactionsForResponse: any = {};
+      const txs = neo4jTxDataToResponseTxData(response.records);
 
-    const txs = neo4jTxDataToResponseTxData(response.records);
+      for (const tx of txs) {
+        transactionsForResponse[tx.hash] = tx;
+      }
 
-    for (const tx of txs) {
-      transactionsForResponse[tx.hash] = tx;
+      return res.send(transactionsForResponse);
+    } finally {
+      await session.close();
     }
-
-    return res.send(transactionsForResponse);
   }
 });

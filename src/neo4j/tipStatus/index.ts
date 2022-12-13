@@ -32,33 +32,35 @@ const getBestAndSafeBlocks = async (driver: Driver) => {
   const session1 = driver.session();
   const session2 = driver.session();
 
-  const [bestBlockResult, safeBlockResult] = await Promise.all([
-    session1.run(bestBlockCypher),
-    session2.run(safeBlockCypher, { safeBlockDepth: SAFE_BLOCK_DEPTH }),
-  ]);
-
-  const bestBlock = bestBlockResult.records[0].get("block");
-  const safeBlock = safeBlockResult.records[0].get("block");
-
-  session1.close();
-  session2.close();
-
-  return {
-    bestBlock: {
-      epoch: bestBlock.epoch,
-      slot: bestBlock.slot,
-      globalSlot: bestBlock.globalSlot,
-      hash: bestBlock.hash,
-      height: bestBlock.height,
-    },
-    safeBlock: {
-      epoch: safeBlock.epoch.toNumber(),
-      slot: safeBlock.slot.toNumber(),
-      globalSlot: safeBlock.globalSlot.toNumber(),
-      hash: safeBlock.hash,
-      height: safeBlock.height,
-    },
-  };
+  try {
+    const [bestBlockResult, safeBlockResult] = await Promise.all([
+      session1.run(bestBlockCypher),
+      session2.run(safeBlockCypher, { safeBlockDepth: SAFE_BLOCK_DEPTH }),
+    ]);
+  
+    const bestBlock = bestBlockResult.records[0].get("block");
+    const safeBlock = safeBlockResult.records[0].get("block");
+  
+    return {
+      bestBlock: {
+        epoch: bestBlock.epoch,
+        slot: bestBlock.slot,
+        globalSlot: bestBlock.globalSlot,
+        hash: bestBlock.hash,
+        height: bestBlock.height,
+      },
+      safeBlock: {
+        epoch: safeBlock.epoch.toNumber(),
+        slot: safeBlock.slot.toNumber(),
+        globalSlot: safeBlock.globalSlot.toNumber(),
+        hash: safeBlock.hash,
+        height: safeBlock.height,
+      },
+    };
+  } finally {
+    await session1.close();
+    await session2.close();
+  }
 };
 
 export const tipStatus = (driver: Driver) => ({
@@ -115,42 +117,44 @@ export const tipStatus = (driver: Driver) => ({
       const session1 = driver.session();
       const session2 = driver.session();
 
-      const [
-        { bestBlock, safeBlock },
-        bestBlockFromReferenceResult,
-        safeBlockFromReferenceResult,
-      ] = await Promise.all([
-        getBestAndSafeBlocks(driver),
-        session1.run(bestBlockCypher, { hashes: bestBlocks }),
-        session2.run(safeBlockCypher, {
-          hashes: bestBlocks,
-          safeBlockDepth: SAFE_BLOCK_DEPTH,
-        }),
-      ]);
-
-      session1.close();
-      session2.close();
-
-      if (bestBlockFromReferenceResult.records.length === 0) {
-        throw new Error("REFERENCE_POINT_BLOCK_NOT_FOUND");
-      }
-      const lastFoundBestBlock: string =
-        bestBlockFromReferenceResult.records[0].get("block").hash;
-
-      if (safeBlockFromReferenceResult.records.length === 0) {
-        throw new Error("REFERENCE_POINT_BLOCK_NOT_FOUND");
-      }
-      const lastFoundSafeBlock: string =
-        safeBlockFromReferenceResult.records[0].get("block").hash;
+      try {
+        const [
+          { bestBlock, safeBlock },
+          bestBlockFromReferenceResult,
+          safeBlockFromReferenceResult,
+        ] = await Promise.all([
+          getBestAndSafeBlocks(driver),
+          session1.run(bestBlockCypher, { hashes: bestBlocks }),
+          session2.run(safeBlockCypher, {
+            hashes: bestBlocks,
+            safeBlockDepth: SAFE_BLOCK_DEPTH,
+          }),
+        ]);
   
-      res.send({
-        safeBlock,
-        bestBlock,
-        reference: {
-          lastFoundSafeBlock,
-          lastFoundBestBlock,
-        },
-      });
+        if (bestBlockFromReferenceResult.records.length === 0) {
+          throw new Error("REFERENCE_POINT_BLOCK_NOT_FOUND");
+        }
+        const lastFoundBestBlock: string =
+          bestBlockFromReferenceResult.records[0].get("block").hash;
+  
+        if (safeBlockFromReferenceResult.records.length === 0) {
+          throw new Error("REFERENCE_POINT_BLOCK_NOT_FOUND");
+        }
+        const lastFoundSafeBlock: string =
+          safeBlockFromReferenceResult.records[0].get("block").hash;
+    
+        res.send({
+          safeBlock,
+          bestBlock,
+          reference: {
+            lastFoundSafeBlock,
+            lastFoundBestBlock,
+          },
+        });
+      } finally {
+        await session1.close();
+        await session2.close();
+      }
     }
   }
 });

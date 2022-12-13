@@ -174,11 +174,13 @@ export const history = (driver: Driver) => ({
     const session = driver.session();
     const transaction = await session.beginTransaction();
 
-    const txs = await getTxHistory(transaction)(req.body.addresses, req.body);
+    try {
+      const txs = await getTxHistory(transaction)(req.body.addresses, req.body);
 
-    await transaction.rollback();
-    await session.close();
-
-    return res.send(txs);
+      return res.send(txs);
+    } finally {
+      await transaction.rollback();
+      await session.close();
+    }
   }
 });

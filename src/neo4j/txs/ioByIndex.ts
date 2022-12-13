@@ -17,35 +17,35 @@ export const ioByIndex = (driver: Driver) => ({
     RETURN tx, outputs`;
 
     const session = driver.session();
-    const result = await session.run(cypher, { hash: req.params.tx_hash });
+    try {
+      const result = await session.run(cypher, { hash: req.params.tx_hash });
 
-    if (result.records && result.records.length > 0) {
-      const outputs = result.records[0].get("outputs");
+      if (result.records && result.records.length > 0) {
+        const outputs = result.records[0].get("outputs");
 
-      const reqIndexNumber = Number(req.params.index);
-      
-      const foundInInputs = outputs.find((output: any) => {
-        return output.properties.index.toNumber() === reqIndexNumber;
-      });
+        const reqIndexNumber = Number(req.params.index);
+        
+        const foundInInputs = outputs.find((output: any) => {
+          return output.properties.index.toNumber() === reqIndexNumber;
+        });
 
-      const outputsForResponse = {
-        address: formatIOAddress(foundInInputs.properties.address),
-        amount: foundInInputs.properties.amount.toNumber().toString(),
-        dataHash: (foundInInputs.properties.datum_hash === undefined) ? null : foundInInputs.properties.datum_hash,
-        assets: mapNeo4jAssets(foundInInputs.properties.assets),
-      };
+        const outputsForResponse = {
+          address: formatIOAddress(foundInInputs.properties.address),
+          amount: foundInInputs.properties.amount.toNumber().toString(),
+          dataHash: (foundInInputs.properties.datum_hash === undefined) ? null : foundInInputs.properties.datum_hash,
+          assets: mapNeo4jAssets(foundInInputs.properties.assets),
+        };
 
-      const r = {
-        output: outputsForResponse,
-      };
+        const r = {
+          output: outputsForResponse,
+        };
 
+        return res.send(r);
+      }
+
+      return res.send(res);
+    } finally {
       await session.close();
-
-      return res.send(r);
     }
-
-    await session.close();
-
-    return res.send(res);
   }
 });

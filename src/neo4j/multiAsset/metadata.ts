@@ -31,26 +31,28 @@ export const metadata = (driver: Driver) => ({
 
       const session = driver.session();
 
-      const result = await session.run(cypher, {
-        asset: name,
-        policy: asset.policy,
-      });
-
-      session.close();
-
-      if (result.records.length === 0) return null;
-
-      const record = result.records[0];
-
-      const assetName = Buffer.from(record.get("asset"), "hex").toString();
-      const policy = record.get("policy");
-      const metadatas = record.get("metadatas") as any[];
-
-      return {
-        assetName: assetName,
-        policy: policy,
-        metadatas: metadatas,
-      };
+      try {
+        const result = await session.run(cypher, {
+          asset: name,
+          policy: asset.policy,
+        });
+  
+        if (result.records.length === 0) return null;
+  
+        const record = result.records[0];
+  
+        const assetName = Buffer.from(record.get("asset"), "hex").toString();
+        const policy = record.get("policy");
+        const metadatas = record.get("metadatas") as any[];
+  
+        return {
+          assetName: assetName,
+          policy: policy,
+          metadatas: metadatas,
+        };
+      } finally {
+        await session.close();
+      }
     };
     
     const promises = assets.map((asset) => getForAsset(asset));
