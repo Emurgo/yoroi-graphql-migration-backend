@@ -214,7 +214,6 @@ const txHistory =
         const untilBlockNum = await askBlockNumByHash(pool, referenceBestBlock);
         const afterBlockInfo = await askBlockInfo(pool, body.after);
 
-        console.log({ referenceBestBlock, untilBlockNum });
         if (
           untilBlockNum.kind === "error" &&
           untilBlockNum.errMsg === utils.errMsgs.noValue

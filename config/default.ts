@@ -1,10 +1,10 @@
 export default { 
   db: {
-    user: process.env.POSTGRES_USER || "cardano_usr",
-    host: process.env.POSTGRES_HOST || "194.242.56.24",
-    database: process.env.POSTGRES_DB || "cardano_db",
-    password: process.env.POSTGRES_PASSWORD || "XaFrHaAfVdH6Gs",
-    port: process.env.POSTGRES_PORT || 30005
+    user: process.env.POSTGRES_USER || "hasura",
+    host: process.env.POSTGRES_HOST || "/tmp/",
+    database: process.env.POSTGRES_DB || "cexplorer",
+    password: process.env.POSTGRES_PASSWORD || "",
+    port: process.env.POSTGRES_PORT || 5432
   },
   server: {
     addressRequestLimit: 500,

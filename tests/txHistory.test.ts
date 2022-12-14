@@ -522,16 +522,13 @@ describe("/txs/history", function() {
 
   it.only("Should query TXs from the next block if `after.tx` is missing", async() => {
     const result = await axios.post(testableUri, {
-      addresses: [
-        "addr_vkh1sk4l8m992qj258pzh9z9nx673y8vzt0mrx2py2w6fw3fx3j6rfd"
-      ],
+      addresses: ["Ae2tdPwUPEZHu3NZa6kCwet2msq4xrBXKHBDvogFKwMsF18Jca8JHLRBas7"],
+      untilBlock: hashForUntilBlock,
       after: {
-        block: "c2dfd2828d2a6fbeab305a01364cb6a6d740a6efe787422f95c66d01b873a82b",
+        block: "790eb4d6ef2fea7cceebf22c66c20518616d5331966f6f9b4ca3a308b9c3ceb1"
       },
-      untilBlock: "f33e9b772678ede034954d75fc932994fb665c8438fba25128f02ceb38790468"
     });
-    console.log(result.data);
-    expect(result.data).to.have.lengthOf(1);
-    expect(result.data[0].hash).to.equal("bc9af1ca0415ccb2360dff730c9cd8de61f35a3efa1c123af27d4452a0461845");
+    expect(result.data).to.have.lengthOf(2);
+    expect(result.data[0].hash).to.equal("e8acd016e530dce91b697ed702f9f8a82a11fc6c43c77074c223378e77152b01");
   });
 });
