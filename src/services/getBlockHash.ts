@@ -44,10 +44,6 @@ export const handleGetBlockHashBySlot =
       return;
     }
 
-    const blocks = await pool.query(
-      "SELECT epoch_no, epoch_slot_no, encode(hash, 'hex') as hash from block limit 5"
-    );
-    console.log({ blocks: blocks.rows });
     const result = await Promise.all(
       slots.map((slot) =>
         pool

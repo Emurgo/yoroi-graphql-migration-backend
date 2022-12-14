@@ -7,15 +7,15 @@ const s = should();
 
 const data = {
   slot1: {
-    slot: [32, 170673],
-    hash: "be7b0a92973a790458a4ba6df4c5b8596715c7f667b170512937ee54ffe8cc2b",
+    slot: [0, 10_004],
+    hash: "a1b0c8626703d6a746de8565ea3360b82f8b3e4230922578c629275ec5b93257",
   },
   slot2: {
-    slot: [32, 170680],
-    hash: "b1b10ffa5bfa78f56c123dcea9b5d222f9573cf05bba382150b8f1f1d621b376",
+    slot: [32, 170_680],
+    hash: "7984bc3c8b96be0826c5034135f316428212060631706d7c3263854be3dc529f",
   },
   slot3: {
-    slot: [-10, 100000],
+    slot: [-10, 100_000],
     hash: null,
   },
 };
