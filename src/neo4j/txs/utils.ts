@@ -78,11 +78,20 @@ export const mapCertificateKind = (certificateType: Neo4jModel.CertificateType) 
   return certificateToKindMap[certificateType];
 };
 
-export const formatNeo4jBigNumber = (n: Neo4jModel.BigNumber | null) => {
+export const formatNeo4jBigNumber = (n: Neo4jModel.BigNumber | null, type: "string" | "number" = "string") => {
   if (!n) return n;
+
+  const toType = (n: any) => {
+    if (type === "string") {
+      return n.toString();
+    } else {
+      return n;
+    }
+  };
+
   return typeof n === "string" || typeof n === "number"
-    ? n.toString()
-    : n.toNumber().toString();
+    ? toType(n)
+    : toType(n.toNumber());
 };
 
 export const formatNeo4jCertificate = (cert: Neo4jModel.CERTIFICATE, block: Neo4jModel.Block) => {
@@ -91,25 +100,25 @@ export const formatNeo4jCertificate = (cert: Neo4jModel.CERTIFICATE, block: Neo4
     case Neo4jModel.CertificateType.StakeRegistration:
       return {
         kind,
-        certIndex: cert.cert_index,
+        certIndex: formatNeo4jBigNumber(cert.cert_index, "number"),
         rewardAddress: getRewardAddressFromCertificate(cert)
       };
     case Neo4jModel.CertificateType.StakeDeregistration:
       return {
         kind,
-        certIndex: cert.cert_index,
+        certIndex: formatNeo4jBigNumber(cert.cert_index, "number"),
         rewardAddress: getRewardAddressFromCertificate(cert)
       };
     case Neo4jModel.CertificateType.StakeDelegation:
       return {
         kind,
-        certIndex: cert.cert_index,
+        certIndex: formatNeo4jBigNumber(cert.cert_index, "number"),
         poolKeyHash: cert.pool_keyhash,
         rewardAddress: getRewardAddressFromCertificate(cert)
       };
     case Neo4jModel.CertificateType.PoolRegistration:
       return {
-        certIndex: cert.cert_index,
+        certIndex: formatNeo4jBigNumber(cert.cert_index, "number"),
         operator: cert.operator,
         vrfKeyHash: cert.vrf_keyhash,
         pledge: formatNeo4jBigNumber(cert.pledge),
@@ -131,7 +140,7 @@ export const formatNeo4jCertificate = (cert: Neo4jModel.CERTIFICATE, block: Neo4
     case Neo4jModel.CertificateType.PoolRetirement:
       return {
         kind,
-        certIndex: cert.cert_index,
+        certIndex: formatNeo4jBigNumber(cert.cert_index, "number"),
         poolKeyHash: cert.pool_keyhash,
         epoch: formatNeo4jBigNumber(block.epoch),
       };

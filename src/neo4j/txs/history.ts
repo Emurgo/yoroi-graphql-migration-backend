@@ -151,7 +151,7 @@ OPTIONAL MATCH (withdrawal:WITHDRAWAL)-[:withdrewAt]->(tx)
 WITH block, tx, outputs, inputs, collateral_inputs, collect(withdrawal) as withdrawals
 
 OPTIONAL MATCH (cert:CERTIFICATE)-[:generatedAt]->(tx)
-WITH block, tx, outputs, inputs, collateral_inputs, withdrawals, collect(cert) as certificates
+WITH block, tx, outputs, inputs, collateral_inputs, withdrawals, apoc.coll.sortNodes(collect(cert), '^cert_index') as certificates
 
 OPTIONAL MATCH (script:SCRIPT)-[:createdAt]->(tx)
 WITH block, tx, outputs, inputs, collateral_inputs, withdrawals, certificates, collect(script) as scripts
