@@ -106,16 +106,16 @@ export const handleTxSummariesForAddresses =
     const result: { [address: string]: any[] } = {};
     const addressSet = new Set(addresses);
 
-    const paymentCredHashToBech32 =
-      (hash: string) => addressTypes.paymentCredsHashToBech32Mapping.get(hash);
+    const paymentCredHashToBech32 = (hash: string) =>
+      addressTypes.paymentCredsHashToBech32Mapping.get(hash);
 
     for (const row of rows) {
       for (const address of [
         ...row.addrs_in,
         ...row.addrs_out,
         ...row.payment_creds_out.map(paymentCredHashToBech32),
-        ...row.payment_creds_in.map(paymentCredHashToBech32)]
-      ) {
+        ...row.payment_creds_in.map(paymentCredHashToBech32),
+      ]) {
         if (addressSet.has(address)) {
           const summary = {
             txHash: row.txHash.toString("hex"),
