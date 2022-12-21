@@ -9,6 +9,7 @@ import { account } from "./account";
 import { pool } from "./pool";
 import { asset } from "./asset";
 import { tipStatus } from "./tipStatus";
+import { lastBlockBySlot } from "./lastBlockBySlot";
 
 const driver = neo4j.driver(
   config.get("neo4j.url"),
@@ -24,4 +25,5 @@ export const neo = {
   pool: pool(driver),
   asset: asset(driver),
   tipStatus: tipStatus(driver),
+  lastBlockBySlot: lastBlockBySlot(driver),
 };

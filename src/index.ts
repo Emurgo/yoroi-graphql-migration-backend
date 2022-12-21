@@ -401,6 +401,11 @@ const routes: Route[] = [
     interceptor: middleware.handleCamelCaseResponse,
   },
   {
+    path: "/v2.1/lastBlockBySlot",
+    method: "post",
+    handler: neo.lastBlockBySlot.handler,
+  },
+  {
     path: "/v2.1/tipStatus",
     method: "get",
     handler: neo.tipStatus.get.handler,
@@ -472,7 +477,6 @@ const routes: Route[] = [
     handler: handleSignedTx,
     interceptor: middleware.handleCamelCaseResponse,
   },
-  
   {
     path: "/v2.1/multiAsset/supply",
     method: "post",
