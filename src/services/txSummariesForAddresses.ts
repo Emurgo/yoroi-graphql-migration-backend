@@ -80,7 +80,9 @@ export const handleTxSummariesForAddresses =
        block.epoch_no AS epoch,
        block.slot_no AS slot,
        array_agg(output.address) AS addrs_out,
-       array_agg(output_of_input.address) AS addrs_in
+       array_agg(output_of_input.address) AS addrs_in,
+       array_agg(encode(output.payment_cred, 'hex')) AS payment_creds_out,
+       array_agg(encode(output_of_input.payment_cred, 'hex')) AS payment_creds_in
      FROM tx
      INNER JOIN block ON block.id = tx.block_id
      INNER JOIN tx_out AS output ON output.tx_id = tx.id
@@ -104,19 +106,31 @@ export const handleTxSummariesForAddresses =
     const result: { [address: string]: any[] } = {};
     const addressSet = new Set(addresses);
 
+    const paymentCredHashToBech32 =
+      (hash: string) => addressTypes.paymentCredsHashToBech32Mapping.get(hash);
+
     for (const row of rows) {
-      for (const address of [...row.addrs_in, ...row.addrs_out]) {
+      for (const address of [
+        ...row.addrs_in,
+        ...row.addrs_out,
+        ...row.payment_creds_out.map(paymentCredHashToBech32),
+        ...row.payment_creds_in.map(paymentCredHashToBech32)]
+      ) {
         if (addressSet.has(address)) {
-          if (!result[address]) {
-            result[address] = [];
-          }
-          result[address].push({
+          const summary = {
             txHash: row.txHash.toString("hex"),
             blockHash: row.blockHash.toString("hex"),
             txBlockIndex: row.txBlockIndex,
             epoch: row.epoch,
             slot: row.slot,
-          });
+          };
+          if (!result[address]) {
+            result[address] = [summary];
+          } else if (
+            !result[address].some(({ txHash }) => txHash === summary.txHash)
+          ) {
+            result[address].push(summary);
+          }
         }
       }
     }

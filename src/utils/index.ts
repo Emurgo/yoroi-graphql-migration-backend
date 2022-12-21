@@ -254,11 +254,14 @@ export function getAddressesByType(addresses: string[]): {
   bech32: string[];
   paymentCreds: string[];
   stakingKeys: string[];
+  paymentCredsHashToBech32Mapping: Map<string, string>;
 } {
   const legacyAddr = [];
   const bech32 = [];
   const paymentCreds = [];
   const stakingKeys = [];
+  const paymentCredsHashToBech32Mapping: Map<string, string> = new Map();
+
   for (const address of addresses) {
     // 1) Check if it's a Byron-era address
     if (ByronAddress.is_valid(address)) {
@@ -295,7 +298,9 @@ export function getAddressesByType(addresses: string[]): {
         }
         case Prefixes.PAYMENT_KEY_HASH: {
           const payload = fromWords(bech32Info.words);
-          paymentCreds.push(`\\x${Buffer.from(payload).toString("hex")}`);
+          const hash = Buffer.from(payload).toString("hex");
+          paymentCredsHashToBech32Mapping.set(hash, address);
+          paymentCreds.push(`\\x${hash}`);
           break;
         }
         default:
@@ -324,6 +329,7 @@ export function getAddressesByType(addresses: string[]): {
     bech32,
     paymentCreds,
     stakingKeys,
+    paymentCredsHashToBech32Mapping,
   };
 }
 
