@@ -39,6 +39,7 @@ export const summaries = (neo4j: Driver) => ({
     const {
       bech32OrBase58Addresses,
       paymentCreds,
+      addressFormatMap
     } = getAddressesByType(addresses);
 
     const addressFilter: string[] = [];
@@ -74,12 +75,26 @@ export const summaries = (neo4j: Driver) => ({
       WITH collect(hash) as hashes
       MATCH (tx:TX)-[:isAt]->(block:Block)
       WHERE tx.hash IN hashes
+
+      WITH tx, block ORDER BY block.number, tx.tx_index LIMIT 20
+
+      OPTIONAL MATCH (tx_out:TX_OUT)-[:producedBy]->(tx)
+      WITH tx, block, collect(tx_out.address) as outputAddresses, collect(tx_out.payment_cred) as outputPaymentCreds
+
+      OPTIONAL MATCH (tx_in:TX_IN)-[:inputOf]->(tx)
+      OPTIONAL MATCH (src_tx_out:TX_OUT)-[:sourceOf]->(tx_in)
+      WITH tx, block, outputAddresses, outputPaymentCreds, collect(src_tx_out.address) as inputAddresses, collect(src_tx_out.payment_cred) as inputPaymentCreds
+
       RETURN {
           txHash: tx.hash,
           blockHash: block.hash,
           txBlockIndex: tx.tx_index,
           epoch: block.epoch,
-          slot: block.slot
+          slot: block.slot,
+          inputAddresses: inputAddresses,
+          outputAddresses: outputAddresses,
+          outputPaymentCreds: outputPaymentCreds,
+          inputPaymentCreds: inputPaymentCreds
       } as tx
       ORDER BY block.number, tx.tx_index
       LIMIT 20
@@ -92,16 +107,44 @@ export const summaries = (neo4j: Driver) => ({
       txIndex: beforeArgs.txIndex,
     });
 
-    const txs = result.records.map((record) => {
-      const tx = record.get("tx");
-      return {
+    const txs = result.records.reduce((prev, curr) => {
+      const tx = curr.get("tx");
+
+      const summary = {
         txHash: tx.txHash,
         blockHash: tx.blockHash,
         txBlockIndex: formatNeo4jBigNumber(tx.txBlockIndex, "number"),
         epoch: formatNeo4jBigNumber(tx.epoch, "number"),
         slot: formatNeo4jBigNumber(tx.slot, "number"),
       };
-    });
+
+      const inputAddresses = tx.inputAddresses as string[];
+      const outputAddresses = tx.outputAddresses as string[];
+      const outputPaymentCreds = tx.outputPaymentCreds as string[];
+      const inputPaymentCreds = tx.inputPaymentCreds as string[];
+
+      const providedAddresses = Object.keys(addressFormatMap);
+
+      const allAddresses = [
+        ...inputAddresses,
+        ...outputAddresses,
+        ...outputPaymentCreds,
+        ...inputPaymentCreds,
+      ];
+
+      const addresses = allAddresses.filter((address) => providedAddresses.includes(address));
+      for (const address of addresses) {
+        const providedAddress = addressFormatMap[address];
+        if (!prev[providedAddress]) {
+          prev[providedAddress] = [];
+        }
+        if (!prev[providedAddress].find((x: typeof summary) => x.txHash === summary.txHash)) {
+          prev[providedAddress].push(summary);
+        }
+      }
+
+      return prev;
+    }, {} as {[key: string]: any});
 
     await transaction.rollback();
     await session.close();
