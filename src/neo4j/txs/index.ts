@@ -7,6 +7,7 @@ import { ioByIndex } from "./ioByIndex";
 import { get } from "./get";
 import { utxoDiffSincePoint } from "./utxoDiffSincePoint";
 import { utxoAtPoint } from "./utxoAtPoint";
+import { summaries } from "./summaries";
 
 export const txs = (driver: Driver) => ({
   history: history(driver),
@@ -17,4 +18,5 @@ export const txs = (driver: Driver) => ({
   get: get(driver),
   utxoDiffSincePoint: utxoDiffSincePoint(driver),
   utxoAtPoint: utxoAtPoint(driver),
+  summaries: summaries(driver),
 });

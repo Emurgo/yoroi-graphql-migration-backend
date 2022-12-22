@@ -1,8 +1,111 @@
 import { Request, Response } from "express";
-import { Driver } from "neo4j-driver-core";
+import { Driver, Transaction } from "neo4j-driver-core";
+import { getAddressesByType } from "../utils";
+import { formatNeo4jBigNumber } from "./utils";
 
-export const io = (_: Driver) => ({
+const getBeforeArgs = (transaction: Transaction) => async (before: { blockHash: string, txHash?: string }) => {
+  const { blockHash, txHash } = before;
+  const block = await transaction.run(
+    "MATCH (block:Block {hash: $blockHash}) RETURN block.number as number",
+    { blockHash }
+  );
+  const blockNumber = block.records[0].get("number").toNumber() as number;
+
+  let txIndex = null as number | null;
+  if (txHash) {
+    const tx = await transaction.run(
+      "MATCH (tx:TX {hash: $txHash}) RETURN tx.tx_index as tx_index",
+      { txHash }
+    );
+    txIndex = tx.records[0].get("tx_index").toNumber() as number;
+  }
+
+  return { blockNumber, txIndex };
+};
+
+export const summaries = (neo4j: Driver) => ({
   handler: async (req: Request, res: Response) => {
-    return res.send({todo: true});
+    const addresses = req.body.addresses as string[];
+    const before = req.body.before as {
+      blockHash: string,
+      txHash?: string
+    };
+
+    const session = neo4j.session();
+    const transaction = await session.beginTransaction();
+
+    const beforeArgs = await getBeforeArgs(transaction)(before);
+
+    const {
+      bech32OrBase58Addresses,
+      paymentCreds,
+    } = getAddressesByType(addresses);
+
+    const addressFilter: string[] = [];
+    if (bech32OrBase58Addresses.length > 0) {
+      addressFilter.push("o.address in $bech32OrBase58Addresses");
+    }
+    if (paymentCreds.length > 0) {
+      addressFilter.push("o.payment_cred in $paymentCreds");
+    }
+
+    const beforeCondition = [] as string[];
+    beforeCondition.push("block.number < $blockNumber");
+    if (beforeArgs.txIndex !== null) {
+      beforeCondition.push("(block.number = $blockNumber AND tx.tx_index < $txIndex)");
+    }
+
+    const cypher = `
+      CALL {
+          MATCH (o:TX_OUT)-[:producedBy]->(tx:TX)-[:isAt]->(block:Block)
+          WHERE (${addressFilter.join(" OR ")})
+              AND (${beforeCondition.join(" OR ")})
+          RETURN tx.hash as hash
+          ORDER BY block.number, tx.tx_index
+          LIMIT 20
+          UNION
+          MATCH (o:TX_OUT)-[:sourceOf]->(i:TX_IN)-[:inputOf]->(tx:TX)-[:isAt]->(block:Block)
+          WHERE (${addressFilter.join(" OR ")})
+              AND (${beforeCondition.join(" OR ")})
+          RETURN tx.hash as hash
+          ORDER BY block.number, tx.tx_index
+          LIMIT 20
+      }
+      WITH collect(hash) as hashes
+      MATCH (tx:TX)-[:isAt]->(block:Block)
+      WHERE tx.hash IN hashes
+      RETURN {
+          txHash: tx.hash,
+          blockHash: block.hash,
+          txBlockIndex: tx.tx_index,
+          epoch: block.epoch,
+          slot: block.slot
+      } as tx
+      ORDER BY block.number, tx.tx_index
+      LIMIT 20
+    `;
+
+    const result = await transaction.run(cypher, {
+      bech32OrBase58Addresses,
+      paymentCreds,
+      blockNumber: beforeArgs.blockNumber,
+      txIndex: beforeArgs.txIndex,
+    });
+
+    const txs = result.records.map((record) => {
+      const tx = record.get("tx");
+      return {
+        txHash: tx.txHash,
+        blockHash: tx.blockHash,
+        txBlockIndex: formatNeo4jBigNumber(tx.txBlockIndex, "number"),
+        epoch: formatNeo4jBigNumber(tx.epoch, "number"),
+        slot: formatNeo4jBigNumber(tx.slot, "number"),
+      };
+    });
+
+    await transaction.rollback();
+    await session.close();
+
+    return res.json(txs);
   }
 });

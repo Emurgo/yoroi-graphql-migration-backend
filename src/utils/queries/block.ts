@@ -1,8 +1,10 @@
 import { Pool } from "pg";
 
 import { BlockFrag } from "../../Transactions/types";
-import { SAFE_BLOCK_DEPTH } from "../../services/tipStatus";
 import { PoolOrClient } from "../index";
+import config from "config";
+
+const SAFE_BLOCK_DEPTH = parseInt(config.get("safeBlockDifference"));
 
 const baseGetBlockQuery = `SELECT encode(hash, 'hex') as hash,
   epoch_no,

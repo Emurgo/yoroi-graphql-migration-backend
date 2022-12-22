@@ -23,7 +23,6 @@ import { handleGetAccountState } from "./services/accountState";
 import { handleGetRegHistory } from "./services/regHistory";
 import { handleGetRewardHistory } from "./services/rewardHistory";
 import { handleTxStatus } from "./services/txStatus";
-import { handleTxSummariesForAddresses } from "./services/txSummariesForAddresses";
 
 import { HealthChecker } from "./HealthChecker";
 
@@ -535,7 +534,7 @@ const routes: Route[] = [
   {
     path: "/v2.1/txs/summaries",
     method: "post",
-    handler: handleTxSummariesForAddresses(pool),
+    handler: neo.txs.summaries.handler,
   },
 ];
 
