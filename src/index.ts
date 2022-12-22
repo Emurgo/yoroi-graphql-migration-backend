@@ -23,6 +23,7 @@ import { handleGetAccountState } from "./services/accountState";
 import { handleGetRegHistory } from "./services/regHistory";
 import { handleGetRewardHistory } from "./services/rewardHistory";
 import { handleTxStatus } from "./services/txStatus";
+import { handleTxSummariesForAddresses } from "./services/txSummariesForAddresses";
 
 import { HealthChecker } from "./HealthChecker";
 
@@ -530,7 +531,12 @@ const routes: Route[] = [
     method: "get",
     handler: getFundInfo,
     interceptor: middleware.handleCamelCaseResponse,
-  },  
+  },
+  {
+    path: "/v2.1/txs/summaries",
+    method: "post",
+    handler: handleTxSummariesForAddresses(pool),
+  },
 ];
 
 applyRoutes(routes, router);

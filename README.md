@@ -1026,3 +1026,35 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   }
   ```
 </details>
+
+<details>
+  <summary>POST v2.1/txs/summaries</summary>
+  Return transaction summaries for addresses.
+
+  Input
+  ```js
+  {
+    // byron addresses, bech32 address, bech32 stake addresses or addr_vkh
+    addresses: Array<string>,
+    before: {
+      blockHash: string, // return txs before this block
+      txHash?: string, // if specified, also return txs in the block but before this tx
+    },
+  }
+  ```
+
+  Output
+  ```js
+  {
+    [address: string]: [ // for each address in the input address list that has txs
+      {
+        txHash: string, // hash of the tx
+        blockHash: string, // hash of the block containing the tx
+        txBlockIndex: number, // the index of the tx in the block
+        epoch: number, // epoch number of the block containing the tx
+        slot: number, // absolute block number of the block containing the tx
+      }
+    ]
+  }
+  ```
+</details>
