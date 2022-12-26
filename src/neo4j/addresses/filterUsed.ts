@@ -3,11 +3,11 @@ import { Request, Response } from "express";
 import { Driver } from "neo4j-driver-core";
 import { getAddressesByType } from "../utils";
 
-const paymentCredsCypher = `MATCH (o:TX_OUT)-[:sourceOf]->(:TX_IN)
+const paymentCredsCypher = `MATCH (o:TX_OUT)
 WHERE o.payment_cred IN $paymentCreds
 RETURN DISTINCT o.payment_cred as a`;
 
-const addressesCypher = `MATCH (o:TX_OUT)-[:sourceOf]->(:TX_IN)
+const addressesCypher = `MATCH (o:TX_OUT)
 WHERE o.address IN $bech32OrBase58Addresses
 RETURN DISTINCT o.address as a`;
 
