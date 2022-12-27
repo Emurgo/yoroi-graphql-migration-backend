@@ -6,6 +6,7 @@ import {
   StakeCredential
 } from "@emurgo/cardano-serialization-lib-nodejs";
 import { HEX_REGEXP, validateRewardAddress } from "../utils";
+import config from "config";
 
 export const getAddressesByType = (addresses: string[]) => {
   const map: { [key: string]: string } = {};
@@ -20,7 +21,7 @@ export const getAddressesByType = (addresses: string[]) => {
       bech32OrBase58Addresses.push(address);
       map[address] = address;
 
-      const byronAsBech32 = ByronAddress.from_base58(address).to_address().to_bech32();
+      const byronAsBech32 = ByronAddress.from_base58(address).to_address().to_bech32(getBech32Prefix());
 
       bech32OrBase58Addresses.push(byronAsBech32);
       map[byronAsBech32] = address;
@@ -85,7 +86,7 @@ export const getAddressesByType = (addresses: string[]) => {
             }
           }
         } else if (/^[0-8]/.test(address)) {
-          const asBech32 = wasmAddr.to_bech32();
+          const asBech32 = wasmAddr.to_bech32(getBech32Prefix());
           bech32OrBase58Addresses.push(asBech32);
           map[asBech32] = address;
         }
@@ -113,4 +114,12 @@ export const mapNeo4jAssets = (assets: string | [] | null | undefined) => {
       amount: a.amount.toString()
     }))
     : [];
+};
+
+export const getBech32Prefix = () => {
+  if (config.get("network") === "mainnet") {
+    return "addr";
+  }
+
+  return "addr_test";
 };
