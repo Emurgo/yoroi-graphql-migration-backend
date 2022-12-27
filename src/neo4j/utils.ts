@@ -8,6 +8,8 @@ import {
 import { HEX_REGEXP, validateRewardAddress } from "../utils";
 
 export const getAddressesByType = (addresses: string[]) => {
+  const map: { [key: string]: string } = {};
+
   const bech32OrBase58Addresses = [] as string[];
   const paymentCreds = [] as string[];
   const addrKeyHashes = [] as string[];
@@ -16,19 +18,32 @@ export const getAddressesByType = (addresses: string[]) => {
   for (const address of addresses) {
     if (ByronAddress.is_valid(address)) {
       bech32OrBase58Addresses.push(address);
-      bech32OrBase58Addresses.push(ByronAddress.from_base58(address).to_address().to_bech32());
+      map[address] = address;
+
+      const byronAsBech32 = ByronAddress.from_base58(address).to_address().to_bech32();
+
+      bech32OrBase58Addresses.push(byronAsBech32);
+      map[byronAsBech32] = address;
+
       continue;
     }
 
     if (address.startsWith("addr_vkh")) {
       const keyHash = Ed25519KeyHash.from_bech32(address);
       const cred = StakeCredential.from_keyhash(keyHash);
-      paymentCreds.push(Buffer.from(cred.to_bytes()).toString("hex"));
+      const hex = Buffer.from(cred.to_bytes()).toString("hex");
+      
+      paymentCreds.push(hex);
+      map[hex] = address;
+
       continue;
     }
 
     if (address.startsWith("addr") || address.startsWith("addr_test")) {
+
       bech32OrBase58Addresses.push(address);
+      map[address] = address;
+
       continue;
     }
 
@@ -41,7 +56,10 @@ export const getAddressesByType = (addresses: string[]) => {
         const cred = rewardAddress.payment_cred();
         const keyHash = cred.to_keyhash();
         if (keyHash) {
-          addrKeyHashes.push(Buffer.from(keyHash.to_bytes()).toString("hex"));
+          const hex = Buffer.from(keyHash.to_bytes()).toString("hex");
+          
+          addrKeyHashes.push(hex);
+          map[hex] = address;
         }
       }
       continue;
@@ -52,6 +70,8 @@ export const getAddressesByType = (addresses: string[]) => {
         const wasmAddr = Address.from_bytes(Buffer.from(address, "hex"));
         if (validateRewardAddress(wasmAddr)) {
           rewardAddresses.push(address);
+          map[address] = address;
+
           const rewardAddress = RewardAddress.from_address(
             wasmAddr
           );
@@ -59,11 +79,15 @@ export const getAddressesByType = (addresses: string[]) => {
             const cred = rewardAddress.payment_cred();
             const keyHash = cred.to_keyhash();
             if (keyHash) {
-              addrKeyHashes.push(Buffer.from(keyHash.to_bytes()).toString("hex"));
+              const hex = Buffer.from(keyHash.to_bytes()).toString("hex");
+              addrKeyHashes.push(hex);
+              map[hex] = address;
             }
           }
         } else if (/^[0-8]/.test(address)) {
-          bech32OrBase58Addresses.push(wasmAddr.to_bech32());
+          const asBech32 = wasmAddr.to_bech32();
+          bech32OrBase58Addresses.push(asBech32);
+          map[asBech32] = address;
         }
         wasmAddr.free();
         continue;
@@ -75,7 +99,8 @@ export const getAddressesByType = (addresses: string[]) => {
     bech32OrBase58Addresses,
     paymentCreds,
     addrKeyHashes,
-    rewardAddresses
+    rewardAddresses,
+    addressFormatMap: map
   };
 };
 

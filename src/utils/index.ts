@@ -9,10 +9,12 @@ import {
   RewardAddress,
   Transaction,
 } from "@emurgo/cardano-serialization-lib-nodejs";
-import { decode, fromWords } from "bech32";
+import { bech32 } from "bech32";
 import { Prefixes } from "./cip5";
 import { Asset } from "../Transactions/types";
 import { ClientBase, Pool, QueryConfig, QueryResult, QueryResultRow } from "pg";
+
+const { decode, fromWords } = bech32;
 
 export const contentTypeHeaders = {
   headers: { "Content-Type": "application/json" },

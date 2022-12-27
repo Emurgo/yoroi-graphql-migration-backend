@@ -1,9 +1,11 @@
 import axios from "axios";
 import { expect, should } from "chai";
-import { encode, toWords, } from "bech32";
+import { bech32 } from "bech32";
 import { Prefixes } from "../src/utils/cip5";
 
 import { config, } from "./config";
+
+const { encode, toWords } = bech32;
 
 const endpoint = config.apiUrl;
 const s = should();

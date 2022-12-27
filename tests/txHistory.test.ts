@@ -4,8 +4,10 @@ import { resultsForSingleHistory } from "./dataSingleHistory";
 import { config, } from "./config";
 import { Certificate, MirCertPot, TransactionFrag } from "../src/Transactions/types";
 import * as R from "ramda";
-import { encode, toWords, } from "bech32";
+import { bech32 } from "bech32";
 import { Prefixes } from "../src/utils/cip5";
+
+const { encode, toWords } = bech32;
 
 const endpoint = config.apiUrl;
 

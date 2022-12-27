@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { Integer, Driver } from "neo4j-driver-core";
-import { mapNeo4jAssets } from "../utils";
+import { getAddressesByType, mapNeo4jAssets } from "../utils";
 import { formatIOAddress } from "./utils";
 
 export const utxoAtPoint = (driver: Driver) => ({
@@ -26,6 +26,11 @@ export const utxoAtPoint = (driver: Driver) => ({
     const addresses = req.body.addresses as string[];
     const referenceBlockHash = req.body.referenceBlockHash;
 
+    const {
+      bech32OrBase58Addresses,
+      paymentCreds,
+    } = getAddressesByType(addresses);
+
     const cypherBlock = `MATCH (b:Block)
     WHERE b.hash = $hash
     RETURN {
@@ -44,8 +49,16 @@ export const utxoAtPoint = (driver: Driver) => ({
 
       const referenceBlockNumber = referenceBlockResult.records[0].get("block").number.toNumber();
 
+      const addressFilter: string[] = [];
+      if (bech32OrBase58Addresses.length > 0) {
+        addressFilter.push("o.address in $bech32OrBase58Addresses");
+      }
+      if (paymentCreds.length > 0) {
+        addressFilter.push("o.payment_cred in $paymentCreds");
+      }
+
       const cypher = `MATCH (o:TX_OUT)-[:producedBy]->(tx:TX)-[:isAt]->(b:Block)
-      WHERE o.address in $hashes
+      WHERE (${addressFilter.join(" OR ")})
           AND b.number <= $referenceBlockNumber
       WITH o, tx, b
       
@@ -67,7 +80,8 @@ export const utxoAtPoint = (driver: Driver) => ({
       LIMIT $pageSize`;
 
       const result = await transaction.run(cypher, {
-        hashes: addresses,
+        bech32OrBase58Addresses: bech32OrBase58Addresses,
+        paymentCreds: paymentCreds,
         referenceBlockNumber: referenceBlockNumber,
         pageSize: Integer.fromNumber(req.body.pageSize),
         pageNumber: Integer.fromNumber(req.body.page),

@@ -534,7 +534,12 @@ const routes: Route[] = [
     method: "get",
     handler: getFundInfo,
     interceptor: middleware.handleCamelCaseResponse,
-  },  
+  },
+  {
+    path: "/v2.1/txs/summaries",
+    method: "post",
+    handler: neo.txs.summaries.handler,
+  },
 ];
 
 applyRoutes(routes, router);
