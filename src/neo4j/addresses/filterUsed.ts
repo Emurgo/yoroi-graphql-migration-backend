@@ -18,6 +18,7 @@ export const filterUsed = (driver: Driver) => ({
     const {
       bech32OrBase58Addresses,
       paymentCreds,
+      addressFormatMap
     } = getAddressesByType(addresses);
 
     const cypherParts = [];
@@ -49,7 +50,7 @@ export const filterUsed = (driver: Driver) => ({
           const keyHash = cred.to_keyhash();
           return keyHash?.to_bech32("addr_vkh");
         } else {
-          return a;
+          return addressFormatMap[a];
         }
       });
 
