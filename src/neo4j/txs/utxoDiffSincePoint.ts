@@ -443,6 +443,15 @@ export const utxoDiffSincePoint = (driver: Driver) => ({
         } : undefined
       });
 
+      const apiResponse = {} as any;
+      apiResponse.lastFoundSafeblock = lastFoundSafeblock;
+      apiResponse.lastFoundBestblock = lastFoundBestblock;
+
+      if (bech32OrBase58Addresses.length === 0 && paymentCreds.length === 0) {
+        apiResponse.diffItems = [];
+        return res.send(apiResponse);
+      }
+
       const filterBy = [] as ("address" | "payment_cred")[];
       if (bech32OrBase58Addresses.length > 0) {
         filterBy.push("address");
@@ -465,10 +474,6 @@ export const utxoDiffSincePoint = (driver: Driver) => ({
         afterTxIndex: afterTxIndex,
         diffLimit: Integer.fromNumber(diffLimit),
       });
-
-      const apiResponse = {} as any;
-      apiResponse.lastFoundSafeblock = lastFoundSafeblock;
-      apiResponse.lastFoundBestblock = lastFoundBestblock;
 
       if (result.records.length === 0) {
         apiResponse.diffItems = [];

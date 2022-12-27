@@ -31,6 +31,10 @@ export const utxoAtPoint = (driver: Driver) => ({
       paymentCreds,
     } = getAddressesByType(addresses);
 
+    if (bech32OrBase58Addresses.length === 0 && paymentCreds.length === 0) {
+      return res.send([]);
+    }
+
     const cypherBlock = `MATCH (b:Block)
     WHERE b.hash = $hash
     RETURN {
