@@ -13,8 +13,8 @@ import { mapNeo4jAssets } from "../utils";
 const network = config.get("network");
 
 
-const GENESIS_UNIX_TIMESTAMP = network === "mainnet" ? 1506243091 : 1654048800;
-const SHELLEY_UNIX_TIMESTAMP = network === "mainnet" ? 1596491091 : 1655776800;
+const GENESIS_UNIX_TIMESTAMP = network === "mainnet" ? 1506243091 : 1654041600;
+const SHELLEY_UNIX_TIMESTAMP = network === "mainnet" ? 1596491091 : 1655769600;
 const SHELLEY_INITIAL_SLOT = network === "mainnet" ? 4924800 : 86400;
 const BYRON_SLOT_DURATION_IN_SECONDS = 20;
 
