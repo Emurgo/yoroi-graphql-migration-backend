@@ -10,13 +10,41 @@ import {
 } from "@emurgo/cardano-serialization-lib-nodejs";
 import { mapNeo4jAssets } from "../utils";
 
-const network = config.get("network");
+const network = config.get<string>("network");
+
+const erasTimestamps: {
+  [key: string]: {
+    genesisUnixTimestamp: number;
+    shelleyUnixTimestamp: number;
+    shelleyInitialSlot: number;
+    byronSlotDurationInSeconds: number;
+  };
+} = {
+  mainnet: {
+    genesisUnixTimestamp: 1506243091,
+    shelleyUnixTimestamp: 1596491091,
+    shelleyInitialSlot: 4924800,
+    byronSlotDurationInSeconds: 20,
+  },
+  testnet: {
+    genesisUnixTimestamp: 1654041600,
+    shelleyUnixTimestamp: 1655769600,
+    shelleyInitialSlot: 86400,
+    byronSlotDurationInSeconds: 20,
+  },
+  preview: {
+    genesisUnixTimestamp: 1666648800,
+    shelleyUnixTimestamp: 1666648800,
+    shelleyInitialSlot: 0,
+    byronSlotDurationInSeconds: 20,
+  }
+};
 
 
-const GENESIS_UNIX_TIMESTAMP = network === "mainnet" ? 1506243091 : 1654041600;
-const SHELLEY_UNIX_TIMESTAMP = network === "mainnet" ? 1596491091 : 1655769600;
-const SHELLEY_INITIAL_SLOT = network === "mainnet" ? 4924800 : 86400;
-const BYRON_SLOT_DURATION_IN_SECONDS = 20;
+const GENESIS_UNIX_TIMESTAMP = erasTimestamps[network].genesisUnixTimestamp;
+const SHELLEY_UNIX_TIMESTAMP = erasTimestamps[network].shelleyUnixTimestamp;
+const SHELLEY_INITIAL_SLOT = erasTimestamps[network].shelleyInitialSlot;
+const BYRON_SLOT_DURATION_IN_SECONDS = erasTimestamps[network].byronSlotDurationInSeconds;
 
 export const neo4jCast = <T>(r: any) => {
   return r.properties as T;
