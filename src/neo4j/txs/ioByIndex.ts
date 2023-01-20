@@ -3,7 +3,6 @@ import { Driver } from "neo4j-driver-core";
 import { mapNeo4jAssets } from "../utils";
 import { formatIOAddress } from "./utils";
 
-
 export const ioByIndex = (driver: Driver) => ({
   handler: async (req: Request, res: Response) => {
 
@@ -12,28 +11,23 @@ export const ioByIndex = (driver: Driver) => ({
     WITH tx
     
     MATCH (o:TX_OUT)-[:producedBy]->(tx)
-    WITH tx, collect(o) as outputs 
+    WHERE o.output_index = $index
+    WITH tx, collect(o) as output 
     
-    RETURN tx, outputs`;
+    RETURN output`;
 
     const session = driver.session();
     try {
-      const result = await session.run(cypher, { hash: req.params.tx_hash });
+      const result = await session.run(cypher, { hash: req.params.tx_hash, index: parseInt(req.params.index) });
 
       if (result.records && result.records.length > 0) {
-        const outputs = result.records[0].get("outputs");
-
-        const reqIndexNumber = Number(req.params.index);
-        
-        const foundInInputs = outputs.find((output: any) => {
-          return output.properties.index.toNumber() === reqIndexNumber;
-        });
+        const output = result.records[0].get("output")[0];
 
         const outputsForResponse = {
-          address: formatIOAddress(foundInInputs.properties.address),
-          amount: foundInInputs.properties.amount.toNumber().toString(),
-          dataHash: (foundInInputs.properties.datum_hash === undefined) ? null : foundInInputs.properties.datum_hash,
-          assets: mapNeo4jAssets(foundInInputs.properties.assets),
+          address: formatIOAddress(output.properties.address),
+          amount: output.properties.amount.toNumber().toString(),
+          dataHash: (output.properties.datum_hash === undefined) ? null : output.properties.datum_hash,
+          assets: mapNeo4jAssets(output.properties.assets),
         };
 
         const r = {
@@ -43,7 +37,7 @@ export const ioByIndex = (driver: Driver) => ({
         return res.send(r);
       }
 
-      return res.send(res);
+      return res.send("No outputs found");
     } finally {
       await session.close();
     }
