@@ -218,25 +218,25 @@ const txHistory =
           untilBlockNum.kind === "error" &&
           untilBlockNum.errMsg === utils.errMsgs.noValue
         ) {
-          throw new Error("REFERENCE_BEST_BLOCK_MISMATCH");
+          throw new middleware.ResponseErr("REFERENCE_BEST_BLOCK_MISMATCH", 400);
         }
         if (
           afterBlockInfo.kind === "error" &&
           typeof referenceTx !== "undefined"
         ) {
-          throw new Error("REFERENCE_TX_NOT_FOUND");
+          throw new middleware.ResponseErr("REFERENCE_TX_NOT_FOUND", 400);
         }
 
         if (
           afterBlockInfo.kind === "ok" &&
           afterBlockInfo.value.block.hash !== referenceBlock
         ) {
-          throw new Error("REFERENCE_BLOCK_MISMATCH");
+          throw new middleware.ResponseErr("REFERENCE_BLOCK_MISMATCH", 400);
         }
 
         // when things are running smoothly, we would never hit this case case
         if (untilBlockNum.kind !== "ok") {
-          throw new Error(untilBlockNum.errMsg);
+          throw new middleware.ResponseErr(untilBlockNum.errMsg, 400);
         }
         const afterInfo = getOrDefaultAfterParam(afterBlockInfo);
 
@@ -255,13 +255,13 @@ const txHistory =
             return;
           }
           case "error":
-            throw new Error(maybeTxs.errMsg);
+            throw new middleware.ResponseErr(maybeTxs.errMsg, 400);
           default:
             return utils.assertNever(maybeTxs);
         }
       }
       case "error":
-        throw new Error(verifiedBody.errMsg);
+        throw new middleware.ResponseErr(verifiedBody.errMsg, 400);
       default:
         return utils.assertNever(verifiedBody);
     }

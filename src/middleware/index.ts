@@ -46,11 +46,22 @@ export const logErrors = (
   next(err);
 };
 
+
+export class ResponseErr extends Error {
+  statusCode: number
+  constructor(msg: string, statusCode = 500) {
+    super(msg);
+    this.statusCode = statusCode;
+  }
+}
+
 export const errorHandler = (
-  err: Error,
+  err: Error | ResponseErr,
   req: Request,
   res: Response,
   _next: NextFunction
 ): void => {
-  res.status(500).send({ error: { response: err.message } });
+  const statusCode = err instanceof ResponseErr ? err.statusCode : 500;
+  const message = err.message;
+  res.status(statusCode).send({ error: { response: message } });
 };

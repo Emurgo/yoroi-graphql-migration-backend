@@ -81,7 +81,7 @@ export const pgSnapshotReadWrapper =
   (handlerFactory: (pool: PoolOrClient) => Handler) =>
   (pool: Pool): Handler =>
   async (req: Request, res: Response, next: NextFunction) => {
-    pgSnapshotRead(pool, async (client) =>
+    await pgSnapshotRead(pool, async (client) =>
       handlerFactory(client)(req, res, next)
     );
   };
