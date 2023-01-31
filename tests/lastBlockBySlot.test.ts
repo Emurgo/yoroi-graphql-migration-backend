@@ -2,8 +2,7 @@ import axios from "axios";
 import { expect, should } from "chai";
 import { config } from "./config";
 
-// const endpoint = config.apiUrl + "v2.1/lastBlockBySlot";
-const endpoint = "https://iohk-mainnet.yoroiwallet.com/api/v2.1/lastBlockBySlot";
+const endpoint = config.apiUrl + "v2.1/lastBlockBySlot";
 const s = should();
 
 const data = {

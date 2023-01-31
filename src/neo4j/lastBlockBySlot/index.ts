@@ -53,21 +53,12 @@ export const lastBlockBySlot = (driver: Driver) => ({
         const epochSlot = slot[1];
 
         const session = driver.session();
-
         const result = (await session.run(cypher, { epoch: epoch, epochSlot: epochSlot })).records[0];
-
-        let value: string | null;
-        if (result) {
-          value = result.get("hash");
-        }
-        else {
-          value = null;
-        }
-
+        const blockHash: string | null = result ? result.get("hash") : null;
         await session.close();
 
         const key = `${epoch},${epochSlot}`;
-        blockHashes[key] = value;
+        blockHashes[key] = blockHash;
       })
     );
 
