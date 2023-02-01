@@ -1,11 +1,5 @@
 # yoroi-graphql-migration-backend
 
-## Background
-
-[Adrestia](https://github.com/input-output-hk/adrestia) is the new codename for all Cardano tooling and includes tooling that will have long-term support.
-
-Adrestia recommends powering light clients with [GraphQL](https://graphql.org/). This is done by using [cardano-db-sync](https://github.com/input-output-hk/cardano-db-sync) to dump the database to a database and then using [cardano-graphql](https://github.com/input-output-hk/cardano-graphql) to serve that data.
-
 ## Purpose of this project
 
 This provides an API useful to light wallets for Cardano.
