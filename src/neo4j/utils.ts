@@ -21,10 +21,16 @@ export const getAddressesByType = (addresses: string[]) => {
       bech32OrBase58Addresses.push(address);
       map[address] = address;
 
-      const byronAsBech32 = ByronAddress.from_base58(address).to_address().to_bech32(getBech32Prefix());
+      const byronAddress = ByronAddress.from_base58(address);
+      const actualAddress = byronAddress.to_address();
+
+      const byronAsBech32 = actualAddress.to_bech32(getBech32Prefix());
 
       bech32OrBase58Addresses.push(byronAsBech32);
       map[byronAsBech32] = address;
+
+      actualAddress.free();
+      byronAddress.free();
 
       continue;
     }
@@ -36,6 +42,9 @@ export const getAddressesByType = (addresses: string[]) => {
       
       paymentCreds.push(hex);
       map[hex] = address;
+
+      cred.free();
+      keyHash.free();
 
       continue;
     }
@@ -49,11 +58,13 @@ export const getAddressesByType = (addresses: string[]) => {
     }
 
     if (address.startsWith("stake") || address.startsWith("stake_test")) {
+      const actualAddress = Address.from_bech32(address);
       const rewardAddress = RewardAddress.from_address(
-        Address.from_bech32(address)
+        actualAddress
       );
       if (rewardAddress) {
-        rewardAddresses.push(Buffer.from(rewardAddress.to_address().to_bytes()).toString("hex"));
+        const rewardAddressToAddress = rewardAddress.to_address();
+        rewardAddresses.push(Buffer.from(rewardAddressToAddress.to_bytes()).toString("hex"));
         const cred = rewardAddress.payment_cred();
         const keyHash = cred.to_keyhash();
         if (keyHash) {
@@ -61,8 +72,13 @@ export const getAddressesByType = (addresses: string[]) => {
           
           addrKeyHashes.push(hex);
           map[hex] = address;
+          keyHash.free();
         }
+        cred.free();
+        rewardAddressToAddress.free();
+        rewardAddress.free();
       }
+      actualAddress.free();
       continue;
     }
 
@@ -83,7 +99,10 @@ export const getAddressesByType = (addresses: string[]) => {
               const hex = Buffer.from(keyHash.to_bytes()).toString("hex");
               addrKeyHashes.push(hex);
               map[hex] = address;
+              keyHash.free();
             }
+            cred.free();
+            rewardAddress.free();
           }
         } else if (/^[0-8]/.test(address)) {
           const asBech32 = wasmAddr.to_bech32(getBech32Prefix());
