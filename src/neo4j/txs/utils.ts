@@ -255,6 +255,7 @@ export const neo4jTxDataToResponseTxData = (records: any): any[] => {
       block_hash: block.hash,
       time: blockDate(block),
       epoch: neo4jBigNumberAsNumber(block.epoch),
+      globalSlot: neo4jBigNumberAsNumber(block.slot),
       slot: neo4jBigNumberAsNumber(block.epoch_slot),
       inputs: inputs.map(i => ({
         address: formatIOAddress(i.tx_out?.address),
