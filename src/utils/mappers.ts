@@ -11,12 +11,8 @@ import {
   Asset,
 } from "../Transactions/types";
 
-import {
-  GeneralTransactionMetadata,
-  TransactionMetadatum,
-  BigNum,
-  MetadataMap,
-} from "@emurgo/cardano-serialization-lib-nodejs";
+import * as Cardano from "@emurgo/cardano-serialization-lib-nodejs";
+import { createCslContext } from "./csl";
 
 const MAX_INT = "2147483647";
 
@@ -141,48 +137,45 @@ export const mapTransactionFragToResponse = (tx: TransactionFrag) => {
 function buildMetadataObj(
   metadataMap: null | Record<string, string>
 ): null | string {
-  if (metadataMap == null) return null;
-  const metadataWasm = GeneralTransactionMetadata.new();
-  for (const key of Object.keys(metadataMap)) {
-    const keyWasm = BigNum.from_str(key);
-    // the cbor inserted into SQL is not the full metadata for the transaction
-    // instead, each row is a CBOR map with a single entry <transaction_metadatum_label, transaction_metadatum>
-    let singletonMap;
-    let map;
-    try {
-      singletonMap = TransactionMetadatum.from_bytes(
-        Buffer.from(
-          // need to cutoff the \\x prefix added by SQL
-          metadataMap[key].substring(2),
-          "hex"
-        )
-      );
-      map = singletonMap.as_map();
-    } catch {
-      map = MetadataMap.new();
-      map.insert_str(
-        "error",
-        TransactionMetadatum.new_text("failed to deserialize")
-      );
-    }
+  const ctx = createCslContext();
+  
+  try {
+    if (metadataMap == null) return null;
+    const metadataWasm = ctx.wrap(Cardano.GeneralTransactionMetadata.new());
+    for (const key of Object.keys(metadataMap)) {
+      const keyWasm = ctx.wrap(Cardano.BigNum.from_str(key));
+      // the cbor inserted into SQL is not the full metadata for the transaction
+      // instead, each row is a CBOR map with a single entry <transaction_metadatum_label, transaction_metadatum>
+      let singletonMap: Cardano.TransactionMetadatum | undefined;
+      let map: Cardano.MetadataMap | undefined;
+      try {
+        singletonMap = ctx.wrap(Cardano.TransactionMetadatum.from_bytes(
+          Buffer.from(
+            // need to cutoff the \\x prefix added by SQL
+            metadataMap[key].substring(2),
+            "hex"
+          ))
+        );
+        map = ctx.wrap(singletonMap.as_map());
+      } catch {
+        map = ctx.wrap(Cardano.MetadataMap.new());
+        map.insert_str(
+          "error",
+          ctx.wrap(Cardano.TransactionMetadatum.new_text("failed to deserialize"))
+        );
+      }
 
-    const keys = map.keys();
-    for (let i = 0; i < keys.len(); i++) {
-      const cborKey = keys.get(i);
-      const datumWasm = map.get(cborKey);
-      metadataWasm.insert(keyWasm, datumWasm);
-      datumWasm.free();
-      cborKey.free();
+      const keys = ctx.wrap(map.keys());
+      for (let i = 0; i < keys.len(); i++) {
+        const cborKey = ctx.wrap(keys.get(i));
+        const datumWasm = ctx.wrap(map.get(cborKey));
+        metadataWasm.insert(keyWasm, datumWasm);
+      }
     }
-    keyWasm.free();
-    if (singletonMap) {
-      singletonMap.free();
-    }
-    map.free();
-    keys.free();
+    const result = Buffer.from(metadataWasm.to_bytes()).toString("hex");
+
+    return result;
+  } finally {
+    ctx.freeAll();
   }
-  const result = Buffer.from(metadataWasm.to_bytes()).toString("hex");
-  metadataWasm.free();
-
-  return result;
 }

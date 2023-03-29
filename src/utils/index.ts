@@ -1,18 +1,11 @@
 import { blake2b } from "hash-wasm";
 import { NextFunction, Request, Response, Router } from "express";
-import {
-  Address,
-  BaseAddress,
-  ByronAddress,
-  EnterpriseAddress,
-  PointerAddress,
-  RewardAddress,
-  Transaction,
-} from "@emurgo/cardano-serialization-lib-nodejs";
+import * as Cardano from "@emurgo/cardano-serialization-lib-nodejs";
 import { bech32 } from "bech32";
 import { Prefixes } from "./cip5";
 import { Asset } from "../Transactions/types";
 import { ClientBase, Pool, QueryConfig, QueryResult, QueryResultRow } from "pg";
+import { createCslContext } from "./csl";
 
 const { decode, fromWords } = bech32;
 
@@ -203,45 +196,55 @@ export const extractAssets = (obj: null | any): Asset[] => {
   });
 };
 
-export function getSpendingKeyHash(wasmAddr: Address): undefined | string {
-  const getResult = (bytes: Uint8Array | undefined) => {
-    if (bytes == null) return undefined;
-    return Buffer.from(bytes).toString("hex");
-  };
+export function getSpendingKeyHash(wasmAddr: Cardano.Address): undefined | string {
+  const ctx = createCslContext();
 
-  {
-    const baseAddr = BaseAddress.from_address(wasmAddr);
-    if (baseAddr) {
-      const result = getResult(
-        baseAddr.payment_cred().to_keyhash()?.to_bytes()
-      );
-      baseAddr.free();
-      return result;
+  try {
+    const getResult = (bytes: Uint8Array | undefined) => {
+      if (bytes == null) return undefined;
+      return Buffer.from(bytes).toString("hex");
+    };
+  
+    {
+      const baseAddr = ctx.wrapU(Cardano.BaseAddress.from_address(wasmAddr));
+      if (baseAddr) {
+        const result = getResult(
+          ctx.wrapU(ctx.wrap(baseAddr.payment_cred()).to_keyhash())?.to_bytes()
+        );
+        return result;
+      }
     }
-  }
-  {
-    const ptrAddr = PointerAddress.from_address(wasmAddr);
-    if (ptrAddr) {
-      const result = getResult(ptrAddr.payment_cred().to_keyhash()?.to_bytes());
-      ptrAddr.free();
-      return result;
+    {
+      const ptrAddr = ctx.wrapU(Cardano.PointerAddress.from_address(wasmAddr));
+      if (ptrAddr) {
+        const result = getResult(
+          ctx.wrapU(ctx.wrap(ptrAddr.payment_cred()).to_keyhash())?.to_bytes()
+        );
+        return result;
+      }
     }
-  }
-  {
-    const enterpriseAddr = EnterpriseAddress.from_address(wasmAddr);
-    if (enterpriseAddr) {
-      const result = getResult(
-        enterpriseAddr.payment_cred().to_keyhash()?.to_bytes()
-      );
-      enterpriseAddr.free();
-      return result;
+    {
+      const enterpriseAddr = ctx.wrapU(Cardano.EnterpriseAddress.from_address(wasmAddr));
+      if (enterpriseAddr) {
+        const result = getResult(
+          ctx.wrapU(ctx.wrap(enterpriseAddr.payment_cred()).to_keyhash())?.to_bytes()
+        );
+        return result;
+      }
     }
+  } finally {
+    ctx.freeAll();
   }
 }
 
-export function validateRewardAddress(wasmAddr: Address): boolean {
-  const rewardAddr = RewardAddress.from_address(wasmAddr);
-  return rewardAddr != null;
+export function validateRewardAddress(wasmAddr: Cardano.Address): boolean {
+  const ctx = createCslContext();
+  try {
+    const rewardAddr = ctx.wrapU(Cardano.RewardAddress.from_address(wasmAddr));
+    return rewardAddr != null;
+  } finally {
+    ctx.freeAll();
+  }
 }
 
 export function getAddressesByType(addresses: string[]): {
@@ -255,83 +258,92 @@ export function getAddressesByType(addresses: string[]): {
   paymentCreds: string[];
   stakingKeys: string[];
 } {
-  const legacyAddr = [];
-  const bech32 = [];
-  const paymentCreds = [];
-  const stakingKeys = [];
-  for (const address of addresses) {
-    // 1) Check if it's a Byron-era address
-    if (ByronAddress.is_valid(address)) {
-      legacyAddr.push(address);
-      continue;
-    }
+  const ctx = createCslContext();
 
-    try {
-      const bech32Info = decode(address, 1000);
-      switch (bech32Info.prefix) {
-        case Prefixes.ADDR: {
-          bech32.push(address);
-          break;
-        }
-        case Prefixes.ADDR_TEST: {
-          bech32.push(address);
-          break;
-        }
-        case Prefixes.STAKE: {
-          const wasmBech32 = Address.from_bech32(address);
-          stakingKeys.push(
-            `\\x${Buffer.from(wasmBech32.to_bytes()).toString("hex")}`
-          );
-          wasmBech32.free();
-          break;
-        }
-        case Prefixes.STAKE_TEST: {
-          const wasmBech32 = Address.from_bech32(address);
-          stakingKeys.push(
-            `\\x${Buffer.from(wasmBech32.to_bytes()).toString("hex")}`
-          );
-          wasmBech32.free();
-          break;
-        }
-        case Prefixes.PAYMENT_KEY_HASH: {
-          const payload = fromWords(bech32Info.words);
-          paymentCreds.push(`\\x${Buffer.from(payload).toString("hex")}`);
-          break;
-        }
-        default:
-          continue;
-      }
-      continue;
-    } catch (_e) {
-      // silently discard any non-valid Cardano addresses
-    }
-    try {
-      if (HEX_REGEXP.test(address)) {
-        const wasmAddr = Address.from_bytes(Buffer.from(address, "hex"));
-        if (validateRewardAddress(wasmAddr)) {
-          stakingKeys.push(`\\x${address}`);
-        }
-        wasmAddr.free();
+  try {
+    const legacyAddr = [];
+    const bech32 = [];
+    const paymentCreds = [];
+    const stakingKeys = [];
+    for (const address of addresses) {
+      // 1) Check if it's a Byron-era address
+      if (Cardano.ByronAddress.is_valid(address)) {
+        legacyAddr.push(address);
         continue;
       }
-    } catch (_e) {
-      // silently discard any non-valid Cardano addresses
-    }
-  }
 
-  return {
-    legacyAddr,
-    bech32,
-    paymentCreds,
-    stakingKeys,
-  };
+      try {
+        const bech32Info = decode(address, 1000);
+        switch (bech32Info.prefix) {
+          case Prefixes.ADDR: {
+            bech32.push(address);
+            break;
+          }
+          case Prefixes.ADDR_TEST: {
+            bech32.push(address);
+            break;
+          }
+          case Prefixes.STAKE: {
+            const wasmBech32 = ctx.wrap(Cardano.Address.from_bech32(address));
+            stakingKeys.push(
+              `\\x${Buffer.from(wasmBech32.to_bytes()).toString("hex")}`
+            );
+            break;
+          }
+          case Prefixes.STAKE_TEST: {
+            const wasmBech32 = ctx.wrap(Cardano.Address.from_bech32(address));
+            stakingKeys.push(
+              `\\x${Buffer.from(wasmBech32.to_bytes()).toString("hex")}`
+            );
+            break;
+          }
+          case Prefixes.PAYMENT_KEY_HASH: {
+            const payload = fromWords(bech32Info.words);
+            paymentCreds.push(`\\x${Buffer.from(payload).toString("hex")}`);
+            break;
+          }
+          default:
+            continue;
+        }
+        continue;
+      } catch (_e) {
+        // silently discard any non-valid Cardano addresses
+      }
+      try {
+        if (HEX_REGEXP.test(address)) {
+          const wasmAddr = ctx.wrap(Cardano.Address.from_bytes(Buffer.from(address, "hex")));
+          if (validateRewardAddress(wasmAddr)) {
+            stakingKeys.push(`\\x${address}`);
+          }
+          continue;
+        }
+      } catch (_e) {
+        // silently discard any non-valid Cardano addresses
+      }
+    }
+
+    return {
+      legacyAddr,
+      bech32,
+      paymentCreds,
+      stakingKeys,
+    };
+  } finally {
+    ctx.freeAll();
+  }
 }
 
 export async function calculateTxId(signedTx: string): Promise<string> {
-  const txBuffer = Buffer.from(signedTx, "base64");
-  const tx = Transaction.from_bytes(txBuffer);
-  const txBody = tx.body();
+  const ctx = createCslContext();
 
-  const blake2bTxHash = await blake2b(txBody.to_bytes(), 256);
-  return blake2bTxHash;
+  try {
+    const txBuffer = Buffer.from(signedTx, "base64");
+    const tx = ctx.wrap(Cardano.Transaction.from_bytes(txBuffer));
+    const txBody = ctx.wrap(tx.body());
+
+    const blake2bTxHash = await blake2b(txBody.to_bytes(), 256);
+    return blake2bTxHash;
+  } finally {
+    ctx.freeAll();
+  }
 }

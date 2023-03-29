@@ -1,14 +1,8 @@
 import { Integer, Transaction } from "neo4j-driver";
 import config from "config";
-import {
-  Address,
-  ByronAddress,
-  Ed25519KeyHash,
-  NetworkInfo,
-  RewardAddress,
-  StakeCredential
-} from "@emurgo/cardano-serialization-lib-nodejs";
+import * as Cardano from "@emurgo/cardano-serialization-lib-nodejs";
 import { mapNeo4jAssets } from "../utils";
+import { createCslContext } from "../../utils/csl";
 
 const network = config.get<string>("network");
 
@@ -84,22 +78,26 @@ export const getScriptsSize = (scripts: Neo4jModel.SCRIPT[]) => {
 };
 
 const getRewardAddressFromCertificate = (cert: Neo4jModel.CERTIFICATE) => {
-  if (cert.addrKeyHash) {
-    const rewardAddress = RewardAddress.new(
-      config.get("network") === "mainnet"
-        ? NetworkInfo.mainnet().network_id()
-        : NetworkInfo.testnet().network_id(),
-      StakeCredential.from_keyhash(
-        Ed25519KeyHash.from_bytes(
-          Buffer.from(cert.addrKeyHash, "hex")
+  const ctx = createCslContext();
+  try {
+    if (cert.addrKeyHash) {
+      const rewardAddress = ctx.wrap(Cardano.RewardAddress.new(
+        config.get("network") === "mainnet"
+          ? ctx.wrap(Cardano.NetworkInfo.mainnet()).network_id()
+          : ctx.wrap(Cardano.NetworkInfo.testnet()).network_id(),
+          ctx.wrap(Cardano.StakeCredential.from_keyhash(
+            ctx.wrap(Cardano.Ed25519KeyHash.from_bytes(Buffer.from(cert.addrKeyHash, "hex"))
+          ))
         )
-      )
-    );
-
-    return Buffer.from(rewardAddress.to_address().to_bytes()).toString("hex");
+      ));
+  
+      return Buffer.from(ctx.wrap(rewardAddress.to_address()).to_bytes()).toString("hex");
+    }
+  
+    return null;
+  } finally {
+    ctx.freeAll();
   }
-
-  return null;
 };
 
 export const mapCertificateKind = (certificateType: Neo4jModel.CertificateType) => {
@@ -181,22 +179,28 @@ export const formatNeo4jCertificate = (cert: Neo4jModel.CERTIFICATE, block: Neo4
 export const formatIOAddress = (addr?: string) => {
   if (!addr) return addr;
 
-  if (ByronAddress.is_valid(addr)) {
+  const ctx = createCslContext();
+
+  if (Cardano.ByronAddress.is_valid(addr)) {
     return addr;
   }
 
-  if (addr.startsWith("addr") || addr.startsWith("addr_test")) {
-    const address = Address.from_bech32(addr);
-    const hex = Buffer.from(address.to_bytes()).toString("hex");
-
-    if (hex.startsWith("8")) {
-      const byronAddress = ByronAddress.from_address(address);
-      if (!byronAddress) return addr;
-
-      return byronAddress.to_base58();
+  try {
+    if (addr.startsWith("addr") || addr.startsWith("addr_test")) {
+      const address = ctx.wrap(Cardano.Address.from_bech32(addr));
+      const hex = Buffer.from(address.to_bytes()).toString("hex");
+  
+      if (hex.startsWith("8")) {
+        const byronAddress = ctx.wrapU(Cardano.ByronAddress.from_address(address));
+        if (!byronAddress) return addr;
+  
+        return byronAddress.to_base58();
+      }
+  
+      return addr;
     }
-
-    return addr;
+  } finally {
+    ctx.freeAll();
   }
 
   return addr;

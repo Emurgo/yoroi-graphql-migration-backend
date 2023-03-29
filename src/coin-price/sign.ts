@@ -1,4 +1,5 @@
 import CardanoWasm from "@emurgo/cardano-serialization-lib-nodejs";
+import { CslContext } from "../utils/csl";
 import type { Ticker } from "./types";
 
 export function serializeTicker(ticker: Ticker): Buffer {
@@ -16,19 +17,21 @@ export function serializeTicker(ticker: Ticker): Buffer {
 export function sign(
   obj: any,
   serializer: (arg0: any) => Buffer,
-  privateKey: CardanoWasm.PrivateKey
+  privateKey: CardanoWasm.PrivateKey,
+  ctx: CslContext
 ): string {
-  return privateKey.sign(serializer(obj)).to_hex();
+  return ctx.wrap(privateKey.sign(serializer(obj))).to_hex();
 }
 
 export function verify(
   obj: any,
   serializer: (arg0: any) => Buffer,
   signatureHex: string,
-  publicKey: CardanoWasm.PublicKey
+  publicKey: CardanoWasm.PublicKey,
+  ctx: CslContext
 ): boolean {
   return publicKey.verify(
     serializer(obj),
-    CardanoWasm.Ed25519Signature.from_bytes(Buffer.from(signatureHex, "hex"))
+    ctx.wrap(CardanoWasm.Ed25519Signature.from_bytes(Buffer.from(signatureHex, "hex")))
   );
 }

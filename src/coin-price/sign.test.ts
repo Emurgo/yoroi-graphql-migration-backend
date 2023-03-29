@@ -5,6 +5,7 @@ import {
   PublicKey,
 } from "@emurgo/cardano-serialization-lib-nodejs";
 import { serializeTicker, sign, verify } from "./sign";
+import { createCslContext } from "../utils/csl";
 
 const TICKER = {
   from: "ADA",
@@ -18,10 +19,13 @@ const PUBLIC_KEY =
   "4711516aac6adccd06054939c45e2487df239ba86cc277ae56aaac0a83f0bf96";
 
 it("sign and verify a ticker", () => {
+  const ctx = createCslContext();
+
   const signature = sign(
     TICKER,
     serializeTicker,
-    PrivateKey.from_extended_bytes(Buffer.from(PRIVATE_KEY, "hex"))
+    ctx.wrap(PrivateKey.from_extended_bytes(Buffer.from(PRIVATE_KEY, "hex"))),
+    ctx
   );
 
   expect(
@@ -29,7 +33,8 @@ it("sign and verify a ticker", () => {
       TICKER,
       serializeTicker,
       signature,
-      PublicKey.from_bytes(Buffer.from(PUBLIC_KEY, "hex"))
+      ctx.wrap(PublicKey.from_bytes(Buffer.from(PUBLIC_KEY, "hex"))),
+      ctx
     )
   ).to.equal(true);
 
@@ -39,7 +44,10 @@ it("sign and verify a ticker", () => {
       TICKER,
       serializeTicker,
       invalidSig,
-      PublicKey.from_bytes(Buffer.from(PUBLIC_KEY, "hex"))
+      ctx.wrap(PublicKey.from_bytes(Buffer.from(PUBLIC_KEY, "hex"))),
+      ctx
     )
   ).to.equal(false);
+
+  ctx.freeAll();
 });
