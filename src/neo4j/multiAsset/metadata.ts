@@ -78,12 +78,25 @@ export const metadata = (driver: Driver) => ({
         for (const meta of metadatas) {
           const metaObjs = JSON.parse(meta) as any[];
           for (const metaObj of metaObjs) {
-            const obj = {
-              key: metaObj.label,
-              metadata: metaObj.map_json
-            };
-    
-            prev[key].push(obj);
+            if (metaObj.label === "721" || metaObj.label === "20") {
+              if (metaObj.map_json[policy]) {
+                if (metaObj.map_json[policy][assetName]) {
+                  const obj = {
+                    key: metaObj.label,
+                    metadata: metaObj.map_json
+                  };
+          
+                  prev[key].push(obj);
+                }
+              }
+            } else {
+              const obj = {
+                key: metaObj.label,
+                metadata: metaObj.map_json
+              };
+      
+              prev[key].push(obj);
+            }
           }
         }
       }
