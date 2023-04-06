@@ -16,62 +16,39 @@ export const supply = (driver: Driver) => ({
 
     const assets: any[] = req.body.assets;
 
-    const params: { [key: string]: string } = {};
-    const whereParts = [] as string[];
-
-    let c = 0;
-
-    for (const asset of assets) {
-      const assetHexName = Buffer.from(asset.name, "utf8").toString("hex");
-
-      const assetKey = `asset${c}`;
-      const policyKey = `policy${c}`;
-
-      params[assetKey] = assetHexName;
-      params[policyKey] = asset.policy;
-
-      whereParts.push(`(m.asset = $${assetKey} AND m.policy = $${policyKey})`);
-
-      c++;
-    }
-
     const cypher = `MATCH (m:MINT)
-    WHERE (${whereParts.join(" OR ")}) 
-    RETURN {
-        policy: m.policy,
-        asset: m.asset,
-        quantity: m.quantity
-    } as asset`;
+    WHERE m.asset = $asset AND m.policy = $policy
+    RETURN sum(m.quantity) as supply`;
 
-    const session = driver.session();
-    try {
-      const result = await session.run(cypher, params);
+    const r: any = {
+      supplies: {}
+    };
+    
+    const promises = assets.map(async (asset) => {
+      const key = `${asset.policy}.${asset.name}`;
 
-      const r: any = {};
-      r.supplies = {};
+      const session = driver.session();
+      try {
+        const assetHexName = Buffer.from(asset.name, "utf8").toString("hex");
 
-      for (const asset of assets) {
-        const key = `${asset.policy}.${asset.name}`;
-        r.supplies[key] = null;
+        const result = await session.run(cypher, {
+          asset: assetHexName,
+          policy: asset.policy,
+        });
+
+        const record = result.records[0];
+        const quantity = record.get("supply").toNumber();
+
+        r.supplies[key] = quantity;
+
+        return r;
+      } finally {
+        await session.close();
       }
+    });
 
-      for (const record of result.records) {
-        const asset = record.get("asset");
-        const assetName = Buffer.from(asset.asset, "hex").toString("utf8");
+    await Promise.all(promises);
 
-        const key = `${asset.policy}.${assetName}`;
-        const quantity = asset.quantity.toNumber();
-
-        if (r.supplies[key]) {
-          r.supplies[key] += quantity;
-        } else {
-          r.supplies[key] = quantity;
-        }
-      }
-
-      return res.send(r);
-    } finally {
-      await session.close();
-    }
+    return res.send(r);
   }
 });
