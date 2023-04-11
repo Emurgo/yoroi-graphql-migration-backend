@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { Driver } from "neo4j-driver-core";
+import { formatNeo4jBigNumber } from "../txs/utils";
 
 export const supply = (driver: Driver) => ({
   handler: async (req: Request, res: Response) => {
@@ -37,7 +38,7 @@ export const supply = (driver: Driver) => ({
         });
 
         const record = result.records[0];
-        const quantity = record.get("supply").toNumber();
+        const quantity = formatNeo4jBigNumber(record.get("supply"), "number");
 
         r.supplies[key] = quantity;
 
