@@ -27,8 +27,8 @@ const erasTimestamps: {
     byronSlotDurationInSeconds: 20,
   },
   preview: {
-    genesisUnixTimestamp: 1666648800,
-    shelleyUnixTimestamp: 1666648800,
+    genesisUnixTimestamp: 1666656000,
+    shelleyUnixTimestamp: 1666656000,
     shelleyInitialSlot: 0,
     byronSlotDurationInSeconds: 20,
   }
