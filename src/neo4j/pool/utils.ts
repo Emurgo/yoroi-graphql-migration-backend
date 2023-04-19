@@ -22,7 +22,7 @@ export const getPayload = (cert: any) => {
             ipv6: r.ipv6,
             dnsName: (r.dnsName) ? r.dnsName.toString() : null,
             dnsSrvName: (r.dns_srv_name) ? r.dns_srv_name.data.toString() : null,
-            port: r.port.toString(),
+            port: (r.port) ? r.port.toString() : null,
           })),
           poolMetadata: {
             url: cert.url,
