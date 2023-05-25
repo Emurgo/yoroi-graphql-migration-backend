@@ -33,11 +33,5 @@ export default {
   coinPrice: {
     currentPriceHttpCacheControlMaxAge: 60, // which is the price data refresh interval
     logLevel: "info",
-    s3: {
-      region: process.env.PRICE_DATA_S3_REGION,
-      bucketName: process.env.PRICE_DATA_S3_BUCKET_NAME,
-      accessKeyId: process.env.PRICE_DATA_S3_ACCESS_KEY_ID,
-      secretAccessKey: process.env.PRICE_DATA_S3_SECRET_ACCESS_KEY,
-    },
   }
 };
