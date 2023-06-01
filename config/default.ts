@@ -39,5 +39,11 @@ export default {
       accessKeyId: process.env.PRICE_DATA_S3_ACCESS_KEY_ID,
       secretAccessKey: process.env.PRICE_DATA_S3_SECRET_ACCESS_KEY,
     },
+  },
+  network: process.env.NETWORK || "mainnet",
+  neo4j: {
+    url: process.env.NEO4J_URL || "neo4j://dus-01.emurgo-rnd.com:7687",
+    username: process.env.NEO4J_USERNAME || "neo4j",
+    password: process.env.NEO4J_PASSWORD || "neo4j"
   }
 };

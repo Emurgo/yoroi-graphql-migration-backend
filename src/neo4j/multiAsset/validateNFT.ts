@@ -1,18 +1,7 @@
-import config from "config";
-import { Pool } from "pg";
 import { Request, Response } from "express";
-
+import { Driver } from "neo4j-driver-core";
+import config from "config";
 import AWS from "aws-sdk";
-
-const query = `SELECT encode(asset.policy, 'hex') as "policy",
-  encode(asset.name, 'escape') as "name",
-  meta.key as "meta_label",
-  meta.json as "metadata"
-FROM multi_asset asset
-  INNER JOIN ma_tx_mint mint on asset.id = mint.ident
-  INNER JOIN tx on mint.tx_id = tx.id
-  INNER JOIN tx_metadata meta on tx.id = meta.tx_id
-WHERE asset.fingerprint = $1::text`;
 
 const getLambda = (): AWS.Lambda => {
   return new AWS.Lambda({
@@ -85,14 +74,23 @@ const sendNftForAnalysis = async (
   if (response.FunctionError) throw new Error(response.FunctionError);
 };
 
-export const handleValidateNft =
-  (pool: Pool) => async (req: Request, res: Response) => {
+export const validateNFT = (driver: Driver) => ({
+  handler: async (req: Request, res: Response) => {
     const fingerprint: string = req.params.fingerprint;
     if (!fingerprint) {
       return res.status(400).send({
         error: "missing fingerprint",
       });
     }
+
+    const cypher = `MATCH (mint:MINT{fingerprint:$fingerprint, quantity: 1})
+    WITH mint
+    MATCH (mint)-[:mintedAt]->(tx:TX)-[:isAt]->(block:Block)
+    RETURN mint.asset as asset,
+      mint.policy as policy,
+      tx.metadata as metadata
+    ORDER BY block.number, tx.tx_index
+    LIMIT 1`;
 
     const envName = req.body.envName ?? "dev";
 
@@ -106,47 +104,58 @@ export const handleValidateNft =
       return res.status(200).send(existingAnalysis);
     }
 
-    const result = await pool.query(query, [fingerprint]);
-    if (result.rowCount === 0) {
-      return res.status(404).send({
-        error: "Not found",
+    const session = driver.session();
+
+    try {
+      const result = await session.run(cypher, {
+        fingerprint: fingerprint,
       });
+  
+      if (result.records.length === 0) {
+        return res.status(404).send({
+          error: "Not found",
+        });
+      }
+  
+      const record = result.records[0];
+      const metadataString = record.get("metadata");
+  
+      const asset = Buffer.from(record.get("asset"), "hex").toString();
+      const policy = record.get("policy");
+      const metadata = JSON.parse(metadataString) as any[];
+  
+      const assetMetada = metadata.reduce((prev, curr) => {
+        if (curr.label === "721") {
+          if (curr.map_json[policy][asset]) {
+            return curr.map_json[policy][asset];
+          }
+        }
+        return prev;
+      }, null as any);
+  
+      if (!assetMetada) {
+        return res.status(409).send({
+          metadata: metadata,
+          error: "missing assetinfo on metadata",
+        });
+      }
+  
+      if (!assetMetada.image) {
+        return res.status(409).send({
+          metadata: metadata,
+          error: "missing image field on metadata",
+        });
+      }
+  
+      if (req.query.skipValidation) {
+        return res.status(204).send();
+      }
+  
+      await sendNftForAnalysis(lambda, fingerprint, assetMetada.image, envName);
+  
+      return res.status(202).send();
+    } finally {
+      await session.close();
     }
-
-    const item = result.rows[0];
-    if (item.meta_label !== "721") {
-      return res.status(409).send({
-        error: `the asset was found, but it has an incorrect metadata label. Expected '721, but it is ${item.meta_label}`,
-      });
-    }
-
-    if (!item.metadata[item.policy]) {
-      return res.status(409).send({
-        metadata: item.metadata,
-        error: `missing policy ('${item.policy}') field on metadata`,
-      });
-    }
-
-    if (!item.metadata[item.policy][item.name]) {
-      return res.status(409).send({
-        metadata: item.metadata,
-        error: `missing name ('${item.name}') field on metadata`,
-      });
-    }
-
-    const metadata = item.metadata[item.policy][item.name];
-    if (!metadata.image) {
-      return res.status(409).send({
-        metadata: item.metadata,
-        error: "missing image field on metadata",
-      });
-    }
-
-    if (req.query.skipValidation) {
-      return res.status(204).send();
-    }
-
-    await sendNftForAnalysis(lambda, fingerprint, metadata.image, envName);
-
-    return res.status(202).send();
-  };
+  }
+});

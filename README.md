@@ -1058,3 +1058,34 @@ We recommend querying using payment key hashes (`addr_vkh`) when possible (other
   }
   ```
 </details>
+
+</details>
+
+<details>
+  <summary> POST /v2.1/lastBlockBySlot</summary>
+
+Resolve the latest block created at a slot equal to or lower than a given slot.
+
+#### Request
+
+The field slots are required to be a non-empty array. Each entry is a tuple of two numbers: epoch and slot.
+
+```ts
+type SlotNo = number;
+type EpochNo = number;
+type Request = {
+  slots: Array<[EpochNo, SlotNo]>;
+};
+```
+
+#### Response
+
+```ts
+type Slot = [EpochNo, SlotNo];
+type Response = {
+  blockHashes: {
+    [key: Slot]: string | null;
+  };
+};
+```
+</details>

@@ -14,41 +14,15 @@ import {
   applyMiddleware,
   applyRoutes,
   Route,
-  UtilEither,
-  errMsgs,
-  pgSnapshotReadWrapper,
-  PoolOrClient,
 } from "./utils";
-import * as utils from "./utils";
 import * as middleware from "./middleware";
 
-import { askBestBlock } from "./services/bestblock";
-import { utxoForAddresses } from "./services/utxoForAddress";
-import { utxoAtPoint } from "./services/utxoAtPoint";
-import {
-  askBlockNumByHash,
-  askBlockNumByTxHash,
-  askTransactionHistory,
-} from "./services/transactionHistory";
-import type { BlockNumByTxHashFrag } from "./services/transactionHistory";
-import { filterUsedAddresses } from "./services/filterUsedAddress";
-import { askUtxoSumForAddresses } from "./services/utxoSumForAddress";
 import { handleSignedTx } from "./services/signedTransaction";
 import { handlePoolInfo } from "./services/poolInfo";
 import { handleGetAccountState } from "./services/accountState";
 import { handleGetRegHistory } from "./services/regHistory";
 import { handleGetRewardHistory } from "./services/rewardHistory";
-import { handleGetMultiAssetSupply } from "./services/multiAssetSupply";
-import { handleGetMultiAssetTxMintMetadata } from "./services/multiAssetTxMint";
-import { handleGetAssetMintTxs } from "./services/assetMintTxs";
 import { handleTxStatus } from "./services/txStatus";
-import { handleUtxoDiffSincePoint } from "./services/utxoDiffSincePoint";
-import { handleGetTxIO, handleGetTxOutput } from "./services/txIO";
-import { handleTipStatusGet, handleTipStatusPost } from "./services/tipStatus";
-import { handleGetTransactions } from "./services/transactions";
-import { handleValidateNft } from "./services/validateNft";
-import { handlePolicyIdExists } from "./services/policyIdExists";
-import { handleTxSummariesForAddresses } from "./services/txSummariesForAddresses";
 
 import { HealthChecker } from "./HealthChecker";
 
@@ -57,7 +31,6 @@ import { createTransactionOutputView } from "./Transactions/output";
 import { createValidUtxosView } from "./Transactions/valid_utxos_view";
 import { createUtxoFunctions } from "./Transactions/utxoFunctions";
 import { createTransactionUtilityFunctions } from "./Transactions/userDefinedFunctions";
-import { poolDelegationHistory } from "./services/poolHistory";
 import { handleGetCardanoWalletPools } from "./services/cardanoWallet";
 
 import { handleMessageBoard } from "./services/messageBoard";
@@ -68,11 +41,12 @@ import { handleOracleTicker } from "./services/oracleTicker";
 
 import { getFundInfo } from "./services/catalyst";
 
-import { mapTransactionFragsToResponse } from "./utils/mappers";
 import * as Sentry from "@sentry/node";
 import * as Tracing from "@sentry/tracing";
 
 import installCoinPriceHandlers from "./coin-price/handler";
+
+import { neo } from "./neo4j";
 
 const pool = new Pool({
   user: config.get("db.user"),
@@ -87,7 +61,7 @@ createTransactionOutputView(pool);
 createUtxoFunctions(pool);
 createTransactionUtilityFunctions(pool);
 
-const healthChecker = new HealthChecker(() => askBestBlock(pool));
+const healthChecker = new HealthChecker(() => neo.bestblock.getBestBlock());
 
 const router = express();
 
@@ -123,149 +97,6 @@ const middlewares = [
 applyMiddleware(middlewares, router);
 
 const port: number = config.get("server.port");
-const addressesRequestLimit: number = config.get("server.addressRequestLimit");
-const apiResponseLimit: number = config.get("server.apiResponseLimit");
-
-const bestBlock = (pool: Pool) => async (_req: Request, res: Response) => {
-  const result = await askBestBlock(pool);
-  switch (result.kind) {
-    case "ok": {
-      const cardano = result.value;
-      res.send(cardano);
-      return;
-    }
-    case "error":
-      throw new Error(result.errMsg);
-    default:
-      return utils.assertNever(result);
-  }
-};
-
-const utxoSumForAddresses = async (req: Request, res: Response) => {
-  if (!req.body || !req.body.addresses) {
-    throw new Error("error, no addresses.");
-  }
-  const verifiedAddresses = utils.validateAddressesReq(
-    addressesRequestLimit,
-    req.body.addresses
-  );
-  switch (verifiedAddresses.kind) {
-    case "ok": {
-      const result = await askUtxoSumForAddresses(
-        pool,
-        verifiedAddresses.value
-      );
-      switch (result.kind) {
-        case "ok":
-          res.send(result.value);
-          return;
-        case "error":
-          throw new Error(result.errMsg);
-        default:
-          return utils.assertNever(result);
-      }
-    }
-    case "error":
-      throw new Error(verifiedAddresses.errMsg);
-    default:
-      return utils.assertNever(verifiedAddresses);
-  }
-};
-
-const getOrDefaultAfterParam = (
-  result: UtilEither<BlockNumByTxHashFrag>
-): {
-  blockNumber: number;
-  txIndex: number;
-} => {
-  if (result.kind !== "ok") {
-    if (result.errMsg === errMsgs.noValue) {
-      // default value since this is an optional field
-      return {
-        blockNumber: -1,
-        txIndex: -1,
-      };
-    }
-    throw new Error(result.errMsg);
-  }
-  return {
-    blockNumber: result.value.block.number,
-    txIndex: result.value.blockIndex,
-  };
-};
-
-const txHistory =
-  (pool: PoolOrClient) => async (req: Request, res: Response) => {
-    if (!req.body) {
-      throw new Error("error, no body");
-    }
-    const verifiedBody = utils.validateHistoryReq(
-      addressesRequestLimit,
-      apiResponseLimit,
-      req.body
-    );
-    switch (verifiedBody.kind) {
-      case "ok": {
-        const body = verifiedBody.value;
-        const limit = body.limit || apiResponseLimit;
-        const [referenceTx, referenceBlock] =
-          (body.after && [body.after.tx, body.after.block]) || [];
-        const referenceBestBlock = body.untilBlock;
-        const untilBlockNum = await askBlockNumByHash(pool, referenceBestBlock);
-        const afterBlockInfo = await askBlockNumByTxHash(pool, referenceTx);
-
-        if (
-          untilBlockNum.kind === "error" &&
-          untilBlockNum.errMsg === utils.errMsgs.noValue
-        ) {
-          throw new Error("REFERENCE_BEST_BLOCK_MISMATCH");
-        }
-        if (
-          afterBlockInfo.kind === "error" &&
-          typeof referenceTx !== "undefined"
-        ) {
-          throw new Error("REFERENCE_TX_NOT_FOUND");
-        }
-
-        if (
-          afterBlockInfo.kind === "ok" &&
-          afterBlockInfo.value.block.hash !== referenceBlock
-        ) {
-          throw new Error("REFERENCE_BLOCK_MISMATCH");
-        }
-
-        // when things are running smoothly, we would never hit this case case
-        if (untilBlockNum.kind !== "ok") {
-          throw new Error(untilBlockNum.errMsg);
-        }
-        const afterInfo = getOrDefaultAfterParam(afterBlockInfo);
-
-        const maybeTxs = await askTransactionHistory(
-          pool,
-          limit,
-          body.addresses,
-          afterInfo,
-          untilBlockNum.value
-        );
-        switch (maybeTxs.kind) {
-          case "ok": {
-            const txs = mapTransactionFragsToResponse(maybeTxs.value);
-
-            res.send(txs);
-            return;
-          }
-          case "error":
-            throw new Error(maybeTxs.errMsg);
-          default:
-            return utils.assertNever(maybeTxs);
-        }
-      }
-      case "error":
-        throw new Error(verifiedBody.errMsg);
-      default:
-        return utils.assertNever(verifiedBody);
-    }
-  };
 
 const getStatus = async (req: Request, res: Response) => {
   const isQueueOnline = config.get("usingQueueEndpoint") === "true";
@@ -334,68 +165,10 @@ const routes: Route[] = [
     handler: handleGetAccountState(pool),
   },
   {
-    path: "/account/registrationHistory",
-    method: "post",
-    handler: handleGetRegHistory(pool),
-  },
-  {
     path: "/account/rewardHistory",
     method: "post",
     handler: handleGetRewardHistory(pool),
   },
-  { path: "/pool/info", method: "post", handler: handlePoolInfo(pool) },
-  {
-    path: "/pool/delegationHistory",
-    method: "post",
-    handler: poolDelegationHistory(pool),
-  },
-  // regular endpoints
-  { path: "/v2/bestblock", method: "get", handler: bestBlock(pool) },
-  { path: "/v2/tipStatus", method: "get", handler: handleTipStatusGet(pool) },
-  { path: "/v2/tipStatus", method: "post", handler: handleTipStatusPost(pool) },
-  {
-    path: "/v2/txs/utxoAtPoint",
-    method: "post",
-    handler: pgSnapshotReadWrapper(utxoAtPoint)(pool),
-  },
-  {
-    path: "/v2/txs/utxoDiffSincePoint",
-    method: "post",
-    handler: pgSnapshotReadWrapper(handleUtxoDiffSincePoint)(pool),
-  },
-  {
-    path: "/v2/addresses/filterUsed",
-    method: "post",
-    handler: filterUsedAddresses(pool),
-  },
-  {
-    path: "/v2/txs/utxoAtPoint",
-    method: "post",
-    handler: utxoAtPoint(pool),
-  },
-  {
-    path: "/txs/utxoForAddresses",
-    method: "post",
-    handler: utxoForAddresses(pool),
-  },
-  {
-    path: "/txs/utxoSumForAddresses",
-    method: "post",
-    handler: utxoSumForAddresses,
-  },
-  {
-    path: "/v2/txs/history",
-    method: "post",
-    handler: pgSnapshotReadWrapper(txHistory)(pool),
-  },
-  { path: "/txs/io/:tx_hash", method: "get", handler: handleGetTxIO(pool) },
-  {
-    path: "/txs/io/:tx_hash/o/:index",
-    method: "get",
-    handler: handleGetTxOutput(pool),
-  },
-  { path: "/v2/txs/get", method: "post", handler: handleGetTransactions(pool) },
-  { path: "/txs/signed", method: "post", handler: handleSignedTx },
   {
     path: "/messages/getMessageBoard",
     method: "post",
@@ -422,34 +195,110 @@ const routes: Route[] = [
     handler: handleGetCardanoWalletPools(pool),
   },
   {
-    path: "/multiAsset/supply",
-    method: "post",
-    handler: handleGetMultiAssetSupply(pool),
-  },
-  {
-    path: "/multiAsset/metadata",
-    method: "post",
-    handler: handleGetMultiAssetTxMintMetadata(pool),
-  },
-  {
-    path: "/asset/:fingerprint/mintTxs",
-    method: "get",
-    handler: handleGetAssetMintTxs(pool),
-  },
-  {
-    path: "/multiAsset/validateNFT/:fingerprint",
-    method: "post",
-    handler: handleValidateNft(pool),
-  },
-  {
     path: "/tx/status",
     method: "post",
     handler: handleTxStatus(pool),
   },
   {
+    path: "/account/registrationHistory",
+    method: "post",
+    handler: neo.account.registrationHistory.handler,
+  },
+  {
+    path: "/pool/info",
+    method: "post",
+    handler: neo.pool.info.handler
+  },
+  {
+    path: "/pool/delegationHistory",
+    method: "post",
+    handler: neo.pool.delegationHistory.handler,
+  },
+  // regular endpoints
+  {
+    path: "/v2/bestblock",
+    method: "get",
+    handler: neo.bestblock.handler
+  },
+  {
+    path: "/v2/tipStatus",
+    method: "get",
+    handler: neo.tipStatus.get.handler
+  },
+  {
+    path: "/v2/tipStatus",
+    method: "post",
+    handler: neo.tipStatus.post.handler
+  },
+  {
+    path: "/v2/txs/utxoAtPoint",
+    method: "post",
+    handler: neo.txs.utxoAtPoint.handler
+  },
+  {
+    path: "/v2/txs/utxoDiffSincePoint",
+    method: "post",
+    handler: neo.txs.utxoDiffSincePoint.handler,
+  },
+  {
+    path: "/v2/addresses/filterUsed",
+    method: "post",
+    handler: neo.addresses.filterUsed.handler,
+  },
+  {
+    path: "/txs/utxoForAddresses",
+    method: "post",
+    handler: neo.txs.utxoForAddresses.handler,
+  },
+  {
+    path: "/txs/utxoSumForAddresses",
+    method: "post",
+    handler: neo.txs.utxoSumForAddresses.handler
+  },
+  {
+    path: "/v2/txs/history",
+    method: "post",
+    handler: neo.txs.history.handler,
+  },
+  {
+    path: "/txs/io/:tx_hash",
+    method: "get",
+    handler: neo.txs.io.handler
+  },
+  {
+    path: "/txs/io/:tx_hash/o/:index",
+    method: "get",
+    handler: neo.txs.ioByIndex.handler
+  },
+  {
+    path: "/v2/txs/get",
+    method: "post",
+    handler: neo.txs.get.handler,
+  },
+  {
+    path: "/multiAsset/supply",
+    method: "post",
+    handler: neo.multiAsset.supply.handler
+  },
+  {
+    path: "/multiAsset/metadata",
+    method: "post",
+    handler: neo.multiAsset.metadata.handler
+  },
+  {
+    path: "/asset/:fingerprint/mintTxs",
+    method: "get",
+    handler: neo.asset.mintTxs.handler,
+  },
+  {
+    path: "/multiAsset/validateNFT/:fingerprint",
+    method: "post",
+    handler: neo.multiAsset.validateNFT.handler
+  },
+  {
     path: "/multiAsset/policyIdExists",
     method: "post",
-    handler: handlePolicyIdExists(pool),
+    handler: neo.multiAsset.policyIdExists.handler,
   },
   {
     path: "/v2/importerhealthcheck",
@@ -472,6 +321,12 @@ const routes: Route[] = [
     method: "get",
     handler: getFundInfo,
   },
+  {
+    path: "/txs/signed",
+    method: "post",
+    handler: handleSignedTx
+  },
+
   // v2.1 endpoints
   {
     path: "/v2.1/account/state",
@@ -480,111 +335,9 @@ const routes: Route[] = [
     interceptor: middleware.handleCamelCaseResponse,
   },
   {
-    path: "/v2.1/account/registrationHistory",
-    method: "post",
-    handler: handleGetRegHistory(pool),
-    interceptor: middleware.handleCamelCaseResponse,
-  },
-  {
     path: "/v2.1/account/rewardHistory",
     method: "post",
     handler: handleGetRewardHistory(pool),
-    interceptor: middleware.handleCamelCaseResponse,
-  },
-  {
-    path: "/v2.1/pool/info",
-    method: "post",
-    handler: handlePoolInfo(pool),
-    interceptor: middleware.handleCamelCaseResponse,
-  },
-  {
-    path: "/v2.1/pool/delegationHistory",
-    method: "post",
-    handler: poolDelegationHistory(pool),
-    interceptor: middleware.handleCamelCaseResponse,
-  },
-  {
-    path: "/v2.1/bestblock",
-    method: "get",
-    handler: bestBlock(pool),
-    interceptor: middleware.handleCamelCaseResponse,
-  },
-  {
-    path: "/v2.1/tipStatus",
-    method: "get",
-    handler: handleTipStatusGet(pool),
-    interceptor: middleware.handleCamelCaseResponse,
-  },
-  {
-    path: "/v2.1/tipStatus",
-    method: "post",
-    handler: handleTipStatusPost(pool),
-    interceptor: middleware.handleCamelCaseResponse,
-  },
-  {
-    path: "/v2.1/txs/utxoAtPoint",
-    method: "post",
-    handler: utxoAtPoint(pool),
-    interceptor: middleware.handleCamelCaseResponse,
-  },
-  {
-    path: "/v2.1/txs/utxoDiffSincePoint",
-    method: "post",
-    handler: handleUtxoDiffSincePoint(pool),
-    interceptor: middleware.handleCamelCaseResponse,
-  },
-  {
-    path: "/v2.1/addresses/filterUsed",
-    method: "post",
-    handler: filterUsedAddresses(pool),
-    interceptor: middleware.handleCamelCaseResponse,
-  },
-  {
-    path: "/v2.1/txs/utxoAtPoint",
-    method: "post",
-    handler: utxoAtPoint(pool),
-    interceptor: middleware.handleCamelCaseResponse,
-  },
-  {
-    path: "/v2.1/txs/utxoForAddresses",
-    method: "post",
-    handler: utxoForAddresses(pool),
-    interceptor: middleware.handleCamelCaseResponse,
-  },
-  {
-    path: "/v2.1/txs/utxoSumForAddresses",
-    method: "post",
-    handler: utxoSumForAddresses,
-    interceptor: middleware.handleCamelCaseResponse,
-  },
-  {
-    path: "/v2.1/txs/history",
-    method: "post",
-    handler: pgSnapshotReadWrapper(txHistory)(pool),
-    interceptor: middleware.handleCamelCaseResponse,
-  },
-  {
-    path: "/v2.1/txs/io/:tx_hash",
-    method: "get",
-    handler: handleGetTxIO(pool),
-    interceptor: middleware.handleCamelCaseResponse,
-  },
-  {
-    path: "/v2.1/txs/io/:tx_hash/o/:index",
-    method: "get",
-    handler: handleGetTxOutput(pool),
-    interceptor: middleware.handleCamelCaseResponse,
-  },
-  {
-    path: "/v2.1/txs/get",
-    method: "post",
-    handler: handleGetTransactions(pool),
-    interceptor: middleware.handleCamelCaseResponse,
-  },
-  {
-    path: "/v2.1/txs/signed",
-    method: "post",
-    handler: handleSignedTx,
     interceptor: middleware.handleCamelCaseResponse,
   },
   {
@@ -618,39 +371,140 @@ const routes: Route[] = [
     interceptor: middleware.handleCamelCaseResponse,
   },
   {
-    path: "/v2.1/multiAsset/supply",
-    method: "post",
-    handler: handleGetMultiAssetSupply(pool),
-    interceptor: middleware.handleCamelCaseResponse,
-  },
-  {
-    path: "/v2.1/multiAsset/metadata",
-    method: "post",
-    handler: handleGetMultiAssetTxMintMetadata(pool),
-    interceptor: middleware.handleCamelCaseResponse,
-  },
-  {
-    path: "/v2.1/asset/:fingerprint/mintTxs",
-    method: "get",
-    handler: handleGetAssetMintTxs(pool),
-    interceptor: middleware.handleCamelCaseResponse,
-  },
-  {
-    path: "/v2.1/multiAsset/validateNFT/:fingerprint",
-    method: "post",
-    handler: handleValidateNft(pool),
-    interceptor: middleware.handleCamelCaseResponse,
-  },
-  {
     path: "/v2.1/tx/status",
     method: "post",
     handler: handleTxStatus(pool),
     interceptor: middleware.handleCamelCaseResponse,
   },
   {
+    path: "/v2.1/account/registrationHistory",
+    method: "post",
+    handler: neo.account.registrationHistory.handler,
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/pool/info",
+    method: "post",
+    handler: neo.pool.info.handler,
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/pool/delegationHistory",
+    method: "post",
+    handler: neo.pool.delegationHistory.handler,
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/bestblock",
+    method: "get",
+    handler: neo.bestblock.handler,
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/lastBlockBySlot",
+    method: "post",
+    handler: neo.lastBlockBySlot.handler,
+  },
+  {
+    path: "/v2.1/tipStatus",
+    method: "get",
+    handler: neo.tipStatus.get.handler,
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/tipStatus",
+    method: "post",
+    handler: neo.tipStatus.post.handler,
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/txs/utxoAtPoint",
+    method: "post",
+    handler: neo.txs.utxoAtPoint.handler,
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/txs/utxoDiffSincePoint",
+    method: "post",
+    handler: neo.txs.utxoDiffSincePoint.handler,
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/addresses/filterUsed",
+    method: "post",
+    handler: neo.addresses.filterUsed.handler,
+    interceptor: middleware.handleCamelCaseResponse
+  },
+  {
+    path: "/v2.1/txs/utxoForAddresses",
+    method: "post",
+    handler: neo.txs.utxoForAddresses.handler,
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/txs/utxoSumForAddresses",
+    method: "post",
+    handler: neo.txs.utxoSumForAddresses.handler,
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/txs/history",
+    method: "post",
+    handler: neo.txs.history.handler,
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/txs/io/:tx_hash",
+    method: "get",
+    handler: neo.txs.io.handler,
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/txs/io/:tx_hash/o/:index",
+    method: "get",
+    handler: neo.txs.ioByIndex.handler,
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/txs/get",
+    method: "post",
+    handler: neo.txs.get.handler,
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/txs/signed",
+    method: "post",
+    handler: handleSignedTx,
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/multiAsset/supply",
+    method: "post",
+    handler: neo.multiAsset.supply.handler,
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/multiAsset/metadata",
+    method: "post",
+    handler: neo.multiAsset.metadata.handler,
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/asset/:fingerprint/mintTxs",
+    method: "get",
+    handler: neo.asset.mintTxs.handler,
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
+    path: "/v2.1/multiAsset/validateNFT/:fingerprint",
+    method: "post",
+    handler: neo.multiAsset.validateNFT.handler,
+    interceptor: middleware.handleCamelCaseResponse,
+  },
+  {
     path: "/v2.1/multiAsset/policyIdExists",
     method: "post",
-    handler: handlePolicyIdExists(pool),
+    handler: neo.multiAsset.policyIdExists.handler,
     interceptor: middleware.handleCamelCaseResponse,
   },
   {
@@ -684,7 +538,7 @@ const routes: Route[] = [
   {
     path: "/v2.1/txs/summaries",
     method: "post",
-    handler: handleTxSummariesForAddresses(pool),
+    handler: neo.txs.summaries.handler,
   },
 ];
 
